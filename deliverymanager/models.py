@@ -1,4 +1,7 @@
+'''
 from django.db import models
+
+
 
 # Create your models here.
 # deliverymanager/models.py
@@ -17,4 +20,4 @@ class Delivery(models.Model):
 
     def __str__(self):
         return f"Delivery {self.id} for order {self.order_id}"
-
+'''
