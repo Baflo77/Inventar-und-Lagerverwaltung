@@ -25,4 +25,7 @@ urlpatterns = [
     path('products/', include('productmanager.urls')),
     path('categories/', include('categorymanager.urls')),
     path('stockmovement/', include('stockmovementmanager.urls'))
+    path('stocks/', include('stockmanager.urls')),
+    path('locations/', include('locationmanager.urls')),
+    path('warehouses/', include('warehousemanager.urls')),
 ]
