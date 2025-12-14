@@ -1,5 +1,5 @@
 from django.db import models
-from warehousemanager.models import Warehouse
+
 # Create your models here.
 class Location(models.Model):
     address = models.CharField(max_length=100)
