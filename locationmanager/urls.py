@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from locationmanager import views
 from django.urls import include
 
 urlpatterns = [

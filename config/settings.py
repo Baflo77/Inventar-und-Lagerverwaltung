@@ -37,7 +37,10 @@ INSTALLED_APPS = [
     'productmanager',
     'suppliermanager',
     'stockmovementmanager',
-    'drf_yasg'
+    'warehousemanager',
+    'locationmanager',
+    'stockmanager',
+    'drf_yasg',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
