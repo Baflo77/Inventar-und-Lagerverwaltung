@@ -10,9 +10,9 @@ class Stock(models.Model):
     threshold = models.PositiveIntegerField(default=0)
     status = models.BooleanField(default=False)
 
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='warehouses')
-    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='locations')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='products')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='stocks')
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='stocks')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stocks')
 
     def __str__(self):
         return f"Produkt: {self.product}, Standort: {self.location}, Anzahl: {self.quantity}, Mindestbestand: {self.threshold}, Status: {self.status}, Warenhaus: {self.warehouse}"
