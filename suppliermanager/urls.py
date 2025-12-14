@@ -20,8 +20,8 @@ from django.urls import include
 from . import views
 
 urlpatterns = [
-    path('suppliers/', views.show_suppliers),
-    path('supplier/<id>', views.show_supplier_details),
+    path('', views.show_all_suppliers),
+    path('<id>', views.show_supplier_details),
     path('firstsupplier/', views.show_first_supplier),
     path('writesupplier/', views.write_supplier),
     path('supplierbyid/<id>', views.show_all_suppliers_by_id),

@@ -1,23 +1,52 @@
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, get_list_or_404
-
+from rest_framework import status
 from suppliermanager.models import Supplier
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from suppliermanager.serializers import SupplierSerializer
 
 
 # Create your views here.
-def show_suppliers(request):
-    return HttpResponse("Hier ist dein Kunde")
+@api_view(["GET", "POST"])
+def show_all_suppliers(request):
+    if request.method == "GET":
+        suppliers = get_list_or_404(Supplier)
+        serialized_suppliers = SupplierSerializer(suppliers, many=True)
+        return Response(serialized_suppliers.data)
+    elif request.method == "POST":
+        supplier_serializer = SupplierSerializer(data=request.data)
+        if supplier_serializer.is_valid():
+            supplier_serializer.save()
+            return Response(supplier_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(supplier_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
 
+
+@api_view()
 def show_all_suppliers_by_id(request, id):
     supplier = get_list_or_404(Supplier, id__gte=id)
     return_value =""
     for ca in supplier:
         return_value += f"{ca} "
-    return HttpResponse(supplier)
+    return Response(supplier)
 
+@api_view(["GET", "PUT", "DELETE"])
 def show_supplier_details(request, id):
     supplier = get_object_or_404(Supplier, pk=id)
-    return HttpResponse(supplier)
+    if request.method == "GET":
+        serializer = SupplierSerializer(supplier)
+        return Response(serializer.data)
+    elif request.method == "DELETE":
+        supplier.delete()
+        return Response(data="msg: Der Lieferant wurde gelöscht", status=status.HTTP_204_NO_CONTENT)
+    elif request.method == "PUT":
+        supplier_serializer = SupplierSerializer(instance=supplier, data=request.data)
+        if supplier_serializer.is_valid():
+            supplier_serializer.save()
+            return Response(supplier_serializer.data)
+        return Response(supplier_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
 
 def show_first_supplier(request):
     supplier = Supplier.objects.first()
