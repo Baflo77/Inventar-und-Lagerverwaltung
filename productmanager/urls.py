@@ -22,7 +22,4 @@ from . import views
 urlpatterns = [
     path('', views.show_all_products),
     path('<id>', views.show_product_details),
-    path('firstproduct/', views.show_first_product),
-    path('writeproduct/', views.write_product),
-    path('productbyid/<id>', views.show_all_products_by_id),
 ]

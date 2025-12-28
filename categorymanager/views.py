@@ -22,14 +22,6 @@ def show_all_categories(request):
         return Response(category_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return None
 
-
-def show_all_categories_by_id(request, id):
-    category = get_list_or_404(Category, id__gte=id)
-    return_value =""
-    for ca in category:
-        return_value += f"{ca} "
-    return HttpResponse(category)
-
 @api_view(["GET", "PUT", "DELETE"])
 def show_category_details(request, id):
     category = get_object_or_404(Category, pk=id)
@@ -47,14 +39,3 @@ def show_category_details(request, id):
         return Response(category_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return None
 
-
-
-def show_first_category(request):
-    category = Category.objects.first()
-    return HttpResponse(f"Name: {category.name}")
-
-def write_category(request):
-    category = Category(name="Elektronik")
-    category.save()
-    category = Category.objects.last()
-    return HttpResponse(f"Name: {category.name}")

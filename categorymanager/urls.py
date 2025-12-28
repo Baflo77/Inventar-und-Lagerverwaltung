@@ -23,7 +23,4 @@ from . import views
 urlpatterns = [
     path('', views.show_all_categories),
     path('<id>', views.show_category_details),
-    path('firstcategory/', views.show_first_category),
-    path('writecategory/', views.write_category),
-    path('categoriesbyid/<id>', views.show_all_categories_by_id),
 ]

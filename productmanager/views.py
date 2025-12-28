@@ -26,14 +26,6 @@ def show_all_products(request):
         return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return None
 
-
-def show_all_products_by_id(request, id):
-    product = get_list_or_404(Product, id__gte=id)
-    return_value =""
-    for ca in product:
-        return_value += f"{ca} "
-    return HttpResponse(product)
-
 @api_view(["GET", "PUT", "DELETE"])
 def show_product_details(request, id):
     product = get_object_or_404(Product, pk=id)
@@ -51,12 +43,3 @@ def show_product_details(request, id):
         return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return None
 
-def show_first_product(request):
-    product = Product.objects.first()
-    return HttpResponse(f"Name: {product.name} SKU: {product.sku} Description: {product.description}, Supplier: {product.supplier}, Category: {product.category}")
-
-def write_product(request):
-    product = Product(name="Apple iPhone 15", sku="1234567", description="Ein iPhone 15", supplier="1", category="1")
-    product.save()
-    product = Product.objects.last()
-    return HttpResponse(f"Name: {product.name} SKU: {product.sku} Description: {product.description}, Supplier: {product.supplier}, Category: {product.category}")
