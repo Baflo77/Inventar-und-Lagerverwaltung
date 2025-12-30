@@ -22,7 +22,6 @@ from django.urls import include
 from customermanager import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('customers/', views.show_customer),
     path('customer/', views.show_customer_details),
 ]
