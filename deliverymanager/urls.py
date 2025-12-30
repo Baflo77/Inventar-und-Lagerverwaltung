@@ -22,6 +22,6 @@ from deliverymanager import views
 
 urlpatterns = [
     path('deliveries/', views.show_deliveries),
-    path('delivery/', views.show_delivery),
+    path('delivery/', views.show_delivery_details),
 
 ]
