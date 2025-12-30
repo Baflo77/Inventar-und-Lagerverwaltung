@@ -1,19 +1,23 @@
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, get_list_or_404
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from categorymanager.models import Category
 from categorymanager.serializers import CategorySerializer
+from rest_framework.exceptions import PermissionDenied
 
 
 # Create your views here.
 @api_view(["GET", "POST"])
+@permission_classes([IsAdminUser])
 def show_all_categories(request):
     if request.method == "GET":
         categories = get_list_or_404(Category)
         serialized_categories = CategorySerializer(categories, many=True)
         return Response(serialized_categories.data)
+
     elif request.method == "POST":
         category_serializer = CategorySerializer(data=request.data)
         if category_serializer.is_valid():
@@ -23,6 +27,7 @@ def show_all_categories(request):
     return None
 
 @api_view(["GET", "PUT", "DELETE"])
+@permission_classes([IsAdminUser])
 def show_category_details(request, id):
     category = get_object_or_404(Category, pk=id)
     if request.method == "GET":

@@ -1,7 +1,8 @@
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, get_list_or_404
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from productmanager.models import Product
 from productmanager.serializers import ProductSerializer
@@ -9,6 +10,7 @@ from productmanager.serializers import ProductSerializer
 
 # Create your views here.
 @api_view(["GET", "POST"])
+@permission_classes([IsAdminUser])
 def show_all_products(request):
     if request.method == "GET":
         searchterm = request.query_params.get('searchterm')
@@ -27,6 +29,7 @@ def show_all_products(request):
     return None
 
 @api_view(["GET", "PUT", "DELETE"])
+@permission_classes([IsAdminUser])
 def show_product_details(request, id):
     product = get_object_or_404(Product, pk=id)
     if request.method == "GET":
