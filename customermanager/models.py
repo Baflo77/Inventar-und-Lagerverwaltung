@@ -13,6 +13,8 @@ class Customer(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="customer_profile",
+        null=True,
+        blank=True,
     )
 
     def __str__(self):
