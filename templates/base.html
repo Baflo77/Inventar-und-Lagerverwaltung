@@ -3,29 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>{% block title %}Inventar-Lagerverwaltung{% endblock %}</title>
+    <title>{% block title %}Lagerverwaltung{% endblock %}</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --header-bg: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+            --accent-line: #3498db;
+            --bg-main: #f4f6f8;
+            --text-dark: #2c3e50;
+            --text-muted: #95a5a6;
+            --shadow-soft: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Verhindert horizontales Scrollen */
+        }
+
+        .app-header {
+            background: var(--header-bg);
+            color: white;
+            height: 85px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 3rem;
+            border-bottom: 3px solid var(--accent-line);
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        /* FIX: Grid entfernt! Wir lassen den Inhalt entscheiden, wie er aussieht. */
+        .main-content-area {
+            width: 100%;
+            min-height: calc(100vh - 85px);
+            /* display: grid wurde hier gelöscht */
+        }
+
+        .user-pill {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        /* Damit Links standardmäßig keine Unterstreichung haben (schöner für Kacheln) */
+        a { text-decoration: none; }
+
+        {% block extra_css %}{% endblock %}
+    </style>
 </head>
-<body class="bg-light">
+<body>
+<header class="app-header">
+    <h1 style="font-size: 1.5rem; margin: 0; font-weight: 700;">Inventar-Lagerverwaltung</h1>
+    <div class="user-pill">👤 <strong>Administrator</strong></div>
+</header>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="/">Inventar-Lagerverwaltung</a>
-            <div class="navbar-nav">
-                <a class="nav-link" href="/stockmovement/">Warenausgang</a>
-                </div>
-        </div>
-    </nav>
+<div class="main-content-area">
+    {% block content %}{% endblock %}
+</div>
 
-    <div class="container">
-        {% block content %}
-        {% endblock %}
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

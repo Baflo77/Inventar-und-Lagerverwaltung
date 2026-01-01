@@ -32,10 +32,10 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
 
-
     'customermanager',
     'categorymanager',
     'deliverymanager',
+    'inventory',
     'locationmanager',
     'ordermanager',
     'productmanager',

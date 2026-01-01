@@ -20,6 +20,8 @@ from django.urls import include
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
+from inventory.views import dashboard
+
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -32,6 +34,8 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', dashboard, name='dashboard'),
+    path('inventory/', include('inventory.urls')),
     path('suppliers/', include('suppliermanager.urls')),
     path('products/', include('productmanager.urls')),
     path('categories/', include('categorymanager.urls')),
