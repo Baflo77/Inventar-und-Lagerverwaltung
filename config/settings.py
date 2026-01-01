@@ -31,16 +31,19 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'deliverymanager',
-    'ordermanager',
+
+
     'customermanager',
     'categorymanager',
-    'productmanager',
-    'suppliermanager',
-    'stockmovementmanager',
-    'warehousemanager',
+    'deliverymanager',
     'locationmanager',
+    'ordermanager',
+    'productmanager',
     'stockmanager',
+    'stockmovementmanager',
+    'suppliermanager',
+    'warehousemanager',
+
     'drf_yasg',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -71,7 +74,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR /'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -135,6 +138,7 @@ STATIC_URL = 'static/'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
