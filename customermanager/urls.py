@@ -21,8 +21,8 @@ from customermanager import views
 
 urlpatterns = [
     path("",views.show_customer),
-    path("customers", views.show_customer),
-    path("customers/<id>", views.show_customer_details),
+    path("customer", views.show_customer),
+    path("customer/<id>", views.show_customer_details),
     path("firstcustomer", views.show_first_customer),
     path("writecustomer", views.write_customer),
 ]
