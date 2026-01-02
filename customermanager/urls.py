@@ -16,12 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from customermanager import views
-
 from django.urls import include
 from customermanager import views
 
 urlpatterns = [
-    path('customers/', views.show_customer),
-    path('customer/', views.show_customer_details),
+    path("",views.show_customer),
+    path("customers", views.show_customer),
+    path("customers/<id>", views.show_customer_details),
+    path("firstcustomer", views.show_first_customer),
+    path("writecustomer", views.write_customer),
 ]

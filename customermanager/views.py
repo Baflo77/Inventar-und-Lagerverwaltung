@@ -7,38 +7,33 @@ from .models import Customer
 from .serializers import CustomerSerializer
 
 
-@api_view(["GET", "POST"])
+@api_view(["GET"])
 def show_customer(request):
-    if request.method == "GET":
-        customers = Customer.objects.all()
-        serializer = CustomerSerializer(customers, many=True)
-        return Response(serializer.data)
+    customers = Customer.objects.all()
+    serializer = CustomerSerializer(customers, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+@api_view(["GET"])
+def show_customer_details(request, id):
+    customer = get_object_or_404(Customer, pk=id)
+    serializer = CustomerSerializer(customer)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def show_first_customer(request):
+    customer = Customer.objects.order_by("pk").first()
+    if not customer:
+        return Response({"detail": "No customers found."}, status=status.HTTP_404_NOT_FOUND)
+    serializer = CustomerSerializer(customer)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def write_customer(request):
     serializer = CustomerSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["GET", "PUT", "DELETE"])
-def show_customer_details(request, pk):
-    customer = get_object_or_404(Customer, pk=pk)
-
-    if request.method == "GET":
-        return Response(CustomerSerializer(customer).data)
-
-    if request.method == "PUT":
-        serializer = CustomerSerializer(customer, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    customer.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-from django.shortcuts import render
-
-# Create your views here.
