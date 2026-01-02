@@ -20,6 +20,6 @@ from django.urls import include
 from . import views
 
 urlpatterns = [
-    path('', views.show_all_products),
-    path('<id>', views.show_product_details),
+    path('', views.show_all_products, name="product_list"),
+    path('<id>', views.show_product_details, name="product_details"),
 ]
