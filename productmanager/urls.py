@@ -21,5 +21,6 @@ from . import views
 
 urlpatterns = [
     path('', views.show_all_products, name="product_list"),
-    path('<id>', views.show_product_details, name="product_details"),
+    path('<int:id>/', views.show_product_details, name="product_details"),
+    path('api/', views.product_list_ui, name='product_list_ui'),
 ]
