@@ -19,10 +19,7 @@ from django.urls import path
 from django.urls import include
 from deliverymanager import views
 
-
 urlpatterns = [
-    path("",views.show_deliveries),
-    path('deliveries/', views.show_deliveries),
-    path('delivery/', views.show_delivery_details),
-
+    path("", views.show_deliveries, name="delivery_list"),
+    path("<int:id>/", views.show_delivery_details, name="delivery_detail"),
 ]

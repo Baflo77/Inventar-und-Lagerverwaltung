@@ -20,9 +20,8 @@ from django.urls import include
 from customermanager import views
 
 urlpatterns = [
-    path("",views.show_customer),
-    path("customer", views.show_customer),
-    path("customer/<id>", views.show_customer_details),
-    path("firstcustomer", views.show_first_customer),
-    path("writecustomer", views.write_customer),
+    path("", views.show_customer, name="customer_list"),
+    path("first/", views.show_first_customer, name="customer_first"),
+    path("write/", views.write_customer, name="customer_write"),
+    path("<int:id>/", views.show_customer_details, name="customer_detail"),
 ]
