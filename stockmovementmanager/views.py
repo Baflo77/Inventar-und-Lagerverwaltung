@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from stockmovementmanager.models import StockMovement
 from stockmovementmanager.serializer import StockMovementSerializer
 from rest_framework import status
+from .filters import StockMovementFilter
 
 
 # Create your views here.
@@ -28,7 +29,7 @@ def stock_movement_list(request):
         return Response (serializer.data)
 
 
-    elif request.method =="Post":
+    elif request.method =="POST":
         serializer = StockMovementSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -65,3 +66,7 @@ def stock_movement_detail(request, id):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+def stock_movement_ui(request):
+    f = StockMovementFilter(request.GET, queryset=StockMovement.objects.all().order_by('-timestamp'))
+    return render(request, 'stockmovementmanager/stockmovement.html', {'filter': f})
