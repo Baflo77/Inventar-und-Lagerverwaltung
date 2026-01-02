@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.urls import include
-from deliverymanager import views
+from . import views
 
 urlpatterns = [
     path("", views.show_deliveries, name="delivery_list"),

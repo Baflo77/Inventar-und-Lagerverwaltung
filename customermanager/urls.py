@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.urls import include
-from customermanager import views
+from . import views
 
 urlpatterns = [
     path("", views.show_customer, name="customer_list"),
