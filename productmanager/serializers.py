@@ -1,14 +1,16 @@
 from rest_framework import serializers
 
+from categorymanager.models import Category
 from productmanager.models import Product
+from suppliermanager.models import Supplier
 
 
 class ProductSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
     sku = serializers.CharField(max_length=100)
     description = serializers.CharField()
-    supplier = serializers.IntegerField()
-    category = serializers.IntegerField()
+    supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     id = serializers.IntegerField(required=False)
 
     def create(self, validated_data):
