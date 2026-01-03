@@ -21,6 +21,7 @@ from . import views
 
 
 urlpatterns = [
-    path('', views.show_all_categories),
-    path('<id>', views.show_category_details),
+    path('', views.categorymanager_ui, name="category_ui"),
+    path('api/', views.show_all_categories, name="category_list_api"),
+    path('api/<int:id>/', views.show_category_details, name="category_details_api"),
 ]

@@ -22,7 +22,6 @@
             color: var(--text-main);
         }
 
-        /* Header */
         .app-header {
             background-color: var(--header-bg);
             color: white;
@@ -62,6 +61,10 @@
 
         .page-title-section {
             margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
         }
 
         .page-title {
@@ -70,7 +73,16 @@
             color: var(--header-bg);
         }
 
-        /* Table Card */
+        .btn-add {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
         .data-card {
             background: var(--card-bg);
             border-radius: 8px;
@@ -105,11 +117,18 @@
             font-size: 0.85rem;
         }
 
-        .actions a {
+        .actions button {
             margin-right: 10px;
-            text-decoration: none;
+            border: none;
+            background: none;
+            cursor: pointer;
             font-size: 0.85rem;
             color: var(--accent-color);
+            padding: 0;
+        }
+
+        .actions button.danger {
+            color: #e74c3c;
         }
 
         .empty-state {
@@ -122,6 +141,128 @@
             font-size: 3rem;
             margin-bottom: 10px;
             display: block;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal {
+            background: white;
+            width: 100%;
+            max-width: 660px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 16px 18px;
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--bg-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--header-bg);
+        }
+
+        .modal-body {
+            padding: 18px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        .form-group input, .form-group textarea {
+            padding: 10px;
+            border: 1px solid #dcdde1;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 16px 18px;
+            border-top: 1px solid var(--bg-main);
+        }
+
+        .btn {
+            border: none;
+            border-radius: 4px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #dcdde1;
+            color: #2f3640;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .toast {
+            margin: 0 0 16px 0;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin: 0 0 10px 0;
         }
     </style>
 </head>
@@ -137,9 +278,14 @@
 
 <div class="container">
 
+    <div id="toast" class="toast"></div>
+
     <div class="page-title-section">
         <h2 class="page-title">Produktübersicht</h2>
+        <button class="btn-add" onclick="openCreate()">➕ Neues Produkt</button>
     </div>
+
+    <p class="hint">Hinweis: Lieferant und Kategorie werden als <strong>ID</strong> gespeichert (ForeignKey).</p>
 
     <div class="data-card">
         <table>
@@ -160,10 +306,21 @@
                     <td><strong>{{ product.name }}</strong></td>
                     <td class="text-muted">{{ product.sku }}</td>
                     <td>{{ product.description|default:"—"|truncatechars:80 }}</td>
-                    <td>{{ product.supplier|default:"—" }}</td>
-                    <td>{{ product.category|default:"—" }}</td>
+                    <td>{{ product.supplier.name|default:product.supplier }}</td>
+                    <td>{{ product.category.name|default:product.category }}</td>
                     <td class="actions">
-                        <a href="/{{ product.id }}/">🔍 Details</a>
+                        <button onclick="openEdit(
+                            '{{ product.id }}',
+                            '{{ product.name|escapejs }}',
+                            '{{ product.sku|escapejs }}',
+                            '{{ product.description|default_if_none:""|escapejs }}',
+                            '{{ product.supplier_id }}',
+                            '{{ product.category_id }}'
+                        )">✏️ Bearbeiten</button>
+
+                        <button class="danger" onclick="openDelete('{{ product.id }}', '{{ product.name|escapejs }}')">
+                            🗑 Löschen
+                        </button>
                     </td>
                 </tr>
             {% empty %}
@@ -182,6 +339,192 @@
     </div>
 
 </div>
+
+<div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle" class="modal-title">Produkt</h3>
+            <button class="btn btn-secondary" onclick="closeModal()">✖</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="pName">Name</label>
+                    <input id="pName" type="text" placeholder="z.B. Schraubendreher">
+                </div>
+                <div class="form-group">
+                    <label for="pSku">SKU</label>
+                    <input id="pSku" type="text" placeholder="z.B. SKU-12345">
+                </div>
+
+                <div class="form-group full">
+                    <label for="pDesc">Beschreibung</label>
+                    <textarea id="pDesc" placeholder="Kurzbeschreibung..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="pSupplierId">Lieferant-ID</label>
+                    <input id="pSupplierId" type="number" min="1" placeholder="z.B. 1">
+                </div>
+                <div class="form-group">
+                    <label for="pCategoryId">Kategorie-ID</label>
+                    <input id="pCategoryId" type="number" min="1" placeholder="z.B. 2">
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-actions" id="modalActions"></div>
+    </div>
+</div>
+
+<script>
+    const API_LIST = "api/";
+    const API_DETAIL = (id) => `api/${id}/`;
+
+    const backdrop = document.getElementById("modalBackdrop");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalActions = document.getElementById("modalActions");
+
+    const pName = document.getElementById("pName");
+    const pSku = document.getElementById("pSku");
+    const pDesc = document.getElementById("pDesc");
+    const pSupplierId = document.getElementById("pSupplierId");
+    const pCategoryId = document.getElementById("pCategoryId");
+
+    const toast = document.getElementById("toast");
+
+    function showToast(msg, isError=false) {
+        toast.style.display = "block";
+        toast.textContent = msg;
+        toast.style.borderLeft = isError ? "4px solid #e74c3c" : "4px solid #2ecc71";
+        setTimeout(() => { toast.style.display = "none"; }, 3000);
+    }
+
+    function openModal() {
+        backdrop.style.display = "flex";
+    }
+
+    function closeModal() {
+        backdrop.style.display = "none";
+        modalActions.innerHTML = "";
+        pName.value = "";
+        pSku.value = "";
+        pDesc.value = "";
+        pSupplierId.value = "";
+        pCategoryId.value = "";
+    }
+
+    function openCreate() {
+        modalTitle.textContent = "Neues Produkt anlegen";
+        modalActions.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="createProduct()">Anlegen</button>
+        `;
+        openModal();
+    }
+
+    function openEdit(id, name, sku, desc, supplierId, categoryId) {
+        modalTitle.textContent = "Produkt bearbeiten";
+        pName.value = name || "";
+        pSku.value = sku || "";
+        pDesc.value = desc || "";
+        pSupplierId.value = supplierId || "";
+        pCategoryId.value = categoryId || "";
+
+        modalActions.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="updateProduct('${id}')">Speichern</button>
+        `;
+        openModal();
+    }
+
+    function openDelete(id, name) {
+        modalTitle.textContent = "Produkt löschen";
+        pName.value = name || "";
+        pSku.value = "";
+        pDesc.value = "";
+        pSupplierId.value = "";
+        pCategoryId.value = "";
+
+        modalActions.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+            <button class="btn btn-danger" onclick="deleteProduct('${id}')">Löschen</button>
+        `;
+        openModal();
+    }
+
+    function buildPayload() {
+        const supplierVal = pSupplierId.value.trim();
+        const categoryVal = pCategoryId.value.trim();
+
+        return {
+            name: pName.value.trim(),
+            sku: pSku.value.trim(),
+            description: pDesc.value.trim(),
+            supplier: supplierVal ? Number(supplierVal) : null,
+            category: categoryVal ? Number(categoryVal) : null
+        };
+    }
+
+    async function createProduct() {
+        const payload = buildPayload();
+        if (!payload.name) return showToast("Bitte einen Namen eingeben.", true);
+        if (!payload.sku) return showToast("Bitte eine SKU eingeben.", true);
+        if (!payload.description) return showToast("Bitte eine Beschreibung eingeben.", true);
+        if (!payload.supplier) return showToast("Bitte eine gültige Lieferant-ID eingeben.", true);
+        if (!payload.category) return showToast("Bitte eine gültige Kategorie-ID eingeben.", true);
+
+        const res = await fetch(API_LIST, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            showToast("Produkt angelegt.");
+            location.reload();
+        } else {
+            const data = await res.json().catch(() => ({}));
+            showToast("Fehler beim Anlegen.", true);
+            console.log(data);
+        }
+    }
+
+    async function updateProduct(id) {
+        const payload = buildPayload();
+        if (!payload.name) return showToast("Bitte einen Namen eingeben.", true);
+        if (!payload.sku) return showToast("Bitte eine SKU eingeben.", true);
+        if (!payload.description) return showToast("Bitte eine Beschreibung eingeben.", true);
+        if (!payload.supplier) return showToast("Bitte eine gültige Lieferant-ID eingeben.", true);
+        if (!payload.category) return showToast("Bitte eine gültige Kategorie-ID eingeben.", true);
+
+        const res = await fetch(API_DETAIL(id), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            showToast("Produkt gespeichert.");
+            location.reload();
+        } else {
+            const data = await res.json().catch(() => ({}));
+            showToast("Fehler beim Speichern.", true);
+            console.log(data);
+        }
+    }
+
+    async function deleteProduct(id) {
+        const res = await fetch(API_DETAIL(id), { method: "DELETE" });
+        if (res.ok) {
+            showToast("Produkt gelöscht.");
+            location.reload();
+        } else {
+            showToast("Fehler beim Löschen.", true);
+        }
+    }
+</script>
 
 </body>
 </html>

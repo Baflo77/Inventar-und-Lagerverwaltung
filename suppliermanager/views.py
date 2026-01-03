@@ -1,8 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, get_list_or_404
 from rest_framework import status
-from rest_framework.permissions import IsAdminUser
-
+from rest_framework.permissions import IsAdminUser, AllowAny
 from suppliermanager.models import Supplier
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -11,7 +10,7 @@ from suppliermanager.serializers import SupplierSerializer
 
 # Create your views here.
 @api_view(["GET", "POST"])
-@permission_classes([IsAdminUser])
+@permission_classes([AllowAny])
 def show_all_suppliers(request):
     if request.method == "GET":
         suppliers = get_list_or_404(Supplier)
@@ -26,7 +25,7 @@ def show_all_suppliers(request):
     return None
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([IsAdminUser])
+@permission_classes([AllowAny])
 def show_supplier_details(request, id):
     supplier = get_object_or_404(Supplier, pk=id)
     if request.method == "GET":
@@ -42,3 +41,9 @@ def show_supplier_details(request, id):
             return Response(supplier_serializer.data)
         return Response(supplier_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return None
+
+def suppliermanager_ui(request):
+    suppliers = get_list_or_404(Supplier)
+    return render(
+        request,"suppliermanager/suppliermanager.html",{"suppliers": suppliers}
+    )

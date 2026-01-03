@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Kategorien | Inventar-Verwaltung</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --bg-main: #ebedef;
+            --header-bg: #2c3e50;
+            --card-bg: #ffffff;
+            --text-main: #2f3640;
+            --accent-color: #3498db;
+            --shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .app-header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 1.2rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-title {
+            font-size: 1.4rem;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .nav-home {
+            text-decoration: none;
+            color: white;
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2.5rem auto;
+            padding: 0 20px;
+        }
+
+        .page-title-section {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            margin: 0;
+            color: var(--header-bg);
+        }
+
+        .btn-add {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .data-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            text-align: left;
+            padding: 15px;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--bg-main);
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid var(--bg-main);
+            font-size: 0.95rem;
+            vertical-align: top;
+        }
+
+        .text-muted {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+        }
+
+        .actions button {
+            margin-right: 10px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            padding: 0;
+        }
+
+        .actions button.danger {
+            color: #e74c3c;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #bdc3c7;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal {
+            background: white;
+            width: 100%;
+            max-width: 520px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 16px 18px;
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--bg-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--header-bg);
+        }
+
+        .modal-body {
+            padding: 18px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        .form-group input {
+            padding: 10px;
+            border: 1px solid #dcdde1;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 16px 18px;
+            border-top: 1px solid var(--bg-main);
+        }
+
+        .btn {
+            border: none;
+            border-radius: 4px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #dcdde1;
+            color: #2f3640;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .toast {
+            margin: 0 0 16px 0;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <div class="header-left">
+        <a href="/" class="nav-home">🏠 Home</a>
+        <h1 class="header-title">Inventar-Lagerverwaltung</h1>
+    </div>
+    <div>Categorymanager</div>
+</header>
+
+<div class="container">
+
+    <div id="toast" class="toast"></div>
+
+    <div class="page-title-section">
+        <h2 class="page-title">Kategorien</h2>
+        <button class="btn-add" onclick="openCreate()">➕ Neue Kategorie</button>
+    </div>
+
+    <div class="data-card">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            {% for category in categories %}
+                <tr>
+                    <td class="text-muted">{{ category.id }}</td>
+                    <td><strong>{{ category.name }}</strong></td>
+                    <td class="actions">
+                        <button onclick="openEdit('{{ category.id }}', '{{ category.name|escapejs }}')">✏️ Bearbeiten</button>
+                        <button class="danger" onclick="openDelete('{{ category.id }}', '{{ category.name|escapejs }}')">🗑 Löschen</button>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">
+                        <div class="empty-state">
+                            <span class="empty-icon">🏷️</span>
+                            Keine Kategorien vorhanden.
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle" class="modal-title">Kategorie</h3>
+            <button class="btn btn-secondary" onclick="closeModal()">✖</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="categoryName">Name</label>
+                <input id="categoryName" type="text" placeholder="z.B. Elektronik">
+            </div>
+        </div>
+
+        <div class="modal-actions" id="modalActions"></div>
+    </div>
+</div>
+
+<script>
+    const API_LIST = "api/";
+    const API_DETAIL = (id) => `api/${id}/`;
+
+    const backdrop = document.getElementById("modalBackdrop");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalActions = document.getElementById("modalActions");
+    const categoryNameInput = document.getElementById("categoryName");
+
+    const toast = document.getElementById("toast");
+
+    function showToast(msg, isError=false) {
+        toast.style.display = "block";
+        toast.textContent = msg;
+        toast.style.borderLeft = isError ? "4px solid #e74c3c" : "4px solid #2ecc71";
+        setTimeout(() => { toast.style.display = "none"; }, 3000);
+    }
+
+    function openModal() {
+        backdrop.style.display = "flex";
+    }
+
+    function closeModal() {
+        backdrop.style.display = "none";
+        categoryNameInput.value = "";
+        modalActions.innerHTML = "";
+    }
+
+    function openCreate() {
+        modalTitle.textContent = "Neue Kategorie anlegen";
+        categoryNameInput.value = "";
+        modalActions.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="createCategory()">Anlegen</button>
+        `;
+        openModal();
+    }
+
+    function openEdit(id, name) {
+        modalTitle.textContent = "Kategorie bearbeiten";
+        categoryNameInput.value = name;
+        modalActions.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="updateCategory('${id}')">Speichern</button>
+        `;
+        openModal();
+    }
+
+    function openDelete(id, name) {
+        modalTitle.textContent = "Kategorie löschen";
+        categoryNameInput.value = name;
+        modalActions.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+            <button class="btn btn-danger" onclick="deleteCategory('${id}')">Löschen</button>
+        `;
+        openModal();
+    }
+
+    async function createCategory() {
+        const name = categoryNameInput.value.trim();
+        if (!name) {
+            showToast("Bitte einen Namen eingeben.", true);
+            return;
+        }
+
+        const res = await fetch(API_LIST, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ name })
+        });
+
+        if (res.ok) {
+            showToast("Kategorie angelegt.");
+            location.reload();
+        } else {
+            const data = await res.json().catch(() => ({}));
+            showToast(data?.name?.[0] || "Fehler beim Anlegen.", true);
+        }
+    }
+
+    async function updateCategory(id) {
+        const name = categoryNameInput.value.trim();
+        if (!name) {
+            showToast("Bitte einen Namen eingeben.", true);
+            return;
+        }
+
+        const res = await fetch(API_DETAIL(id), {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ name })
+        });
+
+        if (res.ok) {
+            showToast("Kategorie gespeichert.");
+            location.reload();
+        } else {
+            const data = await res.json().catch(() => ({}));
+            showToast(data?.name?.[0] || "Fehler beim Speichern.", true);
+        }
+    }
+
+    async function deleteCategory(id) {
+        const res = await fetch(API_DETAIL(id), {
+            method: "DELETE"
+        });
+
+        if (res.ok) {
+            showToast("Kategorie gelöscht.");
+            location.reload();
+        } else {
+            showToast("Fehler beim Löschen.", true);
+        }
+    }
+</script>
+
+</body>
+</html>

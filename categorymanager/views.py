@@ -11,7 +11,7 @@ from rest_framework.exceptions import PermissionDenied
 
 # Create your views here.
 @api_view(["GET", "POST"])
-@permission_classes([IsAdminUser])
+@permission_classes([AllowAny])
 def show_all_categories(request):
     if request.method == "GET":
         categories = get_list_or_404(Category)
@@ -27,7 +27,7 @@ def show_all_categories(request):
     return None
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([IsAdminUser])
+@permission_classes([AllowAny])
 def show_category_details(request, id):
     category = get_object_or_404(Category, pk=id)
     if request.method == "GET":
@@ -44,3 +44,6 @@ def show_category_details(request, id):
         return Response(category_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return None
 
+def categorymanager_ui(request):
+    categories = get_list_or_404(Category)
+    return render(request, "categorymanager/categorymanager.html", {"categories": categories})
