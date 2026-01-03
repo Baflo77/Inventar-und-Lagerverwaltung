@@ -1,13 +1,14 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from django.shortcuts import get_object_or_404
-
+from django.shortcuts import get_object_or_404, render
 from .models import Delivery
 from .serializers import DeliverySerializer
 
 
 @api_view(["GET", "POST"])
+@permission_classes([AllowAny])
 def show_deliveries(request):
     if request.method == "GET":
         deliveries = Delivery.objects.all()
@@ -22,6 +23,7 @@ def show_deliveries(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
+@permission_classes([AllowAny])
 def show_delivery_details(request, pk):
     delivery = get_object_or_404(Delivery, pk=pk)
 
@@ -39,6 +41,11 @@ def show_delivery_details(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-from django.shortcuts import render
+def deliveries_page(request):
+    return render(request, "deliverymanager/deliveries.html")
+
+def delivery_create(request):
+    return render(request, "deliverymanager/delivery_create.html")
+
 
 # Create your views here.
