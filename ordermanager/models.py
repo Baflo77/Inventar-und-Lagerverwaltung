@@ -6,7 +6,6 @@ from productmanager.models import Product
 
 
 class Order(models.Model):
-    """Bestellungen von Kunden"""
     STATUS_CHOICES = [
         ("PENDING", "Ausstehend"),
         ("CONFIRMED", "Bestätigt"),
