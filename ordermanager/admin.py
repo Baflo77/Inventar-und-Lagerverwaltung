@@ -7,8 +7,8 @@ from .models import Order, OrderItem
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'customer', 'created_at', 'status']
-    list_filter = ['status', 'created_at']
+    list_display = ['id', 'customer', 'date', 'status']
+    list_filter = ['status', 'date']
     search_fields = ['customer__firstname', 'customer__lastname']
 
 
