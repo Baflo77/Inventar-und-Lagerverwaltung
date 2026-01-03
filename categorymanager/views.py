@@ -14,7 +14,7 @@ from rest_framework.exceptions import PermissionDenied
 @permission_classes([AllowAny])
 def show_all_categories(request):
     if request.method == "GET":
-        categories = get_list_or_404(Category)
+        categories = Category.objects.all()
         serialized_categories = CategorySerializer(categories, many=True)
         return Response(serialized_categories.data)
 
@@ -45,5 +45,5 @@ def show_category_details(request, id):
     return None
 
 def categorymanager_ui(request):
-    categories = get_list_or_404(Category)
+    categories = Category.objects.all()
     return render(request, "categorymanager/categorymanager.html", {"categories": categories})
