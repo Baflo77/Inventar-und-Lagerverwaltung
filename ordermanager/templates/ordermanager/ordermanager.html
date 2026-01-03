@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Orders | Inventar-Verwaltung</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --bg-main: #ebedef;
+            --header-bg: #2c3e50;
+            --card-bg: #ffffff;
+            --text-main: #2f3640;
+            --accent-color: #3498db;
+            --shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .app-header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 1.2rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-title {
+            font-size: 1.4rem;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .nav-home {
+            text-decoration: none;
+            color: white;
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2.5rem auto;
+            padding: 0 20px;
+        }
+
+        .page-title-section {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            margin: 0;
+            color: var(--header-bg);
+        }
+
+        .btn-add {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .data-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            text-align: left;
+            padding: 15px;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--bg-main);
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid var(--bg-main);
+            font-size: 0.95rem;
+            vertical-align: top;
+        }
+
+        .text-muted {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-confirmed { background: #d1ecf1; color: #0c5460; }
+        .status-shipped { background: #cfe2ff; color: #084298; }
+        .status-delivered { background: #d1e7dd; color: #0f5132; }
+        .status-cancelled { background: #f8d7da; color: #842029; }
+
+        .actions button {
+            margin-right: 10px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            padding: 0;
+        }
+
+        .actions button.danger {
+            color: #e74c3c;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #bdc3c7;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            width: 100%;
+            max-width: 660px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 16px 18px;
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--bg-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--header-bg);
+        }
+
+        .modal-body {
+            padding: 18px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            border: 1px solid #dcdde1;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 16px 18px;
+            border-top: 1px solid var(--bg-main);
+        }
+
+        .btn {
+            border: none;
+            border-radius: 4px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #dcdde1;
+            color: #2f3640;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .toast {
+            margin: 0 0 16px 0;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin: 0 0 10px 0;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--bg-main);
+        }
+
+        .tab-btn {
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #7f8c8d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <div class="header-left">
+        <a href="/" class="nav-home">🏠 Home</a>
+        <h1 class="header-title">Inventar-Lagerverwaltung</h1>
+    </div>
+    <div>Ordermanager</div>
+</header>
+
+<div class="container">
+
+    <div id="toast" class="toast"></div>
+
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('orders')">📦 Orders</button>
+        <button class="tab-btn" onclick="switchTab('items')">📋 Order Items</button>
+    </div>
+
+    <!-- ORDERS TAB -->
+    <div id="orders" class="tab-content active">
+        <div class="page-title-section">
+            <h2 class="page-title">Orderübersicht</h2>
+            <button class="btn-add" onclick="openCreateOrder()">➕ Neue Order</button>
+        </div>
+
+        <p class="hint">Kunde wird als <strong>ID</strong> gespeichert (ForeignKey).</p>
+
+        <div class="data-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Kunde</th>
+                        <th>Datum</th>
+                        <th>Status</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ORDER ITEMS TAB -->
+    <div id="items" class="tab-content">
+        <div class="page-title-section">
+            <h2 class="page-title">Order Items</h2>
+            <button class="btn-add" onclick="openCreateItem()">➕ Neues Item</button>
+        </div>
+
+        <p class="hint">Order und Produkt werden als <strong>ID</strong> gespeichert (ForeignKey).</p>
+
+        <div class="data-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item ID</th>
+                        <th>Order</th>
+                        <th>Produkt</th>
+                        <th>Menge</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ORDER MODAL -->
+<div id="modalBackdropOrder" class="modal-backdrop">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitleOrder" class="modal-title">Order</h3>
+            <button class="btn btn-secondary" onclick="closeModalOrder()">✖</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="oCustomerId">Kunden-ID</label>
+                    <input id="oCustomerId" type="number" min="1" placeholder="z.B. 1">
+                </div>
+                <div class="form-group">
+                    <label for="oStatus">Status</label>
+                    <select id="oStatus">
+                        <option value="PENDING">Ausstehend</option>
+                        <option value="CONFIRMED">Bestätigt</option>
+                        <option value="SHIPPED">Versendet</option>
+                        <option value="DELIVERED">Geliefert</option>
+                        <option value="CANCELLED">Storniert</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-actions" id="modalActionsOrder"></div>
+    </div>
+</div>
+
+<!-- ORDER ITEM MODAL -->
+<div id="modalBackdropItem" class="modal-backdrop">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitleItem" class="modal-title">Order Item</h3>
+            <button class="btn btn-secondary" onclick="closeModalItem()">✖</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="iOrderId">Order-ID</label>
+                    <input id="iOrderId" type="number" min="1" placeholder="z.B. 1">
+                </div>
+                <div class="form-group">
+                    <label for="iProductId">Produkt-ID</label>
+                    <input id="iProductId" type="number" min="1" placeholder="z.B. 1">
+                </div>
+                <div class="form-group full">
+                    <label for="iQuantity">Menge</label>
+                    <input id="iQuantity" type="number" min="1" placeholder="z.B. 5">
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-actions" id="modalActionsItem"></div>
+    </div>
+</div>
+
+<script>
+    const API_ORDERS = "orders/";
+    const API_ITEMS = "orders/items/";
+    const API_ORDER_DETAIL = (id) => `orders/${id}/`;
+    const API_ITEM_DETAIL = (id) => `orders/items/${id}/`;
+
+    // ORDER FUNCTIONS
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tab).classList.add('active');
+        event.target.classList.add('active');
+        if (tab === 'orders') loadOrders();
+        if (tab === 'items') loadItems();
+    }
+
+    function showToast(msg, isError=false) {
+        const toast = document.getElementById("toast");
+        toast.style.display = "block";
+        toast.textContent = msg;
+        toast.style.borderLeft = isError ? "4px solid #e74c3c" : "4px solid #2ecc71";
+        setTimeout(() => { toast.style.display = "none"; }, 3000);
+    }
+
+    async function loadOrders() {
+        const res = await fetch(API_ORDERS);
+        const orders = await res.json();
+        const tbody = document.getElementById("ordersBody");
+        tbody.innerHTML = "";
+
+        if (orders.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><span class="empty-icon">📦</span>Keine Orders vorhanden.</div></td></tr>`;
+            return;
+        }
+
+        orders.forEach(order => {
+            const statusClass = `status-${order.status.toLowerCase()}`;
+            const row = `
+                <tr>
+                    <td><strong>#${order.id}</strong></td>
+                    <td>${order.customer}</td>
+                    <td class="text-muted">${new Date(order.date).toLocaleDateString('de-DE')}</td>
+                    <td><span class="status-badge ${statusClass}">${order.status}</span></td>
+                    <td class="actions">
+                        <button onclick="openEditOrder('${order.id}', '${order.customer}', '${order.status}')">✏️ Bearbeiten</button>
+                        <button class="danger" onclick="openDeleteOrder('${order.id}')">🗑 Löschen</button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function openCreateOrder() {
+        document.getElementById("modalTitleOrder").textContent = "Neue Order anlegen";
+        document.getElementById("oCustomerId").value = "";
+        document.getElementById("oStatus").value = "PENDING";
+        document.getElementById("modalActionsOrder").innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModalOrder()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="createOrder()">Anlegen</button>
+        `;
+        document.getElementById("modalBackdropOrder").style.display = "flex";
+    }
+
+    function openEditOrder(id, customerId, status) {
+        document.getElementById("modalTitleOrder").textContent = "Order bearbeiten";
+        document.getElementById("oCustomerId").value = customerId;
+        document.getElementById("oStatus").value = status;
+        document.getElementById("modalActionsOrder").innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModalOrder()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="updateOrder('${id}')">Speichern</button>
+        `;
+        document.getElementById("modalBackdropOrder").style.display = "flex";
+    }
+
+    function openDeleteOrder(id) {
+        if (confirm("Order wirklich löschen?")) deleteOrder(id);
+    }
+
+    function closeModalOrder() {
+        document.getElementById("modalBackdropOrder").style.display = "none";
+    }
+
+    async function createOrder() {
+        const customerId = document.getElementById("oCustomerId").value.trim();
+        const status = document.getElementById("oStatus").value;
+
+        if (!customerId) return showToast("Bitte eine gültige Kunden-ID eingeben.", true);
+
+        const res = await fetch(API_ORDERS, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ customer: Number(customerId), status })
+        });
+
+        if (res.ok) {
+            showToast("Order angelegt.");
+            closeModalOrder();
+            loadOrders();
+        } else {
+            showToast("Fehler beim Anlegen.", true);
+        }
+    }
+
+    async function updateOrder(id) {
+        const customerId = document.getElementById("oCustomerId").value.trim();
+        const status = document.getElementById("oStatus").value;
+
+        if (!customerId) return showToast("Bitte eine gültige Kunden-ID eingeben.", true);
+
+        const res = await fetch(API_ORDER_DETAIL(id), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ customer: Number(customerId), status })
+        });
+
+        if (res.ok) {
+            showToast("Order gespeichert.");
+            closeModalOrder();
+            loadOrders();
+        } else {
+            showToast("Fehler beim Speichern.", true);
+        }
+    }
+
+    async function deleteOrder(id) {
+        const res = await fetch(API_ORDER_DETAIL(id), { method: "DELETE" });
+        if (res.ok) {
+            showToast("Order gelöscht.");
+            loadOrders();
+        } else {
+            showToast("Fehler beim Löschen.", true);
+        }
+    }
+
+    // ORDER ITEM FUNCTIONS
+    async function loadItems() {
+        const res = await fetch(API_ITEMS);
+        const items = await res.json();
+        const tbody = document.getElementById("itemsBody");
+        tbody.innerHTML = "";
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><span class="empty-icon">📋</span>Keine Items vorhanden.</div></td></tr>`;
+            return;
+        }
+
+        items.forEach(item => {
+            const row = `
+                <tr>
+                    <td><strong>#${item.id}</strong></td>
+                    <td>Order #${item.order}</td>
+                    <td>${item.product}</td>
+                    <td>${item.quantity}</td>
+                    <td class="actions">
+                        <button onclick="openEditItem('${item.id}', '${item.order}', '${item.product}', '${item.quantity}')">✏️ Bearbeiten</button>
+                        <button class="danger" onclick="openDeleteItem('${item.id}')">🗑 Löschen</button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function openCreateItem() {
+        document.getElementById("modalTitleItem").textContent = "Neues Order Item anlegen";
+        document.getElementById("iOrderId").value = "";
+        document.getElementById("iProductId").value = "";
+        document.getElementById("iQuantity").value = "";
+        document.getElementById("modalActionsItem").innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModalItem()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="createItem()">Anlegen</button>
+        `;
+        document.getElementById("modalBackdropItem").style.display = "flex";
+    }
+
+    function openEditItem(id, orderId, productId, quantity) {
+        document.getElementById("modalTitleItem").textContent = "Order Item bearbeiten";
+        document.getElementById("iOrderId").value = orderId;
+        document.getElementById("iProductId").value = productId;
+        document.getElementById("iQuantity").value = quantity;
+        document.getElementById("modalActionsItem").innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModalItem()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="updateItem('${id}')">Speichern</button>
+        `;
+        document.getElementById("modalBackdropItem").style.display = "flex";
+    }
+
+    function openDeleteItem(id) {
+        if (confirm("Order Item wirklich löschen?")) deleteItem(id);
+    }
+
+    function closeModalItem() {
+        document.getElementById("modalBackdropItem").style.display = "none";
+    }
+
+    async function createItem() {
+        const orderId = document.getElementById("iOrderId").value.trim();
+        const productId = document.getElementById("iProductId").value.trim();
+        const quantity = document.getElementById("iQuantity").value.trim();
+
+        if (!orderId) return showToast("Bitte eine gültige Order-ID eingeben.", true);
+        if (!productId) return showToast("Bitte eine gültige Produkt-ID eingeben.", true);
+        if (!quantity) return showToast("Bitte eine Menge eingeben.", true);
+
+        const res = await fetch(API_ITEMS, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order: Number(orderId), product: Number(productId), quantity: Number(quantity) })
+        });
+
+        if (res.ok) {
+            showToast("Order Item angelegt.");
+            closeModalItem();
+            loadItems();
+        } else {
+            showToast("Fehler beim Anlegen.", true);
+        }
+    }
+
+    async function updateItem(id) {
+        const orderId = document.getElementById("iOrderId").value.trim();
+        const productId = document.getElementById("iProductId").value.trim();
+        const quantity = document.getElementById("iQuantity").value.trim();
+
+        if (!orderId) return showToast("Bitte eine gültige Order-ID eingeben.", true);
+        if (!productId) return showToast("Bitte eine gültige Produkt-ID eingeben.", true);
+        if (!quantity) return showToast("Bitte eine Menge eingeben.", true);
+
+        const res = await fetch(API_ITEM_DETAIL(id), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order: Number(orderId), product: Number(productId), quantity: Number(quantity) })
+        });
+
+        if (res.ok) {
+            showToast("Order Item gespeichert.");
+            closeModalItem();
+            loadItems();
+        } else {
+            showToast("Fehler beim Speichern.", true);
+        }
+    }
+
+    async function deleteItem(id) {
+        const res = await fetch(API_ITEM_DETAIL(id), { method: "DELETE" });
+        if (res.ok) {
+            showToast("Order Item gelöscht.");
+            loadItems();
+        } else {
+            showToast("Fehler beim Löschen.", true);
+        }
+    }
+
+    // Initial load
+    loadOrders();
+</script>
+
+</body>
+</html>
