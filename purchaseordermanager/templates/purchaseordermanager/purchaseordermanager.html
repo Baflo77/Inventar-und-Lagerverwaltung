@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>PurchaseOrder Manager</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    h1 { margin-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; }
+    label { display:block; margin-top: 10px; }
+    select { width: 100%; padding: 8px; margin-top: 6px; }
+    button { margin-top: 12px; padding: 10px 14px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
+    .actions button { margin-right: 8px; }
+    .muted { color: #777; font-size: 0.9em; }
+    .error { color: #b00020; margin-top: 10px; }
+    .success { color: #1b5e20; margin-top: 10px; }
+    .empty { color: #777; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<h1>PurchaseOrder Manager</h1>
+<div class="muted">Anzeigen & Erstellen von PurchaseOrders</div>
+
+<div class="grid" style="margin-top: 18px;">
+  <!-- Create Card -->
+  <div class="card">
+    <h2>Neue PurchaseOrder</h2>
+
+    <label for="supplier">Supplier</label>
+    <select id="supplier"></select>
+
+    <label for="status">Status</label>
+    <select id="status">
+      <option value="open">Offen</option>
+      <option value="ordered">Bestellt</option>
+      <option value="delivered">Geliefert</option>
+      <option value="cancelled">Storniert</option>
+    </select>
+
+    <button id="createBtn">Erstellen</button>
+    <div id="msg"></div>
+  </div>
+
+  <!-- List Card -->
+  <div class="card">
+    <h2>PurchaseOrders</h2>
+    <button id="reloadBtn">Neu laden</button>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Supplier</th>
+          <th>Status</th>
+          <th>Erstellt</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody id="ordersTbody">
+        <!-- wird per JS gefüllt -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const ORDERS_API = "/purchaseorders/api/";
+  const SUPPLIERS_API = "/suppliermanager/api/";
+
+  const supplierSelect = document.getElementById("supplier");
+  const ordersTbody = document.getElementById("ordersTbody");
+  const msgBox = document.getElementById("msg");
+
+  function setMsg(text, type = "") {
+    msgBox.className = type;
+    msgBox.textContent = text;
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "-";
+    return iso.replace("T", " ").slice(0, 16);
+  }
+
+  async function loadSuppliers() {
+    supplierSelect.innerHTML = "";
+    const res = await fetch(SUPPLIERS_API);
+    const suppliers = await res.json();
+
+    if (!suppliers.length) {
+      supplierSelect.innerHTML = `<option>Keine Supplier vorhanden</option>`;
+      supplierSelect.disabled = true;
+      return;
+    }
+
+    supplierSelect.disabled = false;
+    suppliers.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.name} (${s.city})`;
+      supplierSelect.appendChild(opt);
+    });
+  }
+
+  async function loadOrders() {
+    ordersTbody.innerHTML = "";
+    setMsg("");
+
+    const res = await fetch(ORDERS_API);
+    const orders = await res.json();
+
+    // ✅ LEERZUSTAND
+    if (!orders.length) {
+      ordersTbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="empty">
+            Keine PurchaseOrders in der Datenbank vorhanden.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const supplierMap = {};
+    for (const opt of supplierSelect.options) {
+      supplierMap[opt.value] = opt.textContent;
+    }
+
+    orders.forEach(o => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${o.id}</td>
+        <td>${supplierMap[o.supplier] ?? "Supplier #" + o.supplier}</td>
+        <td>${o.status}</td>
+        <td>${fmtDate(o.created_at)}</td>
+        <td class="actions">
+          <button data-del="${o.id}">Löschen</button>
+        </td>
+      `;
+      ordersTbody.appendChild(tr);
+    });
+
+    // Delete
+    document.querySelectorAll("button[data-del]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.del;
+        if (!confirm(`PurchaseOrder #${id} löschen?`)) return;
+
+        await fetch(`${ORDERS_API}${id}/`, { method: "DELETE" });
+        setMsg(`PurchaseOrder #${id} gelöscht.`, "success");
+        loadOrders();
+      });
+    });
+  }
+
+  async function createOrder() {
+    const supplier = supplierSelect.value;
+    const status = document.getElementById("status").value;
+
+    if (!supplier) {
+      setMsg("Bitte Supplier auswählen.", "error");
+      return;
+    }
+
+    const res = await fetch(ORDERS_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ supplier: parseInt(supplier), status })
+    });
+
+    if (!res.ok) {
+      setMsg("Fehler beim Erstellen.", "error");
+      return;
+    }
+
+    setMsg("PurchaseOrder wurde erstellt.", "success");
+    loadOrders();
+  }
+
+  document.getElementById("createBtn").addEventListener("click", createOrder);
+  document.getElementById("reloadBtn").addEventListener("click", loadOrders);
+
+  (async function init() {
+    await loadSuppliers();
+    await loadOrders();
+  })();
+</script>
+
+</body>
+</html>

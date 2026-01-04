@@ -45,7 +45,7 @@ urlpatterns = [
     path('orders/', include('ordermanager.urls')),
     path('customers/', include('customermanager.urls')),
     path('deliveries/', include('deliverymanager.urls')),
-
+    path("purchaseorders/", include("purchaseordermanager.urls")),
     path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),

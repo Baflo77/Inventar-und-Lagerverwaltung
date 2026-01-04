@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'stockmovementmanager',
     'suppliermanager',
     'warehousemanager',
-
+    'purchaseordermanager',
     'drf_yasg',
     'django.contrib.admin',
     'django.contrib.auth',
