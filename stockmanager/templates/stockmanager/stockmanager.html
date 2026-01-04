@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    /* --- Lokale Styles für die Lager-Tabelle --- */
+    
+    .stock-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        border: 1px solid #edf2f7;
+        overflow: hidden; /* Damit die Ecken der Tabelle rund bleiben */
+    }
+
+    .table-custom {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-custom thead th {
+        background-color: #f8f9fa;
+        color: #6c757d;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        padding: 1.2rem 1.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .table-custom tbody td {
+        padding: 1.2rem 1.5rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+        color: #2d3436;
+        font-size: 0.95rem;
+    }
+
+    .table-custom tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-custom tbody tr:hover {
+        background-color: #fcfcfc;
+    }
+
+    /* --- Status Badges (Ampel) --- */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .status-ok { background-color: #d1e7dd; color: #0f5132; }       /* Grün */
+    .status-critical { background-color: #fff3cd; color: #856404; } /* Gelb/Orange */
+    .status-empty { background-color: #f8d7da; color: #842029; }    /* Rot */
+
+    /* --- Action Button --- */
+    .btn-action {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid #dfe6e9;
+        background: white;
+        color: #636e72;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-action:hover {
+        background: #f1f3f5;
+        color: #2d3436;
+        border-color: #b2bec3;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    
+    <main class="w-100 p-5">
+        
+        <div class="page-header">
+            <div>
+                <h2 style="font-weight: 800; color: #2d3436; margin-bottom: 5px;">Lagerbestand</h2>
+                <span style="color: #8e9aaf;">Übersicht aller Artikel und Verfügbarkeiten</span>
+            </div>
+            
+            <a href="#" class="btn btn-primary" style="border-radius: 12px; padding: 10px 20px;">
+                <i class="bi bi-plus-lg me-2"></i> Bestand erfassen
+            </a>
+        </div>
+
+        <div class="stock-card">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>Produkt</th>
+                        <th>Lagerort</th>
+                        <th class="text-center">Bestand</th>
+                        <th class="text-center">Status</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in stocks %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">{{ item.product.name }}</div>
+                            <small class="text-muted">Art.Nr: {{ item.product.sku|default:"-" }}</small>
+                        </td>
+                        <td>
+                            <div>{{ item.warehouse.name }}</div>
+                            <small class="text-muted"><i class="bi bi-geo-alt"></i> {{ item.location.name }}</small>
+                        </td>
+                        <td class="text-center">
+                            <span style="font-size: 1.1rem; font-weight: 700;">{{ item.quantity }}</span>
+                            <small class="text-muted d-block">Min: {{ item.threshold }}</small>
+                        </td>
+                        <td class="text-center">
+                            {% if item.status == 'OK' %}
+                                <span class="status-badge status-ok">
+                                    <i class="bi bi-check-circle-fill me-1"></i> OK
+                                </span>
+                            {% elif item.status == 'KRITISCH' %}
+                                <span class="status-badge status-critical">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Knapp
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-empty">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Leer
+                                </span>
+                            {% endif %}
+                            
+                            {% if item.quantity_on_order > 0 %}
+                                <div style="font-size: 0.7rem; color: #0d6efd; margin-top: 5px;">
+                                    <i class="bi bi-truck"></i> +{{ item.quantity_on_order }} bestellt
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a href="#" class="btn-action" title="Bearbeiten">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="#" class="btn-action text-danger" title="Ausbuchen">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <p class="mt-2">Noch keine Lagerbestände vorhanden.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+</div>
+{% endblock %}
