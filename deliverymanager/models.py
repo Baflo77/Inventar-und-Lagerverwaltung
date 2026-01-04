@@ -4,10 +4,11 @@ from ordermanager.models import Order
 
 class Delivery(models.Model):
     order = models.ForeignKey(
-        Order,
+        "ordermanager.Order",
         on_delete=models.CASCADE,
         related_name="deliveries",
     )
+
     delivery_date = models.DateField()
     status = models.BooleanField(default=False)
 
