@@ -34,6 +34,7 @@ INSTALLED_APPS = [
 
     'customermanager',
     'categorymanager',
+    'deliveryitem',
     'deliverymanager',
     'inventory',
     'locationmanager',

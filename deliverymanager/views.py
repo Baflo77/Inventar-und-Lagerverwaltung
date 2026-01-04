@@ -2,11 +2,18 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from django.shortcuts import get_object_or_404, render
+
+from django.shortcuts import get_object_or_404, render, redirect
+
+from ordermanager.models import Order
+from deliveryitem.models import DeliveryItem
 from .models import Delivery
 from .serializers import DeliverySerializer
 
 
+# -----------------------
+# API (JSON)
+# -----------------------
 @api_view(["GET", "POST"])
 @permission_classes([AllowAny])
 def show_deliveries(request):
@@ -28,7 +35,8 @@ def show_delivery_details(request, pk):
     delivery = get_object_or_404(Delivery, pk=pk)
 
     if request.method == "GET":
-        return Response(DeliverySerializer(delivery).data)
+        serializer = DeliverySerializer(delivery)
+        return Response(serializer.data)
 
     if request.method == "PUT":
         serializer = DeliverySerializer(delivery, data=request.data)
@@ -41,11 +49,52 @@ def show_delivery_details(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# -----------------------
+# HTML PAGE (Create + List + Items in ONE page)
+# -----------------------
 def deliveries_page(request):
-    return render(request, "deliverymanager/deliveries.html")
+    # CREATE (via the form inside deliveries.html)
+    if request.method == "POST":
+        order_id = request.POST.get("order")
+        delivery_date = request.POST.get("delivery_date")
+        status_value = request.POST.get("status")
+        delivered = True if status_value == "on" else False
 
-def delivery_create(request):
-    return render(request, "deliverymanager/delivery_create.html")
+        # Create Delivery
+        delivery = Delivery.objects.create(
+            order_id=order_id,
+            delivery_date=delivery_date,
+            status=delivered,
+        )
 
+        # Create up to 3 DeliveryItems (ignore empty rows)
+        for i in range(1, 4):
+            desc = (request.POST.get(f"description_{i}") or "").strip()
+            qty_raw = (request.POST.get(f"quantity_{i}") or "").strip()
 
-# Create your views here.
+            if desc and qty_raw:
+                try:
+                    qty = int(qty_raw)
+                except ValueError:
+                    qty = 1
+
+                if qty < 1:
+                    qty = 1
+
+                DeliveryItem.objects.create(
+                    delivery=delivery,
+                    description=desc,
+                    quantity=qty,
+                )
+
+        return redirect("deliveries_page")
+
+    # READ (render list + items)
+    deliveries = Delivery.objects.prefetch_related("items").all()
+    orders = Order.objects.all()
+
+    return render(
+        request,
+        "deliverymanager/deliveries.html",
+        {"deliveries": deliveries, "orders": orders},
+    )
