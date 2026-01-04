@@ -33,14 +33,10 @@
         min-width: 380px;
         background-color: #ffffff;
         border-left: 1px solid #e1e8ed;
-
-        /* Startet exakt auf gleicher Höhe wie links */
         padding: 5rem 2rem 3rem 2rem;
-
         display: flex;
         flex-direction: column;
         gap: 0;
-
         position: sticky; top: 0; height: 100vh; overflow-y: auto;
     }
 
@@ -88,10 +84,7 @@
         min-height: 1.5em;
     }
     .section-label::after { content: ""; flex: 1; height: 1px; background: #e0e4e8; }
-
-    /* WICHTIG: Identischer Abstand für Gruppen Links UND Rechts */
     .section-group { margin-bottom: 5rem; }
-
 
     /* --- SIDEBAR WIDGETS --- */
     .monitor-card {
@@ -155,17 +148,24 @@
         <div class="section-group">
             <div class="section-label">Operatives Geschäft</div>
             <div class="tile-grid">
+                <a href="/orders/" class="tile">
+                    <div><span class="tile-label">Aufträge</span><span class="tile-subtitle">Bestellungen</span></div>
+                    <i class="bi bi-receipt text-primary tile-icon"></i>
+                </a>
+
                 <a href="/stockmovement/" class="tile">
                     <div><span class="tile-label">Bewegung</span><span class="tile-subtitle">Ein- & Ausgänge</span></div>
-                    <i class="bi bi-arrow-repeat text-primary tile-icon"></i>
+                    <i class="bi bi-arrow-repeat text-info tile-icon"></i>
                 </a>
+
                 <a href="/stocks/" class="tile">
                     <div><span class="tile-label">Bestand</span><span class="tile-subtitle">Aktueller Stock</span></div>
                     <i class="bi bi-box-seam text-secondary tile-icon"></i>
                 </a>
+
                 <a href="/deliveries/" class="tile">
                     <div><span class="tile-label">Lieferungen</span><span class="tile-subtitle">Auslieferung</span></div>
-                    <i class="bi bi-truck text-info tile-icon"></i>
+                    <i class="bi bi-truck text-dark tile-icon"></i>
                 </a>
             </div>
         </div>
@@ -199,26 +199,33 @@
         </div>
 
         <div class="section-group">
-            <div class="section-label">Partner & System</div>
+            <div class="section-label">Geschäftspartner</div>
             <div class="tile-grid">
                 <a href="/suppliers/" class="tile">
                     <div><span class="tile-label">Lieferanten</span><span class="tile-subtitle">Einkauf</span></div>
                     <i class="bi bi-shop text-dark tile-icon"></i>
                 </a>
-                <a href="/customers/" class="tile">
+
+                <a href="/customermanager/" class="tile">
                     <div><span class="tile-label">Kunden</span><span class="tile-subtitle">Verkauf</span></div>
                     <i class="bi bi-people text-success tile-icon"></i>
                 </a>
+            </div>
+        </div>
+
+        <div class="section-group">
+            <div class="section-label">Systemverwaltung</div>
+            <div class="tile-grid">
                 <a href="/admin/" class="tile" style="border-left: 5px solid #95a5a6;">
-                    <div><span class="tile-label">Admin-Panel</span><span class="tile-subtitle">Konfiguration</span></div>
-                    <i class="bi bi-gear text-muted tile-icon"></i>
+                    <div><span class="tile-label">Admin-Panel</span><span class="tile-subtitle">Konfiguration & Nutzer</span></div>
+                    <i class="bi bi-gear-wide-connected text-muted tile-icon"></i>
                 </a>
             </div>
         </div>
+
     </main>
 
     <aside class="sidebar-area">
-
         <div class="section-group">
             <div class="section-label">Dashboard Status</div>
             <div class="monitor-card">
@@ -254,14 +261,14 @@
 
         <div class="section-group">
             <div class="section-label">Schnellzugriff</div>
+            <a href="/orders/" class="quick-action-btn">
+                <i class="bi bi-cart-plus text-primary"></i> Auftrag anlegen
+            </a>
             <a href="/stockmovement/" class="quick-action-btn">
-                <i class="bi bi-plus-circle text-primary"></i> Buchung erfassen
+                <i class="bi bi-plus-circle text-info"></i> Buchung erfassen
             </a>
             <a href="/products/" class="quick-action-btn">
                 <i class="bi bi-box-seam text-success"></i> Produkt anlegen
-            </a>
-            <a href="/deliveries/" class="quick-action-btn">
-                <i class="bi bi-file-earmark-plus text-info"></i> Lieferschein
             </a>
         </div>
 
@@ -282,7 +289,6 @@
                 </div>
             </div>
         </div>
-
     </aside>
 
 </div>

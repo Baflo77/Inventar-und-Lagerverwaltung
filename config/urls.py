@@ -35,7 +35,6 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', dashboard, name='dashboard'),
-    path('inventory/', include('inventory.urls')),
     path('suppliers/', include('suppliermanager.urls')),
     path('products/', include('productmanager.urls')),
     path('categories/', include('categorymanager.urls')),
@@ -44,10 +43,12 @@ urlpatterns = [
     path('locations/', include('locationmanager.urls')),
     path('warehouses/', include('warehousemanager.urls')),
     path('orders/', include('ordermanager.urls')),
+    path('customers/', include('customermanager.urls')),
+    path('deliveries/', include('deliverymanager.urls')),
+
     path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
-    path('', include('customermanager.urls')),
-    path('deliveries/', include('deliverymanager.urls')),
+
 
 ]

@@ -84,5 +84,5 @@ def show_order_item_details(request, id):
 
 
 def ordermanager_ui(request):
-    orders = get_list_or_404(Order)
+    orders = Order.objects.all()
     return render(request, "ordermanager/ordermanager.html", {"orders": orders})
