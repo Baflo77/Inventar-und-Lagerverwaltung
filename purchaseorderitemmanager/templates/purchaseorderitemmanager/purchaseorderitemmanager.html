@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>PurchaseOrderItems | Inventar-Verwaltung</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    h1 { margin-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; }
+    label { display:block; margin-top: 10px; }
+    input, select { width: 100%; padding: 8px; margin-top: 6px; }
+    button { margin-top: 12px; padding: 10px 14px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
+    .actions button { margin-right: 8px; }
+    .muted { color: #777; font-size: 0.9em; }
+    .error { color: #b00020; margin-top: 10px; }
+    .success { color: #1b5e20; margin-top: 10px; }
+    .empty { color: #777; font-style: italic; }
+  </style>
+</head>
+
+<body>
+  <h1>PurchaseOrderItem Manager</h1>
+  <div class="muted">Anzeigen & Erstellen von PurchaseOrderItems</div>
+
+  <div class="grid" style="margin-top: 18px;">
+    <!-- Create Card -->
+    <div class="card">
+      <h2>Neues Item</h2>
+
+      <label for="purchaseOrder">PurchaseOrder</label>
+      <select id="purchaseOrder"></select>
+
+      <label for="product">Produkt</label>
+      <input id="product" type="text" placeholder="z.B. USB-C Kabel" />
+
+      <label for="quantity">Menge</label>
+      <input id="quantity" type="number" min="1" value="1" />
+
+      <button id="createBtn">Erstellen</button>
+
+      <div id="msg"></div>
+    </div>
+
+    <!-- List Card -->
+    <div class="card">
+      <h2>Items</h2>
+      <button id="reloadBtn">Neu laden</button>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>PurchaseOrder</th>
+            <th>Produkt</th>
+            <th>Menge</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="itemsTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+  // UI wird unter /purchaseorderitems/ aufgerufen
+  // API liegt entsprechend unter /purchaseorderitems/api/
+  const ITEMS_API = "/purchaseorderitems/api/";
+
+  // Für Dropdown der PurchaseOrders:
+  // wenn du deine PurchaseOrder-App unter /purchaseorders/api/ hast, passt das so:
+  const ORDERS_API = "/purchaseorders/api/";
+
+  const poSelect = document.getElementById("purchaseOrder");
+  const itemsTbody = document.getElementById("itemsTbody");
+  const msgBox = document.getElementById("msg");
+
+  function setMsg(text, type="") {
+    msgBox.className = type;
+    msgBox.textContent = text;
+  }
+
+  async function loadPurchaseOrders() {
+    poSelect.innerHTML = "";
+    try {
+      const res = await fetch(ORDERS_API);
+      if (!res.ok) throw new Error("PurchaseOrder API nicht erreichbar");
+      const orders = await res.json();
+
+      if (!orders.length) {
+        poSelect.innerHTML = `<option value="">Keine PurchaseOrders vorhanden</option>`;
+        poSelect.disabled = true;
+        return;
+      }
+
+      poSelect.disabled = false;
+
+      // Optional: Supplier-Namen anzeigen, wenn API mehr als nur supplier-ID liefert.
+      // Bei deinem Serializer kommt wahrscheinlich nur "supplier" als ID.
+      orders.forEach(o => {
+        const opt = document.createElement("option");
+        opt.value = o.id;
+        opt.textContent = `PO #${o.id} (Supplier: ${o.supplier})`;
+        poSelect.appendChild(opt);
+      });
+    } catch (e) {
+      poSelect.disabled = true;
+      setMsg("Fehler beim Laden der PurchaseOrders: " + e.message, "error");
+    }
+  }
+
+  async function loadItems() {
+    itemsTbody.innerHTML = "";
+    setMsg("");
+
+    try {
+      const res = await fetch(ITEMS_API);
+      if (!res.ok) throw new Error("PurchaseOrderItem API nicht erreichbar");
+      const items = await res.json();
+
+      // ✅ Empty-State wenn DB leer ist
+      if (!items.length) {
+        itemsTbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="empty">
+              Keine PurchaseOrderItems in der Datenbank vorhanden.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      items.forEach(i => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${i.id}</td>
+          <td>PO #${i.purchase_order}</td>
+          <td>${i.product}</td>
+          <td>${i.quantity}</td>
+          <td class="actions">
+            <button data-del="${i.id}">Löschen</button>
+          </td>
+        `;
+        itemsTbody.appendChild(tr);
+      });
+
+      // Delete handler
+      itemsTbody.querySelectorAll("button[data-del]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-del");
+          if (!confirm(`Item #${id} wirklich löschen?`)) return;
+
+          try {
+            const delRes = await fetch(`${ITEMS_API}${id}/`, { method: "DELETE" });
+            if (!delRes.ok && delRes.status !== 204) throw new Error("Löschen fehlgeschlagen");
+            setMsg(`Item #${id} gelöscht.`, "success");
+            await loadItems();
+          } catch (e) {
+            setMsg("Fehler beim Löschen: " + e.message, "error");
+          }
+        });
+      });
+
+    } catch (e) {
+      setMsg("Fehler beim Laden der Items: " + e.message, "error");
+    }
+  }
+
+  async function createItem() {
+    setMsg("");
+
+    const purchaseOrderId = poSelect.value;
+    const product = document.getElementById("product").value.trim();
+    const quantity = parseInt(document.getElementById("quantity").value, 10);
+
+    if (!purchaseOrderId) {
+      setMsg("Bitte eine PurchaseOrder auswählen.", "error");
+      return;
+    }
+    if (!product) {
+      setMsg("Bitte Produkt eingeben.", "error");
+      return;
+    }
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      setMsg("Bitte eine gültige Menge (>= 1) eingeben.", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch(ITEMS_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          purchase_order: parseInt(purchaseOrderId, 10),
+          product: product,
+          quantity: quantity
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(JSON.stringify(err));
+      }
+
+      document.getElementById("product").value = "";
+      document.getElementById("quantity").value = "1";
+
+      setMsg("Item wurde erstellt.", "success");
+      await loadItems();
+    } catch (e) {
+      setMsg("Fehler beim Erstellen: " + e.message, "error");
+    }
+  }
+
+  document.getElementById("createBtn").addEventListener("click", createItem);
+  document.getElementById("reloadBtn").addEventListener("click", loadItems);
+
+  (async function init() {
+    await loadPurchaseOrders();
+    await loadItems();
+  })();
+</script>
+
+</body>
+</html>
+
