@@ -13,7 +13,7 @@ from suppliermanager.serializers import SupplierSerializer
 @permission_classes([AllowAny])
 def show_all_suppliers(request):
     if request.method == "GET":
-        suppliers = get_list_or_404(Supplier)
+        suppliers = Supplier.objects.all()
         serialized_suppliers = SupplierSerializer(suppliers, many=True)
         return Response(serialized_suppliers.data)
     elif request.method == "POST":
@@ -43,7 +43,7 @@ def show_supplier_details(request, id):
     return None
 
 def suppliermanager_ui(request):
-    suppliers = get_list_or_404(Supplier)
+    suppliers = Supplier.objects.all()
     return render(
         request,"suppliermanager/suppliermanager.html",{"suppliers": suppliers}
     )

@@ -14,9 +14,9 @@ def show_all_products(request):
     if request.method == "GET":
         searchterm = request.query_params.get('searchterm')
         if searchterm is not None:
-            products = get_list_or_404(Product, name__contains=searchterm)
+            products = Product.objects.filter(name__icontains=searchterm)
         else:
-            products = get_list_or_404(Product)
+            products = Product.objects.all()
         serialized_products = ProductSerializer(products, many=True)
         return Response(serialized_products.data)
 
@@ -52,8 +52,8 @@ def show_product_details(request, id):
 def product_list_ui(request):
     searchterm = request.GET.get('searchterm')
     if searchterm:
-        products = get_list_or_404(Product, name__icontains=searchterm)
+        products = Product.objects.filter(name__icontains=searchterm)
     else:
-        products = get_list_or_404(Product)
+        products = Product.objects.all()
 
     return render(request, 'productmanager/productmanager.html', {'products': products})
