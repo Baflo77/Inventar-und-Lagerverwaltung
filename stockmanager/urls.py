@@ -22,6 +22,8 @@ from django.urls import include
 from stockmanager import views
 
 urlpatterns = [
+
+    path('', views.stock_list_ui),
     path('stocks/', views.show_stock),
     path('firststock/', views.show_first_stock),
     path('writestock/', views.write_stock),

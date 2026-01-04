@@ -27,3 +27,23 @@ def write_stock(request):
     stock.save()
     stock = Stock.objects.last()
     return HttpResponse(f"Produkt: {stock.product}, Standort: {stock.location}, Anzahl: {stock.quantity}, Mindestbestand: {stock.threshold}, Status: {stock.status}, Warenhaus: {stock.warehouse}")
+
+
+def stock_list_ui(request):
+    searchterm = request.GET.get('searchterm')
+    lagerbestandsdaten = Stock.objects.select_related('product', 'warehouse', 'location')
+    if searchterm:
+        suche_produkt = lagerbestandsdaten.filter(product__name__icontains=searchterm)
+        suche_ort = lagerbestandsdaten.filter(location__name__icontains=searchterm)
+
+        stocks = (suche_produkt | suche_ort).distinct()
+    else:
+        stocks = lagerbestandsdaten.all()
+
+    stocks = stocks.order_by('product__name')
+
+    context = {
+        'stocks': stocks,
+        'searchterm': searchterm
+    }
+    return render(request, 'stockmanager/stockmanager.html', context)
