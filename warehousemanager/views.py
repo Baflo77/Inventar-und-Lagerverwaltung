@@ -1,15 +1,22 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, get_list_or_404
+from rest_framework.decorators import api_view
+from yaml import serialize
+
 from .models import Warehouse
+from rest_framework.response import Response
+from warehousemanager.serializers import WarehouseSerializer
 
 # Create your views here.
 def show_warehouses(request):
     return HttpResponse("Hier sind deine Warenhäuser")
 
+@api_view()
 def show_all_warehouses_by_id(request, id):
     warehouse = get_list_or_404(Warehouse, pk=id)
-    return HttpResponse(warehouse)
+    serializer = WarehouseSerializer(warehouse)
+    return Response(serializer.data)
 
 def show_first_warehouse(request):
     warehouse = Warehouse.objects.first()

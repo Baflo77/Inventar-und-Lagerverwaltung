@@ -1,14 +1,22 @@
 from django.http import HttpResponse
 from django.shortcuts import render, get_list_or_404
 from .models import Stock
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from .serializers import StockSerializer
+
 
 # Create your views here.
+@api_view()
 def show_stock(request):
-    return HttpResponse("Hier sind deine Lager")
+    return Response("Hier sind deine Lager")
 
+@api_view()
 def show_all_stocks_by_id(request, id):
     stock = get_list_or_404(Stock, pk=id)
-    return HttpResponse(stock)
+    serializer = StockSerializer(stock, many=True)
+    return Response(serializer.data)
 
 def show_first_stock(request):
     stock = Stock.objects.first()
