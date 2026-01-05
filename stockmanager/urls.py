@@ -25,7 +25,6 @@ urlpatterns = [
 
     path('', views.stock_list_ui),
     path('stocks/', views.show_stock),
-    path('firststock/', views.show_first_stock),
-    path('writestock/', views.write_stock),
-    path('stockbyid/<id>', views.show_all_stocks_by_id),
+    path('stock/', views.show_all_stocks),
+    path('<id>', views.show_stock_details),
 ]

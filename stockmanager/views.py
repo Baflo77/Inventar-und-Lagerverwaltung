@@ -1,5 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import render, get_list_or_404
+from rest_framework import status
+
 from .models import Stock
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -12,11 +14,42 @@ from .serializers import StockSerializer
 def show_stock(request):
     return Response("Hier sind deine Lager")
 
-@api_view()
-def show_all_stocks_by_id(request, id):
-    stock = get_list_or_404(Stock, pk=id)
-    serializer = StockSerializer(stock, many=True)
-    return Response(serializer.data)
+@api_view(["GET","POST"])
+def show_all_stocks(request):
+    if request.method == "GET":
+        searchterm = request.query_params.get('searchterm')
+
+        if searchterm is not None:
+            stock= get_list_or_404(Stock, stock__icontains=searchterm)
+        elif searchterm is not None:
+            stock = Stock.objects.all()
+
+        serialized_stock = StockSerializer(Stock, many=True)
+        return Response(serialized_stock.data)
+    elif request.method == "POST":
+        serializer = StockSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(StockSerializer.data, status=status.HTTP_201_CREATED)
+        return Response(StockSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET","PUT","DELETE"])
+def show_stock_details(request, id):
+    if request.method == "GET":
+        stock = get_list_or_404(Stock)
+        serialized_stock = StockSerializer(stock, many=True)
+        return Response(serialized_stock.data)
+    elif request.method == "DELETE":
+        Stock.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    elif request.method == "PUT":
+        serializer = StockSerializer(instance=Stock, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(StockSerializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 def show_first_stock(request):
     stock = Stock.objects.first()
