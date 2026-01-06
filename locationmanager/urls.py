@@ -21,7 +21,7 @@ from django.urls import include
 from locationmanager import views
 
 urlpatterns = [
-    path('locations/', views.show_locations),
-    path('writelocation/', views.write_location),
-    path('locationbyid/<id>', views.show_all_locations_by_id),
+    #path('locations/', views.show_locations),
+    #path('writelocation/', views.write_location),
+    path('locations/', views.show_all_locations),
 ]
