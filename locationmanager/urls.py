@@ -23,5 +23,5 @@ from locationmanager import views
 urlpatterns = [
     #path('locations/', views.show_locations),
     #path('writelocation/', views.write_location),
-    path('locations/', views.show_all_locations),
+    path('', views.location_list_ui),
 ]

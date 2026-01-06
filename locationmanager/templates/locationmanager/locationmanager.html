@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Manager | Lagerverwaltung</title>
+    <style>
+        :root {
+            --bg-main: #ebedef;
+            --header-bg: #2c3e50;
+            --card-bg: #ffffff;
+            --text-main: #2f3640;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        /* --- Header --- */
+        .app-header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 1.2rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .header-title { font-size: 1.4rem; margin: 0; font-weight: 500; }
+
+        .nav-home {
+            text-decoration: none;
+            color: white;
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .nav-home:hover { background: rgba(255,255,255,0.1); }
+
+        /* --- Layout Container --- */
+        .container {
+            max-width: 1400px;
+            margin: 2.5rem auto;
+            padding: 0 20px;
+        }
+
+        .page-title-section { margin-bottom: 2rem; }
+        .page-title { font-size: 1.8rem; margin: 0; color: var(--header-bg); }
+        .page-subtitle { color: #7f8c8d; font-size: 0.9rem; margin-top: 5px; }
+
+        /* --- Grid Layout --- */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* --- Cards --- */
+        .data-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            padding: 0;
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #eee;
+            background: #fdfdfd;
+        }
+        .card-title { margin: 0; font-size: 1.1rem; color: var(--header-bg); }
+
+        .card-body { padding: 1.5rem; }
+
+        /* --- Form Styles --- */
+        .form-group { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 0.75rem; font-weight: bold; color: #7f8c8d; text-transform: uppercase; }
+        .form-group input, .form-group textarea {
+            padding: 10px;
+            border: 1px solid #dcdde1;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .form-group textarea { resize: vertical; }
+
+        .form-row { display: flex; gap: 10px; }
+        .form-row .form-group { flex: 1; }
+
+        .btn-save {
+            background: var(--success-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn-save:hover { background: #219150; }
+
+        /* --- Table Styles --- */
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8f9fa; text-align: left; padding: 15px; font-size: 0.85rem; color: #7f8c8d; border-bottom: 2px solid var(--bg-main); }
+        td { padding: 15px; border-bottom: 1px solid var(--bg-main); font-size: 0.95rem; vertical-align: top; }
+
+        .empty-state { text-align: center; padding: 50px; color: #bdc3c7; }
+        .empty-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+
+        @media (max-width: 900px) {
+            .content-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <div class="header-left">
+        <a href="/" class="nav-home">🏠 Home</a>
+        <h1 class="header-title">Lagerverwaltung</h1>
+    </div>
+    <div class="user-action">Location Manager</div>
+</header>
+
+<div class="container">
+    <div class="page-title-section">
+        <h2 class="page-title">Standort Verwaltung</h2>
+        <p class="page-subtitle">Neue Lagerorte anlegen und bestehende verwalten</p>
+    </div>
+
+    <div class="content-grid">
+
+        <div class="data-card">
+            <div class="card-header">
+                <h3 class="card-title">Neuen Standort anlegen</h3>
+            </div>
+            <div class="card-body">
+                <form id="createLocationForm">
+                    <div class="form-group">
+                        <label>Name *</label>
+                        <input type="text" id="name" required placeholder="z.B. Hauptlager Halle A">
+                    </div>
+                    <div class="form-group">
+                        <label>Beschreibung</label>
+                        <textarea id="description" rows="2"></textarea>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+                    <div class="form-group">
+                        <label>Straße & Nr.</label>
+                        <input type="text" id="street">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>PLZ</label>
+                            <input type="text" id="zip_code">
+                        </div>
+                        <div class="form-group">
+                            <label>Stadt</label>
+                            <input type="text" id="city">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Land</label>
+                        <input type="text" id="country" value="Deutschland">
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Latitude</label>
+                            <input type="number" step="any" id="latitude" placeholder="52.123">
+                        </div>
+                        <div class="form-group">
+                            <label>Longitude</label>
+                            <input type="number" step="any" id="longitude" placeholder="13.456">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-save">Standort speichern</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="data-card">
+            <div class="card-header">
+                <h3 class="card-title">Vorhandene Standorte</h3>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 30%">Name / Ort</th>
+                        <th style="width: 40%">Adresse</th>
+                        <th style="width: 30%">Geo-Position</th>
+                    </tr>
+                </thead>
+                <tbody id="locationTableBody">
+                    <tr>
+                        <td colspan="3">
+                            <div class="empty-state">
+                                <span class="empty-icon">📍</span>
+                                Lade Daten...
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // --- 1. CSRF Token Helper ---
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // --- 2. Daten laden (GET) ---
+    async function loadLocations() {
+        const tbody = document.getElementById('locationTableBody');
+
+        try {
+            // WICHTIG: Hier ist die neue URL für die Liste
+            const response = await fetch('/locations/api/list/');
+
+            if (!response.ok) throw new Error('Netzwerk Fehler');
+
+            const data = await response.json();
+            tbody.innerHTML = ''; // Tabelle leeren
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="3"><div class="empty-state"><span class="empty-icon">📭</span>Keine Standorte gefunden.</div></td></tr>
+                `;
+                return;
+            }
+
+            data.forEach(loc => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <strong>${loc.name}</strong><br>
+                        <small style="color:#7f8c8d">${loc.description || ''}</small>
+                    </td>
+                    <td>
+                        ${loc.street}<br>
+                        ${loc.zip_code} ${loc.city}<br>
+                        <small>${loc.country}</small>
+                    </td>
+                    <td>
+                        ${loc.latitude ? `Lat: ${loc.latitude}` : '-'}<br>
+                        ${loc.longitude ? `Lon: ${loc.longitude}` : '-'}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+        } catch (error) {
+            console.error('Error:', error);
+            tbody.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center; padding:20px;">Fehler beim Laden der Daten.</td></tr>`;
+        }
+    }
+
+    // --- 3. Daten speichern (POST) ---
+    document.getElementById('createLocationForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Daten sammeln
+        const formData = {
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
+            street: document.getElementById('street').value,
+            zip_code: document.getElementById('zip_code').value,
+            city: document.getElementById('city').value,
+            country: document.getElementById('country').value,
+            latitude: document.getElementById('latitude').value || null,
+            longitude: document.getElementById('longitude').value || null
+        };
+
+        try {
+            // WICHTIG: Hier ist die neue URL für das Speichern
+            const response = await fetch('/locations/api/create/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                // Formular leeren
+                document.getElementById('createLocationForm').reset();
+                // Liste neu laden (damit der neue Eintrag sofort erscheint)
+                loadLocations();
+                alert("Standort erfolgreich gespeichert!");
+            } else {
+                const errorData = await response.json();
+                alert("Fehler: " + JSON.stringify(errorData));
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert("Ein Fehler ist aufgetreten.");
+        }
+    });
+
+    // --- Start: Initial Laden ---
+    loadLocations();
+
+</script>
+
+</body>
+</html>

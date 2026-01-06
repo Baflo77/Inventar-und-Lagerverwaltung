@@ -23,5 +23,6 @@ urlpatterns = [
     #path('warehouses/', views.show_warehouses),
     path('firstwarehouse/', views.show_first_warehouse),
     path('writewarehouse/', views.write_warehouse),
-    path('warehouses/', views.show_all_warehouses),
+    path('', views.warehouse_list_ui),
+
 ]

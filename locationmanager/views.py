@@ -10,13 +10,15 @@ from .models import Location
 from rest_framework.response import Response
 
 from .serializers import LocationSerializer
-
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view, permission_classes
 
 # Create your views here.
 def show_locations(request):
     return HttpResponse("Hier sind die verschiedenen Standorte")
 
 @api_view(["GET", "POST"])
+@permission_classes([AllowAny])
 def show_all_locations(request):
     if request.method == "GET":
         searchterm = request.query.get("searchterm")
@@ -42,3 +44,11 @@ def write_location(request):
     location = Location.objects.last()
     return HttpResponse(f"Addresse: {location.address}, Warenhaus: {location.warehouse}")
 
+def location_list_ui(request):
+    searchterm = request.GET.get("searchterm")
+    if searchterm:
+        location = Location.objects.filter(name__icontains=searchterm)
+    else:
+        location = Location.objects.all()
+
+    return render(request, "locationmanager/locationmanager.html")
