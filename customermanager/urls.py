@@ -20,9 +20,19 @@ from django.urls import include
 from . import views
 
 urlpatterns = [
-    path("customers/", views.show_customer, name="customer_list"),
+    # HTML (Browser)
+
     path("", views.customers_page, name="customers_page"),
-    path("first/", views.show_first_customer, name="customer_first"),
-    path("write/", views.write_customer, name="customer_write"),
-    path("<int:id>/", views.show_customer_details, name="customer_detail"),
+    path("create/", views.create_customer, name="customer_create"),
+    path("<int:id>/edit/", views.edit_customer, name="customer_edit"),
+    path("<int:id>/delete/", views.delete_customer, name="customer_delete"),
+
+    # API (Postman / Tests)
+
+    path("customers/", views.show_customer, name="customer_list"),
+    path("customers/<int:id>/", views.show_customer_details, name="customer_detail"),
+    path("customers/first/", views.show_first_customer, name="customer_first"),
+    path("customers/write/", views.write_customer, name="customer_write"),
 ]
+
+
