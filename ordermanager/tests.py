@@ -8,7 +8,6 @@ from productmanager.models import Product
 
 class OrderTestCase(TestCase):
     def setUp(self):
-        # Test-Daten erstellen
         self.customer = Customer.objects.create(
             firstname="Max",
             lastname="Müller",
