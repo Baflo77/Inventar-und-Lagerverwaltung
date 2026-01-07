@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import Order, OrderItem
 
-# Inline für Items direkt in Order bearbeiten
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 1
