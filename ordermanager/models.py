@@ -34,20 +34,21 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.id} - {self.customer.firstname} {self.customer.lastname}"
 
+    def clean(self):
+        super().clean()
+        if self.status == 'SHIPPED' and not self.items.exists():
+            raise ValidationError("Order kann nicht versendet werden ohne Items!")
+
     def get_total_price(self):
-        """Berechnet Gesamtpreis aller Items"""
         return sum(item.get_subtotal() for item in self.items.all())
 
     def get_total_quantity(self):
-        """Berechnet Gesamtmenge aller Items"""
         return sum(item.quantity for item in self.items.all())
 
     def can_ship(self):
-        """Validierung: Order nur versendbar wenn CONFIRMED"""
         return self.status == "CONFIRMED"
 
     def ship(self):
-        """Status zu SHIPPED ändern"""
         if not self.can_ship():
             raise ValidationError(f"Order {self.id} kann nicht versendet werden (Status: {self.status})")
         self.status = "SHIPPED"
@@ -55,7 +56,6 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    """Einzelne Positionen einer Bestellung (1:N zu Order)"""
     id = models.AutoField(primary_key=True)
     order = models.ForeignKey(
         Order,
@@ -76,6 +76,12 @@ class OrderItem(models.Model):
         """Validierung: Menge darf nicht negativ sein"""
         if self.quantity <= 0:
             raise ValidationError("Bestellmenge muss größer als 0 sein!")
+
+    def save(self, *args, **kwargs):
+        if hasattr(self.product, 'stock') and self.product.stock < self.quantity:
+            raise ValidationError(f"Lagerbestand unzureichend: {self.product.stock} < {self.quantity}")
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         self.full_clean()

@@ -82,7 +82,6 @@ def show_order_item_details(request, id):
         return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return None
 
-
 def ordermanager_ui(request):
     orders = Order.objects.all()
     return render(request, "ordermanager/ordermanager.html", {"orders": orders})
