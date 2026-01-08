@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Stock Manager | Lagerverwaltung{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* --- DESIGN VARIABLES (Identisch zum Location Manager) --- */
+    /* --- DEIN BESTEHENDES CSS --- */
     :root {
         --primary-dark: #2c3e50;
         --accent-blue: #3498db;
@@ -22,6 +23,7 @@
         padding-top: 2rem;
         padding-bottom: 2rem;
         color: var(--text-dark);
+        min-height: 100vh; /* Wichtig für Fullscreen Feel */
     }
 
     .lm-container {
@@ -30,7 +32,6 @@
         padding: 0 20px;
     }
 
-    /* --- TITEL BEREICH --- */
     .page-header {
         margin-bottom: 2rem;
         border-bottom: 1px solid #dee2e6;
@@ -43,7 +44,6 @@
         margin: 0;
     }
 
-    /* --- GRID LAYOUT --- */
     .content-grid {
         display: grid;
         grid-template-columns: 350px 1fr;
@@ -51,7 +51,6 @@
         align-items: start;
     }
 
-    /* --- CARDS --- */
     .data-card {
         background: white;
         border-radius: 6px;
@@ -75,7 +74,6 @@
     .card-body { padding: 1.25rem; }
     .card-body.p-0 { padding: 0; }
 
-    /* --- FORM FIELDS --- */
     .form-group { margin-bottom: 1rem; }
     .form-label {
         font-size: 0.85rem;
@@ -94,7 +92,6 @@
         box-sizing: border-box;
     }
 
-    /* --- GRÜNER BUTTON --- */
     .btn-submit {
         display: block;
         width: 100%;
@@ -112,7 +109,6 @@
     }
     .btn-submit:hover { background-color: #218838; }
 
-    /* --- TABLE STYLES --- */
     .table-modern { width: 100%; border-collapse: collapse; margin-bottom: 0; }
     .table-modern thead th {
         vertical-align: bottom;
@@ -129,7 +125,6 @@
     .table-modern tbody tr:nth-of-type(odd) { background-color: rgba(0,0,0,.02); }
     .table-modern td { padding: 12px 15px; vertical-align: middle; font-size: 0.9rem; }
 
-    /* Status Badges */
     .status-badge {
         font-size: 0.75rem;
         font-weight: 700;
@@ -142,6 +137,31 @@
 
     .quantity-display { font-weight: 700; color: var(--primary-dark); }
     .quantity-low { color: var(--danger-red); }
+
+    /* --- NEU: Button für Ausbuchen --- */
+    .btn-book-out {
+        background-color: white;
+        border: 1px solid var(--danger-red);
+        color: var(--danger-red);
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-book-out:hover {
+        background-color: var(--danger-red);
+        color: white;
+    }
+
+    /* Modal Header Anpassung */
+    .modal-header { background-color: #f8f9fa; }
+    .btn-confirm-out { background-color: var(--danger-red); color: white; border: none; width: 100%; padding: 10px; font-weight: bold; border-radius: 4px; }
+    .btn-confirm-out:hover { background-color: #c0392b; }
 
     @media (max-width: 992px) {
         .content-grid { grid-template-columns: 1fr; }
@@ -166,27 +186,28 @@
                 </div>
                 <div class="card-body">
                     <p style="font-size: 0.85rem; color: #666; margin-bottom: 1rem;">
-                        Nutze dies nur, um ein Produkt erstmals einem Lagerort zuzuweisen. Für tägliche Änderungen nutze "Warenbewegung".
+                        Nutze dies nur, um ein Produkt erstmals einem Lagerort zuzuweisen.
                     </p>
-                    <form>
+                    <form method="POST">
+                        {% csrf_token %}
                         <div class="form-group">
                             <label class="form-label">Produkt ID</label>
-                            <input type="number" class="form-control" placeholder="Produkt ID eingeben">
+                            <input type="number" name="product_id" class="form-control" placeholder="Produkt ID" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Lagerort ID</label>
-                            <input type="number" class="form-control" placeholder="Location ID eingeben">
+                            <input type="number" name="location_id" class="form-control" placeholder="Location ID" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Startmenge</label>
-                            <input type="number" class="form-control" placeholder="0">
+                            <input type="number" name="quantity" class="form-control" placeholder="0" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Mindestbestand (Alarm)</label>
-                            <input type="number" class="form-control" value="10">
+                            <label class="form-label">Mindestbestand</label>
+                            <input type="number" name="threshold" class="form-control" value="10" required>
                         </div>
 
-                        <button type="button" class="btn-submit">Bestand initialisieren</button>
+                        <button type="submit" name="action" value="initialize" class="btn-submit">Bestand initialisieren</button>
                     </form>
                 </div>
             </div>
@@ -203,8 +224,8 @@
                                     <th>Produkt / SKU</th>
                                     <th>Lagerort</th>
                                     <th>Bestand</th>
-                                    <th>Min. / Nachbestellt</th>
-                                    <th style="text-align: right;">Status</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Aktionen</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -227,16 +248,24 @@
                                     </td>
 
                                     <td>
-                                        <small>Min: {{ stock.threshold }}</small><br>
-                                        <small style="color: #3498db;">Order: {{ stock.quantity_on_order }}</small>
-                                    </td>
-
-                                    <td style="text-align: right;">
-                                        {% if stock.quantity < stock.threshold %}
-                                            <span class="status-badge status-low">Kritisch</span>
+                                        {% if stock.quantity == 0 %}
+                                            <span class="status-badge" style="background:#e9ecef; color:#495057;">LEER</span>
+                                        {% elif stock.quantity <= stock.threshold %}
+                                            <span class="status-badge status-low">KRITISCH</span>
                                         {% else %}
                                             <span class="status-badge status-ok">OK</span>
                                         {% endif %}
+                                    </td>
+
+                                    <td style="text-align: right;">
+                                        <button class="btn-book-out" style="border-color: #3498db; color: #3498db; margin-right: 5px;"
+                                                onclick="openTransferModal('{{ stock.id }}', '{{ stock.product.name }}', {{ stock.quantity }})">
+                                            <i class="bi bi-arrow-left-right"></i> Umlagern
+                                        </button>
+
+                                        <button class="btn-book-out" onclick="openBookOutModal('{{ stock.id }}', '{{ stock.product.name }}', {{ stock.quantity }})">
+                                            Ausbuchen
+                                        </button>
                                     </td>
                                 </tr>
                                 {% empty %}
@@ -255,4 +284,201 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="bookOutModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" style="font-weight: 700;">Ware ausbuchen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <p id="modalInfoText" style="color: #666; margin-bottom: 1.5rem;">...</p>
+
+          <form id="bookOutForm">
+            <input type="hidden" id="stockId">
+
+            <div class="mb-3">
+                <label class="form-label">Menge zur Entnahme</label>
+                <input type="number" id="amount" class="form-control" min="1" required placeholder="Menge eingeben">
+                <div class="form-text" id="maxInfo"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Notiz (Optional)</label>
+                <input type="text" id="notes" class="form-control" placeholder="Grund für Entnahme">
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-confirm-out">Jetzt Ausbuchen</button>
+            </div>
+          </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" style="font-weight: 700;">Ware umlagern</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <p id="transferInfoText" style="color: #666; margin-bottom: 1.5rem;">...</p>
+
+          <form id="transferForm">
+            <input type="hidden" id="transferStockId">
+
+            <div class="mb-3">
+                <label class="form-label">Menge zur Umlagerung</label>
+                <input type="number" id="transferAmount" class="form-control" min="1" required placeholder="Menge eingeben">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Nach Lagerort</label>
+                <select id="targetLocationId" class="form-select" required>
+                    <option value="" selected disabled>Bitte wählen...</option>
+                    {% for loc in locations %}
+                        <option value="{{ loc.id }}">{{ loc.name }} {% if loc.warehouse %}({{ loc.warehouse.name }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #3498db; border: none; font-weight: bold; padding: 10px;">
+                    Jetzt Umlagern
+                </button>
+            </div>
+          </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 1. CSRF Helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // 2. Setup Modals
+    let bookOutModal;
+    let transferModal;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Init BookOut
+        const bookOutEl = document.getElementById('bookOutModal');
+        if(bookOutEl) bookOutModal = new bootstrap.Modal(bookOutEl);
+
+        // Init Transfer
+        const transferEl = document.getElementById('transferModal');
+        if(transferEl) transferModal = new bootstrap.Modal(transferEl);
+    });
+
+    // ----------------------------------------------------
+    // LOGIK: AUSBUCHEN
+    // ----------------------------------------------------
+    function openBookOutModal(id, productName, currentQty) {
+        document.getElementById('stockId').value = id;
+        document.getElementById('modalInfoText').innerHTML = `Ausbuchen von: <strong>${productName}</strong>`;
+        document.getElementById('maxInfo').innerText = `Maximal verfügbar: ${currentQty} Stück`;
+
+        const amountInput = document.getElementById('amount');
+        amountInput.value = "";
+        amountInput.max = currentQty;
+
+        bookOutModal.show();
+    }
+
+    document.getElementById('bookOutForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const stockId = document.getElementById('stockId').value;
+        const amount = document.getElementById('amount').value;
+        const notes = document.getElementById('notes').value;
+
+        try {
+            const response = await fetch(`/stocks/api/${stockId}/book-out/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ amount: amount, notes: notes })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const data = await response.json();
+                alert("Fehler: " + (data.error || "Unbekannter Fehler"));
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Verbindungsfehler zum Server.");
+        }
+    });
+
+    // ----------------------------------------------------
+    // LOGIK: UMLAGERN
+    // ----------------------------------------------------
+    function openTransferModal(id, productName, currentQty) {
+        document.getElementById('transferStockId').value = id;
+        document.getElementById('transferInfoText').innerHTML = `Umlagern von: <strong>${productName}</strong><br>Verfügbar: ${currentQty}`;
+
+        const amountInput = document.getElementById('transferAmount');
+        amountInput.value = "";
+        amountInput.max = currentQty;
+
+        transferModal.show();
+    }
+
+    document.getElementById('transferForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const stockId = document.getElementById('transferStockId').value;
+        const amount = document.getElementById('transferAmount').value;
+        const targetLoc = document.getElementById('targetLocationId').value;
+
+        try {
+            const response = await fetch(`/stocks/api/${stockId}/transfer/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    amount: amount,
+                    target_location_id: targetLoc
+                })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const data = await response.json();
+                alert("Fehler: " + (data.error || "Unbekannt"));
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Verbindungsfehler.");
+        }
+    });
+</script>
 {% endblock %}

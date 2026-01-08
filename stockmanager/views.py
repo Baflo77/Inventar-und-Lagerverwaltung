@@ -1,107 +1,120 @@
-from django.http import HttpResponse
-from django.shortcuts import render, get_list_or_404
-from rest_framework import status
-from .models import Stock
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .serializers import StockSerializer
-from django.shortcuts import render, redirect
+import json
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.contrib import messages
-from .forms import OutgoingStockForm
-from .services import process_outgoing_goods
-from django.core.exceptions import ValidationError
+from django.db import transaction
+from locationmanager.models import Location
+from productmanager.models import Product
+from .models import Stock, StockMovement
 
 
 
-# Create your views here.
-@api_view()
-def show_stock(request):
-    # 'select_related' optimiert die Datenbankabfrage für Fremdschlüssel (Product & Location)
-    stocks = Stock.objects.select_related('product', 'location').all()
+def stock_manager_view(request):
 
-    context = {
-        'stocks': stocks
-    }
-    return render(request, 'stockmanager/stockmanager.html', context)
+    if request.method == 'POST' and request.POST.get('action') == 'initialize':
+        product_id = request.POST.get('product_id')
+        location_id = request.POST.get('location_id')
+        quantity = request.POST.get('quantity')
+        threshold = request.POST.get('threshold')
 
-@api_view(["GET","POST"])
-def show_all_stocks(request):
-    if request.method == "GET":
-        searchterm = request.query_params.get('searchterm')
-
-        if searchterm is not None:
-            stock= get_list_or_404(Stock, stock__icontains=searchterm)
-        elif searchterm is not None:
-            stock = Stock.objects.all()
-
-        serialized_stock = StockSerializer(Stock, many=True)
-        return Response(serialized_stock.data)
-    elif request.method == "POST":
-        serializer = StockSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(StockSerializer.data, status=status.HTTP_201_CREATED)
-        return Response(StockSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["GET","PUT","DELETE"])
-def show_stock_details(request, id):
-    stock = get_list_or_404(Stock, id=id)
-
-    if request.method == "GET":
-        stock = get_list_or_404(Stock)
-        serialized_stock = StockSerializer(stock)
-        return Response(serialized_stock.data)
-    elif request.method == "DELETE":
-        Stock.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    elif request.method == "PUT":
-        serializer = StockSerializer(instance=Stock, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(StockSerializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-'''Test Views- Können weg?
-def show_first_stock(request):
-    stock = Stock.objects.first()
-    return HttpResponse(f"Produkt: {stock.product}, Standort: {stock.location}, Anzahl: {stock.quantity}, Mindestbestand: {stock.threshold}, Status: {stock.status}, Warenhaus: {stock.warehouse}")
-
-def write_stock(request):
-    stock = Stock(product="Apple iPhone 15", location="Berlin", quantity=8, threshold=1, warehouse="W3")
-    stock.save()
-    stock = Stock.objects.last()
-    return HttpResponse(f"Produkt: {stock.product}, Standort: {stock.location}, Anzahl: {stock.quantity}, Mindestbestand: {stock.threshold}, Status: {stock.status}, Warenhaus: {stock.warehouse}")
-
-'''
-
-def stock_list_ui(request):
-
-    stocks = Stock.objects.select_related('product', 'location').all()
-
-    context = {
-        'stocks': stocks
-    }
-    return render(request, 'stockmanager/stockmanager.html', context)
-
-
-
-def outgoing_goods_view(request):
-    if request.method == 'POST':
-        form = OutgoingStockForm(request.POST)
-        if form.is_valid():
-            stock_item = form.cleaned_data['stock_item']
-            quantity = form.cleaned_data['quantity']
-            notes = form.cleaned_data['notes']
-
+        if product_id and location_id:
             try:
-                process_outgoing_goods(stock_item.id, quantity, user=request.user, notes=notes)
-                messages.success(request, f"{quantity}x {stock_item.product} erfolgreich ausgebucht.")
-                return redirect('stock_list_ui')  # Zurück zur Übersicht
-            except ValidationError as e:
-                # Fehler aus dem Service im Formular anzeigen
-                form.add_error(None, e)
-    else:
-        form = OutgoingStockForm()
+                prod = Product.objects.get(id=product_id)
+                loc = Location.objects.get(id=location_id)
 
-    return render(request, 'stockmanager/outgoing_form.html', {'form': form})
+                Stock.objects.update_or_create(
+                    product=prod,
+                    location=loc,
+                    defaults={
+                        'quantity': int(quantity),
+                        'threshold': int(threshold)
+                    }
+                )
+                messages.success(request, f"Bestand für {prod.name} erfolgreich initialisiert.")
+            except Product.DoesNotExist:
+                messages.error(request, f"Produkt ID {product_id} nicht gefunden.")
+            except Location.DoesNotExist:
+                messages.error(request, f"Lagerort ID {location_id} nicht gefunden.")
+            except Exception as e:
+                messages.error(request, f"Fehler: {str(e)}")
+
+        return redirect('stockmanager/stock_manager')
+
+
+    stocks = Stock.objects.select_related('product', 'location__warehouse').all()
+
+
+    all_locations = Location.objects.select_related('warehouse').all()
+
+    context = {
+        'stocks': stocks,
+        'locations': all_locations
+    }
+    return render(request, 'stockmanager/stockmanager.html', context)
+
+
+
+@require_POST
+def book_out_api(request, stock_id):
+    try:
+        data = json.loads(request.body)
+        amount = int(data.get('amount', 0))
+        stock = get_object_or_404(Stock, id=stock_id)
+
+        if amount <= 0:
+            return JsonResponse({'error': 'Menge muss positiv sein.'}, status=400)
+        if stock.quantity < amount:
+            return JsonResponse({'error': 'Nicht genügend Bestand verfügbar.'}, status=400)
+
+        with transaction.atomic():
+            # Bestand reduzieren
+            stock.quantity -= amount
+            stock.save()
+
+            StockMovement.objects.create(product=stock.product,source_location=stock.location, destination_location=None,  quantity=amount,movement_type='OUT')
+
+        return JsonResponse({'success': True})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+
+@require_POST
+def transfer_stock_api(request, stock_id):
+    try:
+        data = json.loads(request.body)
+        amount = int(data.get('amount', 0))
+        target_location_id = data.get('target_location_id')
+
+        # Validierung
+        if not target_location_id:
+            return JsonResponse({'error': 'Kein Ziellagerort gewählt.'}, status=400)
+
+        source_stock = get_object_or_404(Stock, id=stock_id)
+        target_location = get_object_or_404(Location, id=target_location_id)
+
+        if amount <= 0 or source_stock.quantity < amount:
+            return JsonResponse({'error': 'Ungültige Menge oder zu wenig Bestand.'}, status=400)
+
+        if source_stock.location.id == target_location.id:
+            return JsonResponse({'error': 'Start- und Ziellagerort sind identisch.'}, status=400)
+
+        with transaction.atomic():
+            # 1. Quelle reduzieren
+            source_stock.quantity -= amount
+            source_stock.save()
+
+            # 2. Ziel erhöhen oder neu erstellen
+            dest_stock, created = Stock.objects.get_or_create(product=source_stock.product,location=target_location,defaults={'quantity': 0, 'threshold': source_stock.threshold})
+            dest_stock.quantity += amount
+            dest_stock.save()
+
+            # 3. Logging Eintrag (StockMovement)
+            StockMovement.objects.create(product=source_stock.product,source_location=source_stock.location,destination_location=target_location,quantity=amount,movement_type='MOVE')
+
+        return JsonResponse({'success': True})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

@@ -20,10 +20,9 @@ from django.urls import include
 from stockmovementmanager import views
 
 urlpatterns = [
-    # Liste aller Bewegungen (oder neue anlegen)
-    path('', views.stock_movement_ui, name='movement_ui'),
 
-# Einzelne Bewegung ansehen (z.B. movements/5/)
+    path('', views.stock_movement_ui, name='movement_list'),
+
     path('api/', views.stock_movement_list, name='api_list'),
     path('<id>/', views.stock_movement_detail, name='api_detail'),
 ]

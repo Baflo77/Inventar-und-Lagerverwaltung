@@ -22,10 +22,12 @@ from django.urls import include
 from stockmanager import views
 
 urlpatterns = [
+    # 1. Die Hauptseite (Tabelle & Initialisieren)
+    path('', views.stock_manager_view, name='stock_manager'),
 
-    path('', views.stock_list_ui,name='stock_list_ui'),
-    path('outgoing/', views.outgoing_goods_view, name='outgoing_goods'),
-    path('stocks/', views.show_stock),
-    path('stock/', views.show_all_stocks),
-    path('<id>', views.show_stock_details),
+    # 2. API für Ausbuchen
+    path('api/<int:stock_id>/book-out/', views.book_out_api, name='api_book_out'),
+
+    # 3. API für Umlagern
+    path('api/<int:stock_id>/transfer/', views.transfer_stock_api, name='api_transfer_stock'),
 ]
