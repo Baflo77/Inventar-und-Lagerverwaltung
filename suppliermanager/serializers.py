@@ -1,7 +1,5 @@
 from rest_framework import serializers
-
 from suppliermanager.models import Supplier
-
 
 class SupplierSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=30)
