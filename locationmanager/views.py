@@ -1,43 +1,59 @@
+from typing import Any
+
 from django.shortcuts import render
-from rest_framework.decorators import api_view, permission_classes # <--- permission_classes neu
-from rest_framework.permissions import AllowAny # <--- AllowAny neu
-from rest_framework.response import Response
+from django.http import HttpResponse, request
+from django.shortcuts import render, get_object_or_404, get_list_or_404
 from rest_framework import status
-from django.views.decorators.csrf import ensure_csrf_cookie
+from rest_framework.decorators import api_view
 
 from .models import Location
+from rest_framework.response import Response
+
 from .serializers import LocationSerializer
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view, permission_classes
 
-# --- 1. HTML View ---
-# ensure_csrf_cookie sorgt dafür, dass der Browser das Token bekommt
-@ensure_csrf_cookie
-def show_locations(request):
-    # WICHTIG: Hier müssen wir die Daten aus der DB holen
-    all_locations = Location.objects.all()
+# Create your views here.
+def location_list_ui(request):
+    return render(request, "locationmanager/locationmanager.html")
 
-    context = {
-        'locations': all_locations
-        # Dieser Name 'locations' muss mit dem HTML {% for location in locations %} übereinstimmen
-    }
-    return render(request, 'locationmanager/locationmanager.html', context)
 
-# --- 2. API: Liste (GET) ---
-@api_view(['GET'])
-@permission_classes([AllowAny]) # <--- Erlaubt Zugriff auch ohne Login
-def get_locations(request):
-    locations = Location.objects.all().order_by('-created_at')
-    serializer = LocationSerializer(locations, many=True)
-    return Response(serializer.data)
-
-# --- 3. API: Speichern (POST) ---
-@api_view(['POST'])
+@api_view(["GET", "POST"])
 @permission_classes([AllowAny])
-def write_location(request):
-    """
-    Erlaubt jedem (auch Nicht-Admins), Daten zu speichern.
-    """
+def show_all_locations(request):
+    if request.method == "GET":
+        searchterm = request.query_params.get("searchterm")
+        locations = Location.objects.all()
+
+        if searchterm:
+            locations = locations.filter(name__icontains=searchterm)
+
+        serializer = LocationSerializer(locations, many=True)
+        return Response(serializer.data)
+
+    # POST
     serializer = LocationSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET", "PUT", "DELETE"])
+@permission_classes([AllowAny])
+def location_detail(request, id):
+    location = get_object_or_404(Location, pk=id)
+
+    if request.method == "GET":
+        return Response(LocationSerializer(location).data)
+
+    if request.method == "PUT":
+        serializer = LocationSerializer(location, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    if request.method == "DELETE":
+        location.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
