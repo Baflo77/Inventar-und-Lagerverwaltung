@@ -8,8 +8,14 @@ class Product(models.Model):
     sku = models.CharField(max_length=100)
     description = models.TextField()
 
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='productssupplier')
+    # supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='productssupplier')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='productscategory')
 
+    suppliers = models.ManyToManyField(
+    Supplier,
+    through="productsuppliermanager.ProductSupplier",
+    related_name="products"
+    )
+
     def __str__(self):
-        return f"Name: {self.name}, SKU: {self.sku}, Beschreibung: {self.description}, Lieferant: {self.supplier}, Kategorie: {self.category}"
+        return f"{self.name} ({self.sku})"

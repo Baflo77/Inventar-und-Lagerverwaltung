@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>ProductSupplier | Inventar-Verwaltung</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root {
+      --bg-main: #ebedef;
+      --header-bg: #2c3e50;
+      --card-bg: #ffffff;
+      --text-main: #2f3640;
+      --accent-color: #3498db;
+      --shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    body { background-color: var(--bg-main); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; color: var(--text-main); }
+    .app-header { background-color: var(--header-bg); color: white; padding: 1.2rem 2.5rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .header-title { font-size: 1.4rem; margin: 0; font-weight: 500; }
+    .nav-home { text-decoration: none; color: white; font-size: 0.9rem; padding: 5px 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; }
+
+    .container { max-width: 1200px; margin: 2.5rem auto; padding: 0 20px; }
+    .page-title-section { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .page-title { font-size: 1.8rem; margin: 0; color: var(--header-bg); }
+    .btn-add { background: var(--accent-color); color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+
+    .data-card { background: var(--card-bg); border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f8f9fa; text-align: left; padding: 15px; font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; border-bottom: 2px solid var(--bg-main); }
+    td { padding: 15px; border-bottom: 1px solid var(--bg-main); font-size: 0.95rem; vertical-align: top; }
+    .text-muted { color: #7f8c8d; font-size: 0.85rem; }
+
+    .actions button { margin-right: 10px; border: none; background: none; cursor: pointer; font-size: 0.85rem; color: var(--accent-color); padding: 0; }
+    .actions button.danger { color: #e74c3c; }
+
+    .empty-state { text-align: center; padding: 50px; color: #bdc3c7; }
+    .empty-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal { background: white; width: 100%; max-width: 720px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
+    .modal-header { padding: 16px 18px; background: #f8f9fa; border-bottom: 1px solid var(--bg-main); display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { margin: 0; font-size: 1rem; color: var(--header-bg); }
+    .modal-body { padding: 18px; display: grid; gap: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { font-size: 0.75rem; font-weight: bold; color: #7f8c8d; text-transform: uppercase; }
+    .form-group input, .form-group select { padding: 10px; border: 1px solid #dcdde1; border-radius: 4px; font-size: 0.95rem; font-family: inherit; }
+    .form-group select { padding: 10px; border: 1px solid #dcdde1; border-radius: 4px; font-size: 0.95rem; font-family: inherit; background: white;
+}
+
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 18px; border-top: 1px solid var(--bg-main); }
+    .btn { border: none; border-radius: 4px; padding: 10px 14px; cursor: pointer; font-weight: 600; }
+    .btn-primary { background: var(--accent-color); color: white; }
+    .btn-secondary { background: #dcdde1; color: #2f3640; }
+    .btn-danger { background: #e74c3c; color: white; }
+
+    .toast { margin: 0 0 16px 0; padding: 12px 14px; border-radius: 8px; background: #ffffff; box-shadow: var(--shadow); display: none; }
+    .hint { font-size: 0.85rem; color: #7f8c8d; margin: 0 0 10px 0; }
+
+  </style>
+</head>
+
+<body>
+<header class="app-header">
+  <div class="header-left">
+    <a href="/" class="nav-home">🏠 Home</a>
+    <h1 class="header-title">Inventar-Lagerverwaltung</h1>
+  </div>
+  <div>ProductSupplier</div>
+</header>
+
+<div class="container">
+
+  <div id="toast" class="toast"></div>
+
+  <div class="page-title-section">
+    <h2 class="page-title">ProductSupplier</h2>
+    <button class="btn-add" onclick="openCreate()">➕ Neue Zuordnung</button>
+  </div>
+
+  <p class="hint">
+    Hier pflegst du die n:m-Verknüpfung (ProductSupplier) inkl. Preis, Lieferzeit und Mindestmenge.
+  </p>
+
+  <div class="data-card">
+    <table>
+      <thead>
+      <tr>
+        <th>Produkt</th>
+        <th>Supplier</th>
+        <th>Einkaufspreis</th>
+        <th>Lieferzeit (Tage)</th>
+        <th>Min. Bestellmenge</th>
+        <th>Aktionen</th>
+      </tr>
+      </thead>
+
+      <tbody>
+      {% for link in links %}
+        <tr>
+          <td><strong>{{ link.product }}</strong></td>
+          <td class="text-muted">{{ link.supplier }}</td>
+          <td>{{ link.purchase_price|default:"—" }}</td>
+          <td>{{ link.delivery_time_days|default:"—" }}</td>
+          <td>{{ link.min_order_quantity|default:"—" }}</td>
+
+          <td class="actions">
+            <button onclick="openEdit(
+              '{{ link.id }}',
+              '{{ link.product_id }}',
+              '{{ link.supplier_id }}',
+              '{{ link.purchase_price|default_if_none:"" }}',
+              '{{ link.delivery_time_days|default_if_none:"" }}',
+              '{{ link.min_order_quantity|default_if_none:"" }}'
+            )">✏️ Bearbeiten</button>
+
+            <button class="danger" onclick="openDelete('{{ link.id }}')">🗑 Löschen</button>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <span class="empty-icon">🔗</span>
+              Keine Zuordnungen vorhanden.
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modalBackdrop" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle" class="modal-title">Zuordnung</h3>
+      <button class="btn btn-secondary" onclick="closeModal()">✖</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label for="pId">Produkt</label>
+          <select id="pId">
+            <option value="">Bitte wählen…</option>
+            {% for p in products %}
+              <option value="{{ p.id }}">
+                {{ p.name }} ({{ p.sku }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sId">Supplier</label>
+          <select id="sId">
+            <option value="">Bitte wählen…</option>
+            {% for s in suppliers %}
+              <option value="{{ s.id }}">
+                {{ s.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="price">Purchase price</label>
+          <input id="price" type="number" step="0.01" min="0" placeholder="z.B. 23.00">
+        </div>
+
+        <div class="form-group">
+          <label for="days">Delivery time (days)</label>
+          <input id="days" type="number" min="0" placeholder="z.B. 3">
+        </div>
+
+        <div class="form-group full">
+          <label for="moq">Min order quantity</label>
+          <input id="moq" type="number" min="0" placeholder="z.B. 10">
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<script>
+
+  function getCSRFToken() {
+  const el = document.querySelector('meta[name="csrf-token"]');
+  return el ? el.getAttribute("content") : "";
+}
+  const API_LIST = "productsupplier/";
+  const API_DETAIL = (id) => `productsupplier/${id}/`;
+
+  const backdrop = document.getElementById("modalBackdrop");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalActions = document.getElementById("modalActions");
+  const toast = document.getElementById("toast");
+
+  const pId = document.getElementById("pId");
+  const sId = document.getElementById("sId");
+  const price = document.getElementById("price");
+  const days = document.getElementById("days");
+  const moq = document.getElementById("moq");
+
+  function showToast(msg, isError=false) {
+    toast.style.display = "block";
+    toast.textContent = msg;
+    toast.style.borderLeft = isError ? "4px solid #e74c3c" : "4px solid #2ecc71";
+    setTimeout(() => { toast.style.display = "none"; }, 3000);
+  }
+
+  function openModal() { backdrop.style.display = "flex"; }
+
+  function closeModal() {
+    backdrop.style.display = "none";
+    modalActions.innerHTML = "";
+    pId.value = "";
+    sId.value = "";
+    price.value = "";
+    days.value = "";
+    moq.value = "";
+  }
+
+  function openCreate() {
+    modalTitle.textContent = "Neue Zuordnung anlegen";
+    modalActions.innerHTML = `
+      <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="createLink()">Anlegen</button>
+    `;
+    openModal();
+  }
+
+  function openEdit(id, productId, supplierId, purchasePrice, deliveryDays, minOrderQty) {
+    modalTitle.textContent = "Zuordnung bearbeiten";
+    pId.value = productId || "";
+    sId.value = supplierId || "";
+    price.value = purchasePrice || "";
+    days.value = deliveryDays || "";
+    moq.value = minOrderQty || "";
+
+    modalActions.innerHTML = `
+      <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="updateLink('${id}')">Speichern</button>
+    `;
+    openModal();
+  }
+
+  function openDelete(id) {
+    modalTitle.textContent = "Zuordnung löschen";
+    modalActions.innerHTML = `
+      <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-danger" onclick="deleteLink('${id}')">Löschen</button>
+    `;
+    openModal();
+  }
+
+  function buildPayload() {
+    return {
+      product: pId.value ? Number(pId.value) : null,
+      supplier: sId.value ? Number(sId.value) : null,
+      purchase_price: price.value ? String(price.value) : null,
+      delivery_time_days: days.value ? Number(days.value) : null,
+      min_order_quantity: moq.value ? Number(moq.value) : null,
+    };
+  }
+
+  function validate(payload) {
+    if (!payload.product) return "Bitte Product ID eingeben.";
+    if (!payload.supplier) return "Bitte Supplier ID eingeben.";
+    return null;
+  }
+
+  async function createLink() {
+    const payload = buildPayload();
+    const err = validate(payload);
+    if (err) return showToast(err, true);
+
+    const res = await fetch(API_LIST, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+       "Content-Type": "application/json",
+       "X-CSRFToken": getCSRFToken()
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      showToast("Zuordnung angelegt.");
+      location.reload();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      console.log(data);
+
+      showToast("Fehler beim Anlegen (evtl. doppelte Kombination).", true);
+    }
+  }
+
+  async function updateLink(id) {
+    const payload = buildPayload();
+    const err = validate(payload);
+    if (err) return showToast(err, true);
+
+    const res = await fetch(API_DETAIL(id), {
+      method: "Patch", // Patch häufig besser, weil bei PUT meist alle Felder geändert werden müssen
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCSRFToken()
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      showToast("Zuordnung gespeichert.");
+      location.reload();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      console.log(data);
+      showToast("Fehler beim Speichern.", true);
+    }
+  }
+
+  async function deleteLink(id) {
+    const res = await fetch(API_DETAIL(id), {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCSRFToken()
+     }
+    });
+
+    if (res.ok) {
+      showToast("Zuordnung gelöscht.");
+      location.reload();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      console.log(data);
+      showToast("Fehler beim Löschen.", true);
+    }
+  }
+</script>
+</body>
+</html>

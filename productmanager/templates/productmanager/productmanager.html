@@ -285,8 +285,8 @@
         <button class="btn-add" onclick="openCreate()">➕ Neues Produkt</button>
     </div>
 
-    <p class="hint">
-        Hinweis: Lieferant und Kategorie sind ForeignKeys. Wähle sie am besten aus (statt IDs zu raten).
+    <p class="hint">Hinweis: Kategorie wird als <strong>ID</strong> gespeichert (ForeignKey).
+                Lieferanten werden über <strong>ProductSupplier</strong> (n:m) zugeordnet.
     </p>
 
     <div class="data-card">
@@ -308,7 +308,13 @@
                     <td><strong>{{ product.name }}</strong></td>
                     <td class="text-muted">{{ product.sku }}</td>
                     <td>{{ product.description|default:"—"|truncatechars:80 }}</td>
-                    <td>{{ product.supplier.name|default:product.supplier }}</td>
+                    <td>
+                        {% for s in product.suppliers.all %}
+                        {{ s.name }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                            —
+                        {% endfor %}
+                    </td>
                     <td>{{ product.category.name|default:product.category }}</td>
                     <td class="actions">
                         <button onclick="openEdit(
@@ -316,7 +322,6 @@
                             '{{ product.name|escapejs }}',
                             '{{ product.sku|escapejs }}',
                             '{{ product.description|default_if_none:""|escapejs }}',
-                            '{{ product.supplier_id }}',
                             '{{ product.category_id }}'
                         )">✏️ Bearbeiten</button>
 
@@ -363,17 +368,6 @@
                 <div class="form-group full">
                     <label for="pDesc">Beschreibung</label>
                     <textarea id="pDesc" placeholder="Kurzbeschreibung..."></textarea>
-                </div>
-
-                <!-- Dropdowns statt ID-Felder -->
-                <div class="form-group">
-                    <label for="pSupplierId">Lieferant</label>
-                    <select id="pSupplierId">
-                        <option value="">Bitte wählen…</option>
-                        {% for s in suppliers %}
-                            <option value="{{ s.id }}">{{ s.name }}</option>
-                        {% endfor %}
-                    </select>
                 </div>
 
                 <div class="form-group">
@@ -499,6 +493,8 @@
         pSupplierId.value = supplierId || "";
         pCategoryId.value = categoryId || "";
 
+        pSupplierId.value = "";
+
         modalActions.innerHTML = `
             <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
             <button class="btn btn-primary" onclick="updateProduct('${id}')">Speichern</button>
@@ -529,7 +525,6 @@
             name: pName.value.trim(),
             sku: pSku.value.trim(),
             description: pDesc.value.trim(),
-            supplier: supplierVal ? Number(supplierVal) : null,
             category: categoryVal ? Number(categoryVal) : null
         };
     }
@@ -539,8 +534,8 @@
         if (!payload.name) return showToast("Bitte einen Namen eingeben.", true);
         if (!payload.sku) return showToast("Bitte eine SKU eingeben.", true);
         if (!payload.description) return showToast("Bitte eine Beschreibung eingeben.", true);
-        if (!payload.supplier) return showToast("Bitte einen Lieferanten auswählen.", true);
-        if (!payload.category) return showToast("Bitte eine Kategorie auswählen.", true);
+        if (!payload.category) return showToast("Bitte eine gültige Kategorie-ID eingeben.", true);
+
 
         const { res, data } = await apiFetch(API_LIST, {
             method: "POST",
