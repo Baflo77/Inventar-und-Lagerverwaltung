@@ -4,14 +4,15 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-
+from django.db.models.functions import Coalesce
+from django.db.models import Count, Sum
 from .models import Warehouse
 from .serializers import WarehouseSerializer
 
-
+@permission_classes([AllowAny])
 def warehouse_list_ui(request):
     # location_count kommt aus Location.related_name="locations"
-    warehouses = Warehouse.objects.annotate(location_count=Count("locations"))
+    warehouses = Warehouse.objects.annotate(location_count=Count("locations", distinct=True),total_stock_quantity=Coalesce(Sum("locations__stocks__quantity"), 0))
     return render(request, "warehousemanager/warehousemanager.html", {"warehouses": warehouses})
 
 

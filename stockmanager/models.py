@@ -13,7 +13,7 @@ class Stock(models.Model):
     quantity_on_order = models.PositiveIntegerField(default=0, verbose_name="Bestellte Menge (Einkauf)")
     threshold = models.PositiveIntegerField(default=0,verbose_name="Meldebestand (Mindestmenge)")
 
-    location = models.ForeignKey('locationmanager.Location', on_delete=models.CASCADE, related_name='stock_items')
+    location = models.ForeignKey('locationmanager.Location', on_delete=models.CASCADE, related_name='stocks')
     product = models.ForeignKey('productmanager.Product', on_delete=models.CASCADE, related_name='stock_entries')
 
     class Meta:

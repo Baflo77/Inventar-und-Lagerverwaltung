@@ -1,71 +1,226 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Meine Lagerübersicht{% endblock %}
+{% block title %}Warehouse Manager | Lagerverwaltung{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* --- DESIGN VARIABLES --- */
+    :root {
+        --primary-dark: #2c3e50;
+        --accent-blue: #3498db;  /* Das Blau für den Button */
+        --bg-light: #f4f6f9;
+        --text-dark: #343a40;
+        --text-muted: #6c757d;
+        --success-green: #27ae60; /* Das Grün für den Bestand */
+    }
+
+    .warehouse-wrapper {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: var(--bg-light);
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        color: var(--text-dark);
+        min-height: 100vh;
+    }
+
+    .lm-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    /* --- HEADER --- */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 1rem;
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        margin: 0;
+    }
+
+
+    .btn-action-solid {
+        background-color: #3498db !important;
+        color: #ffffff !important;
+        border: 1px solid #2980b9;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .btn-action-solid:hover {
+        background-color: #2980b9 !important; /* Dunkleres Blau beim Hover */
+        transform: translateY(-1px);
+    }
+
+    /* --- CARD STYLE --- */
+    .data-card {
+        background: white;
+        border-radius: 6px;
+        box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+        margin-bottom: 1rem;
+        overflow: hidden;
+        /* Falls du den feinen blauen Strich oben behalten willst, lass dies stehen.
+           Wenn nicht, lösche die nächste Zeile: */
+        border-top: 3px solid var(--accent-blue);
+    }
+
+    /* --- TABLE STYLE (FIX: Überschriften sichtbar machen) --- */
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 0;
+    }
+
+    /* Header Hintergrund Hellgrau, Schrift Dunkelgrau */
+    .table-modern thead {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .table-modern thead th {
+        vertical-align: bottom;
+        color: #495057; /* Dunkelgraue Schrift, damit man es sieht */
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 15px 20px; /* Mehr Platz */
+        text-align: left;
+        letter-spacing: 0.05em;
+    }
+
+    .table-modern tbody tr { border-bottom: 1px solid #e9ecef; }
+    .table-modern tbody tr:last-child { border-bottom: none; }
+    .table-modern td {
+        padding: 15px 20px;
+        vertical-align: middle;
+        font-size: 0.95rem;
+        color: var(--text-dark);
+    }
+
+    /* --- BESTAND FORMATIERUNG (FIX: Grün & Fett) --- */
+    .text-stock {
+        color: var(--success-green);
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .text-empty { color: var(--text-muted); font-style: italic; }
+
+    /* BADGES (Lagerplätze) */
+    .badge-places {
+        background-color: #e3f2fd;
+        color: #1565c0;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    /* Action Link */
+    .btn-details {
+        color: var(--text-muted);
+        border: 1px solid #dee2e6;
+        padding: 5px 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        background: white;
+    }
+    .btn-details:hover {
+        border-color: var(--accent-blue);
+        color: var(--accent-blue);
+    }
+
+    /* MODAL */
+    .modal-header { background-color: #f8f9fa; }
+    .btn-save { background-color: var(--success-green); color: white; border: none; }
+    .btn-save:hover { background-color: #218838; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold text-dark"> Warehouse Overview</h2>
-            <p class="text-muted">Hier ist die Übersicht deiner Lagerstandorte.</p>
-        </div>
-        <a href="#" class="btn btn-primary shadow-sm">
-            <i class="bi bi-plus-lg"></i> Neues Lager
-        </a>
-    </div>
+<div class="warehouse-wrapper">
+    <div class="lm-container">
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Warehouse Overview</h1>
+                <p style="color: var(--text-muted); margin: 5px 0 0 0;">Übersicht aller Lagerstandorte und Bestände.</p>
+            </div>
+
+            <button type="button" class="btn-action-solid" data-bs-toggle="modal" data-bs-target="#createWarehouseModal">
+                <i class="bi bi-plus-lg"></i> Neues Lager anlegen
+            </button>
+        </div>
+
+        <div class="data-card">
             <div class="table-responsive">
-                <table class="table table-hover table-striped align-middle mb-0">
-                    <thead class="table-light">
+                <table class="table-modern">
+                    <thead>
                         <tr>
-                            <th scope="col" class="ps-4">Name / Ort</th>
-                            <th scope="col">Lagerplätze </th>
-                            <th scope="col">Gesamtbestand</th>
-                            <th scope="col" class="text-end pe-4">Aktionen</th>
+                            <th>Name / Ort</th>
+                            <th style="text-align: center;">Lagerplätze</th>
+                            <th>Gesamtbestand</th>
+                            <th style="text-align: right;">Aktionen</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for warehouse in warehouses %}
                         <tr>
-                            <td class="ps-4">
-                                <span class="fw-bold text-primary">{{ warehouse }}</span>
+                            <td>
+                                <div style="font-weight: 700; font-size: 1rem;">{{ warehouse.name }}</div>
                                 {% if warehouse.short_code %}
-                                    <small class="text-muted ms-2">({{ warehouse.short_code }})</small>
+                                    <small style="color: var(--text-muted);">Code: {{ warehouse.short_code }}</small>
                                 {% endif %}
                             </td>
 
-                            <td>
-                                <span class="badge bg-secondary rounded-pill">
+                            <td style="text-align: center;">
+                                <span class="badge-places">
                                     {{ warehouse.location_count }} Plätze
                                 </span>
                             </td>
 
                             <td>
-                                {% if warehouse.total_stock_quantity %}
-                                    <span class="text-success fw-bold">
+                                {% if warehouse.total_stock_quantity > 0 %}
+                                    <span class="text-stock">
                                         <i class="bi bi-box-seam"></i> {{ warehouse.total_stock_quantity }} Stk.
                                     </span>
                                 {% else %}
-                                    <span class="text-muted fst-italic">
+                                    <span class="text-empty">
                                         <i class="bi bi-dash-circle"></i> Leer
                                     </span>
                                 {% endif %}
                             </td>
 
-                            <td class="text-end pe-4">
-                                <a href="#" class="btn btn-sm btn-outline-secondary">
+                            <td style="text-align: right;">
+                                <a href="#" class="btn-details">
                                     Details ansehen
                                 </a>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center py-5 text-muted">
-                                <i class="bi bi-building-x" style="font-size: 2rem;"></i>
-                                <p class="mt-2">Noch keine Warehouses angelegt.</p>
+                            <td colspan="4" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                                <i class="bi bi-building-x" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                                <p>Noch keine Warehouses angelegt.</p>
                             </td>
                         </tr>
                         {% endfor %}
@@ -75,4 +230,77 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="createWarehouseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" style="font-weight: 700;">Neues Lagerhaus</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <form id="createWarehouseForm">
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 600;">Bezeichnung *</label>
+                <input type="text" id="name" class="form-control" placeholder="z.B. Zentrallager Süd" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 600;">Standort ID (Optional)</label>
+                <input type="number" id="location_id" class="form-control" placeholder="ID aus Location-Manager">
+            </div>
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-save">Speichern</button>
+            </div>
+          </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    document.getElementById('createWarehouseForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const nameVal = document.getElementById('name').value;
+        const locIdVal = document.getElementById('location_id').value;
+        const formData = {
+            name: nameVal,
+            ...(locIdVal && { location_id: parseInt(locIdVal) })
+        };
+
+        try {
+            const response = await fetch('api/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify(formData)
+            });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const errorData = await response.json();
+                alert("Fehler: " + JSON.stringify(errorData));
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Verbindungsfehler");
+        }
+    });
+</script>
 {% endblock %}

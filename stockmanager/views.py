@@ -1,12 +1,16 @@
 from django.http import HttpResponse
 from django.shortcuts import render, get_list_or_404
 from rest_framework import status
-
 from .models import Stock
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
 from .serializers import StockSerializer
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import OutgoingStockForm
+from .services import process_outgoing_goods
+from django.core.exceptions import ValidationError
+
 
 
 # Create your views here.
@@ -42,9 +46,11 @@ def show_all_stocks(request):
 
 @api_view(["GET","PUT","DELETE"])
 def show_stock_details(request, id):
+    stock = get_list_or_404(Stock, id=id)
+
     if request.method == "GET":
         stock = get_list_or_404(Stock)
-        serialized_stock = StockSerializer(stock, many=True)
+        serialized_stock = StockSerializer(stock)
         return Response(serialized_stock.data)
     elif request.method == "DELETE":
         Stock.delete()
@@ -56,7 +62,7 @@ def show_stock_details(request, id):
             return Response(StockSerializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+'''Test Views- Können weg?
 def show_first_stock(request):
     stock = Stock.objects.first()
     return HttpResponse(f"Produkt: {stock.product}, Standort: {stock.location}, Anzahl: {stock.quantity}, Mindestbestand: {stock.threshold}, Status: {stock.status}, Warenhaus: {stock.warehouse}")
@@ -67,28 +73,17 @@ def write_stock(request):
     stock = Stock.objects.last()
     return HttpResponse(f"Produkt: {stock.product}, Standort: {stock.location}, Anzahl: {stock.quantity}, Mindestbestand: {stock.threshold}, Status: {stock.status}, Warenhaus: {stock.warehouse}")
 
+'''
 
 def stock_list_ui(request):
-    # 1. Daten holen (mit select_related für Performance)
+
     stocks = Stock.objects.select_related('product', 'location').all()
 
     context = {
         'stocks': stocks
     }
-
-    # 2. An das Template schicken
-    # WICHTIG: Prüfe, ob deine HTML-Datei wirklich in diesem Ordner liegt!
     return render(request, 'stockmanager/stockmanager.html', context)
 
-
-# ... deine anderen Funktionen (outgoing_goods_view etc.) kannst du lassen ..
-
-
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .forms import OutgoingStockForm
-from .services import process_outgoing_goods
-from django.core.exceptions import ValidationError
 
 
 def outgoing_goods_view(request):

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Location Manager | Lagerverwaltung{% endblock %}
 
@@ -6,19 +7,21 @@
 <style>
     /* --- DESIGN VARIABLES --- */
     :root {
-        --primary-dark: #2c3e50;       /* Dunkelblau für Header */
-        --accent-blue: #3498db;        /* Hellblau für Highlights */
-        --bg-light: #f4f6f9;           /* Hintergrund der Seite */
-        --text-dark: #343a40;          /* Haupttext */
-        --text-muted: #6c757d;         /* Nebentext */
+        --primary-dark: #2c3e50;
+        --accent-blue: #3498db;
+        --bg-light: #f4f6f9;
+        --text-dark: #343a40;
+        --text-muted: #6c757d;
+        --success-green: #27ae60;
     }
 
-    .location-manager-wrapper {
+    .location-wrapper {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         background-color: var(--bg-light);
         padding-top: 2rem;
         padding-bottom: 2rem;
         color: var(--text-dark);
+        min-height: 100vh;
     }
 
     .lm-container {
@@ -27,30 +30,45 @@
         padding: 0 20px;
     }
 
-    /* --- TITEL BEREICH --- */
+    /* --- HEADER --- */
     .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 2rem;
         border-bottom: 1px solid #dee2e6;
         padding-bottom: 1rem;
     }
+
     .page-title {
         font-size: 1.75rem;
         font-weight: 700;
         color: var(--primary-dark);
         margin: 0;
     }
-    .page-subtitle {
-        color: var(--text-muted);
-        margin-top: 0.25rem;
+
+    /* --- DER BLAUE BUTTON (Exakt wie gewünscht) --- */
+    .btn-action-solid {
+        background-color: #3498db !important;
+        color: #ffffff !important;
+        border: none !important;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
         font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s;
+        cursor: pointer;
     }
 
-    /* --- GRID LAYOUT --- */
-    .content-grid {
-        display: grid;
-        grid-template-columns: 380px 1fr;
-        gap: 2rem;
-        align-items: start;
+    .btn-action-solid:hover {
+        background-color: #2980b9 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
     }
 
     /* --- CARD DESIGN --- */
@@ -60,316 +78,211 @@
         box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
         border-top: 3px solid var(--accent-blue);
         margin-bottom: 1rem;
+        overflow: hidden;
     }
 
-    .data-card.form-card {
-        border-top-color: #28a745; /* Grüner Akzent oben passend zum Button */
-    }
-
-    .card-header {
-        background-color: transparent;
-        border-bottom: 1px solid rgba(0,0,0,.125);
-        padding: 1rem 1.25rem;
-    }
-
-    .card-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin: 0;
-        color: var(--primary-dark);
-    }
-
-    .card-body {
-        padding: 1.25rem;
-    }
-
-    .card-body.p-0 { padding: 0; }
-
-    /* --- FORMULAR STYLES --- */
-    .form-section-title {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 700;
-        color: #adb5bd;
-        margin: 1.5rem 0 0.5rem 0;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 5px;
-    }
-    .form-section-title:first-child { margin-top: 0; }
-
-    .form-group { margin-bottom: 1rem; }
-
-    .form-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 0.4rem;
-        display: block;
-    }
-
-    .form-control {
-        display: block;
-        width: 100%;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.95rem;
-        color: #495057;
-        background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        box-sizing: border-box;
-    }
-
-    .form-control:focus {
-        border-color: #80bdff;
-        outline: 0;
-        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-    }
-
-    .form-row {
-        display: flex;
-        gap: 10px;
-    }
-    .form-row .form-group { flex: 1; }
-
-    /* --- BUTTON STYLE (Geändert: Durchgehend Grün) --- */
-    .btn-submit {
-        display: block;
-        width: 100%;
-        font-weight: 600;
-        text-align: center;
-        background-color: #28a745; /* Sattgrün */
-        color: white;
-        border: none; /* Kein Rand */
-        padding: 12px 20px;
-        font-size: 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        margin-top: 1.5rem;
-    }
-
-    .btn-submit:hover {
-        background-color: #218838; /* Etwas dunkler beim Drüberfahren */
-        color: white;
-        text-decoration: none;
-    }
-
-    /* --- TABELLEN DESIGN --- */
+    /* --- TABLE STYLE (Einheitlich) --- */
     .table-modern {
         width: 100%;
         border-collapse: collapse;
         margin-bottom: 0;
     }
 
+    /* Header: Hellgrau mit dunkelgrauer Schrift */
+    .table-modern thead {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+
     .table-modern thead th {
         vertical-align: bottom;
-        border-bottom: 2px solid #dee2e6;
-        background-color: var(--primary-dark);
-        color: white;
+        color: #495057;
         text-transform: uppercase;
         font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        padding: 12px 15px;
+        font-weight: 700;
+        padding: 15px 20px;
         text-align: left;
+        letter-spacing: 0.05em;
     }
 
-    .table-modern tbody tr {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .table-modern tbody tr:nth-of-type(odd) {
-        background-color: rgba(0,0,0,.02);
-    }
+    .table-modern tbody tr { border-bottom: 1px solid #e9ecef; }
+    .table-modern tbody tr:last-child { border-bottom: none; }
 
     .table-modern td {
-        padding: 12px 15px;
+        padding: 15px 20px;
         vertical-align: middle;
         font-size: 0.9rem;
+        color: var(--text-dark);
     }
 
-    /* Badges */
+    /* Text Styles */
+    .text-main { font-weight: 700; color: var(--primary-dark); display: block; font-size: 1rem;}
+    .text-sub { font-size: 0.85rem; color: var(--text-muted); display: block; margin-top: 2px; }
+
+    /* Badge Styles */
     .badge-soft {
-        padding: 0.35em 0.65em;
-        font-size: 0.75em;
+        background-color: #e3f2fd;
+        color: #1565c0;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    /* --- FORMULAR IM MODAL --- */
+    .form-label { font-weight: 600; margin-bottom: 5px; font-size: 0.9rem;}
+    .form-control { margin-bottom: 10px; }
+    .form-section-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
         font-weight: 700;
-        border-radius: 0.25rem;
-        display: inline-block;
-        background-color: #e6f2ff;
-        color: #0069d9;
+        color: #adb5bd;
+        margin: 1rem 0 0.5rem 0;
+        border-bottom: 1px solid #eee;
     }
 
-    .text-main { font-weight: 600; color: var(--primary-dark); display: block; }
-    .text-sub { font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 2px; }
+    /* MODAL HEADER & FOOTER */
+    .modal-header { background-color: #f8f9fa; }
+    .btn-save { background-color: var(--success-green); color: white; border: none; width: 100%; padding: 10px; border-radius: 4px; font-weight: 600; }
+    .btn-save:hover { background-color: #218838; }
 
-    /* Action Button (SVG Icon) */
-    .btn-icon {
-        background: transparent;
-        border: 1px solid #ced4da;
-        color: var(--text-muted);
-        width: 34px;
-        height: 34px;
-        border-radius: 4px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-        cursor: pointer;
-        text-decoration: none;
-    }
-    .btn-icon:hover {
-        background-color: var(--primary-dark);
-        color: white;
-        border-color: var(--primary-dark);
-    }
-    .btn-icon svg {
-        width: 16px;
-        height: 16px;
-        fill: currentColor;
-    }
-
-    @media (max-width: 992px) {
-        .content-grid { grid-template-columns: 1fr; }
-    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="location-manager-wrapper">
+<div class="location-wrapper">
     <div class="lm-container">
 
         <div class="page-header">
-            <h1 class="page-title">Standort Verwaltung</h1>
-            <p class="page-subtitle">Übersicht aller Lagerorte und Erfassung neuer Positionen.</p>
+            <div>
+                <h1 class="page-title">Standort Verwaltung</h1>
+                <p style="color: var(--text-muted); margin: 5px 0 0 0;">Übersicht aller Lagerorte und Adressen.</p>
+            </div>
+
+            <button type="button" class="btn-action-solid" data-bs-toggle="modal" data-bs-target="#createLocationModal">
+                <i class="bi bi-plus-lg"></i> Neuer Standort
+            </button>
         </div>
 
-        <div class="content-grid">
+        <div class="data-card">
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Name / Beschreibung</th>
+                            <th style="width: 20%;">Zugehörigkeit</th>
+                            <th style="width: 35%;">Adresse</th>
+                            <th style="width: 15%; text-align: right;">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for location in locations %}
+                        <tr>
+                            <td>
+                                <span class="text-main">{{ location.name }}</span>
+                                {% if location.description %}
+                                    <span class="text-sub">{{ location.description|truncatechars:40 }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if location.warehouse %}
+                                    <span class="badge-soft">
+                                        <i class="bi bi-building"></i> {{ location.warehouse.name }}
+                                    </span>
+                                {% else %}
+                                    <span style="color: #ccc;">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="line-height: 1.4; color: #555;">
+                                    {{ location.street }} {{ location.house_number|default:"" }}<br>
+                                    {{ location.zip_code }} {{ location.city }}
+                                </div>
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="#" class="text-muted hover:text-primary">
+                                    Details
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 4rem; color: #adb5bd;">
+                                <i class="bi bi-geo-alt" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                                Keine Standorte gefunden.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-            <div class="data-card form-card">
-                <div class="card-header">
-                    <h3 class="card-title">Neuen Standort erfassen</h3>
+<div class="modal fade" id="createLocationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered"> <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" style="font-weight: 700;">Neuen Standort erfassen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <form id="createLocationForm">
+
+            <div class="form-section-title" style="margin-top:0;">Basisdaten</div>
+            <div class="mb-3">
+                <label class="form-label">Bezeichnung *</label>
+                <input type="text" id="name" class="form-control" required placeholder="z.B. Hauptlager Halle A">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Beschreibung</label>
+                <textarea id="description" class="form-control" rows="2" placeholder="Optionale Notizen..."></textarea>
+            </div>
+
+            <div class="form-section-title">Anschrift</div>
+            <div class="row g-2"> <div class="col-md-9">
+                    <label class="form-label">Straße</label>
+                    <input type="text" id="street" class="form-control">
                 </div>
-                <div class="card-body">
-                    <form id="createLocationForm">
+                <div class="col-md-3">
+                    <label class="form-label">Nr.</label>
+                    <input type="text" id="house_number" class="form-control">
+                </div>
+            </div>
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label">PLZ</label>
+                    <input type="text" id="zip_code" class="form-control">
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Stadt</label>
+                    <input type="text" id="city" class="form-control">
+                </div>
+            </div>
+            <div class="mb-3 mt-2">
+                <label class="form-label">Land</label>
+                <input type="text" id="country" class="form-control" value="Deutschland">
+            </div>
 
-                        <div class="form-section-title">Allgemeine Infos</div>
-                        <div class="form-group">
-                            <label class="form-label">Bezeichnung *</label>
-                            <input type="text" id="name" class="form-control" required placeholder="z.B. Hauptlager Halle A">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Beschreibung</label>
-                            <textarea id="description" class="form-control" rows="2" placeholder="Optionale Notizen..."></textarea>
-                        </div>
-
-                        <div class="form-section-title">Anschrift</div>
-                        <div class="form-row">
-                            <div class="form-group" style="flex: 2;">
-                                <label class="form-label">Straße</label>
-                                <input type="text" id="street" class="form-control">
-                            </div>
-                            <div class="form-group" style="flex: 1;">
-                                <label class="form-label">Nr.</label>
-                                <input type="text" id="house_number" class="form-control">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group" style="flex: 1;">
-                                <label class="form-label">PLZ</label>
-                                <input type="text" id="zip_code" class="form-control">
-                            </div>
-                            <div class="form-group" style="flex: 2;">
-                                <label class="form-label">Stadt</label>
-                                <input type="text" id="city" class="form-control">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Land</label>
-                            <input type="text" id="country" class="form-control" value="Deutschland">
-                        </div>
-
-                        <div class="form-section-title">Geo-Koordinaten (Optional)</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Latitude</label>
-                                <input type="number" step="any" id="latitude" class="form-control" placeholder="52.123">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Longitude</label>
-                                <input type="number" step="any" id="longitude" class="form-control" placeholder="13.456">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn-submit">
-                            Standort speichern
-                        </button>
-                    </form>
+            <div class="form-section-title">Zusatz (Optional)</div>
+            <div class="row g-2">
+                <div class="col-6">
+                    <label class="form-label">Latitude</label>
+                    <input type="number" step="any" id="latitude" class="form-control" placeholder="52.123">
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Longitude</label>
+                    <input type="number" step="any" id="longitude" class="form-control" placeholder="13.456">
                 </div>
             </div>
 
-            <div class="data-card">
-                <div class="card-header">
-                    <h3 class="card-title">Aktive Standorte</h3>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table-modern">
-                            <thead>
-                                <tr>
-                                    <th style="width: 30%;">Name / Beschreibung</th>
-                                    <th style="width: 20%;">Zugehörigkeit</th>
-                                    <th style="width: 35%;">Adresse</th>
-                                    <th style="width: 15%; text-align: right;">Optionen</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for location in locations %}
-                                <tr>
-                                    <td>
-                                        <span class="text-main">{{ location.name }}</span>
-                                        {% if location.description %}
-                                            <span class="text-sub">{{ location.description|truncatechars:30 }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if location.warehouse %}
-                                            <span class="badge-soft">{{ location.warehouse.name }}</span>
-                                        {% else %}
-                                            <span style="color: #999; font-size: 0.8rem;">—</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div style="line-height: 1.3; font-size: 0.85rem; color: #555;">
-                                            {{ location.street }} {{ location.house_number|default:"" }}<br>
-                                            {{ location.zip_code }} {{ location.city }}
-                                        </div>
-                                    </td>
-                                    <td style="text-align: right;">
-                                        <a href="#" class="btn-icon" title="Bearbeiten">
-                                            <svg viewBox="0 0 24 24">
-                                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                            </svg>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="4" style="text-align: center; padding: 3rem;">
-                                        <div style="color: #adb5bd;">
-                                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📂</div>
-                                            <div>Keine Standorte gefunden.</div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-save">Standort speichern</button>
             </div>
-
-        </div> </div>
+          </form>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -394,6 +307,7 @@
     document.getElementById('createLocationForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
+        // Daten sammeln
         const formData = {
             name: document.getElementById('name').value,
             description: document.getElementById('description').value,
@@ -407,6 +321,7 @@
         };
 
         try {
+            // WICHTIG: Prüfe bitte in deiner urls.py, ob dieser Pfad stimmt!
             const response = await fetch('/locations/api/create/', {
                 method: 'POST',
                 headers: {
@@ -417,7 +332,7 @@
             });
 
             if (response.ok) {
-                window.location.reload();
+                window.location.reload(); // Seite neu laden bei Erfolg
             } else {
                 const errorData = await response.json();
                 alert("Fehler beim Speichern:\n" + JSON.stringify(errorData, null, 2));

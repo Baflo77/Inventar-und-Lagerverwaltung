@@ -12,10 +12,17 @@ from rest_framework.response import Response
 from .serializers import LocationSerializer
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
+from django.db.models import Count, Sum
+from django.db.models.functions import Coalesce
 
 # Create your views here.
 def location_list_ui(request):
-    return render(request, "locationmanager/locationmanager.html")
+
+    locations = Location.objects.select_related('warehouse').annotate(item_count=Count('stocks'), total_quantity=Coalesce(Sum('stocks__quantity'), 0)).all()
+    context = {
+        'locations': locations
+    }
+    return render(request, "locationmanager/locationmanager.html", context)
 
 
 @api_view(["GET", "POST"])
