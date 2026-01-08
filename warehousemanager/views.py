@@ -1,52 +1,49 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.shortcuts import render, get_object_or_404, get_list_or_404
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Count
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.decorators import api_view
-from yaml import serialize
 
 from .models import Warehouse
-from rest_framework.response import Response
-from warehousemanager.serializers import WarehouseSerializer
+from .serializers import WarehouseSerializer
 
-# Create your views here.
-def show_warehouses(request):
-    return HttpResponse("Hier sind deine Warenhäuser")
-
-@api_view(["GET","POST"])
-def show_all_warehouses(request):
-    if request.method == "GET":
-        searchterm = request.query.get("searchterm")
-        if searchterm is not None:
-            warehouses = Warehouse.objects.filter(name__icontains=searchterm)
-        elif searchterm is None:
-            warehouses = Warehouse.objects.all()
-
-        serializer = WarehouseSerializer(warehouses)
-        return Response(serializer.data)
-
-    elif request.method == "POST":
-        serializer = WarehouseSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(WarehouseSerializer.data, status=status.HTTP_201_CREATED)
-    return Response(WarehouseSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-def show_first_warehouse(request):
-    warehouse = Warehouse.objects.first()
-    return HttpResponse(f"Name: {warehouse.name}, Standort: {warehouse.location}")
-
-def write_warehouse(request):
-    warehouse = Warehouse(name="Warenhaus Technik", location="Würzburg")
-    warehouse.save()
-    warehouse = Warehouse.objects.last()
-    return HttpResponse(f"Name: {warehouse.name}, Standort: {warehouse.location}")
 
 def warehouse_list_ui(request):
-    searchterm = request.GET.get("searchterm")
-    if searchterm:
-        warehouses = Warehouse.objects.filter(name__icontains=searchterm)
-    else:
-        warehouses = Warehouse.objects.all()
-
+    # location_count kommt aus Location.related_name="locations"
+    warehouses = Warehouse.objects.annotate(location_count=Count("locations"))
     return render(request, "warehousemanager/warehousemanager.html", {"warehouses": warehouses})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([AllowAny])
+def show_all_warehouses(request):
+    if request.method == "GET":
+        warehouses = Warehouse.objects.all()
+        return Response(WarehouseSerializer(warehouses, many=True).data)
+
+    wh_serializer = WarehouseSerializer(data=request.data)
+    if wh_serializer.is_valid():
+        wh_serializer.save()
+        return Response(wh_serializer.data, status=status.HTTP_201_CREATED)
+    return Response(wh_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET", "PUT", "DELETE"])
+@permission_classes([AllowAny])
+def show_warehouse_detail(request, id):
+    warehouse = get_object_or_404(Warehouse, pk=id)
+
+    if request.method == "GET":
+        return Response(WarehouseSerializer(warehouse).data)
+
+    if request.method == "PUT":
+        wh_serializer = WarehouseSerializer(warehouse, data=request.data)
+        if wh_serializer.is_valid():
+            wh_serializer.save()
+            return Response(wh_serializer.data)
+        return Response(wh_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    if request.method == "DELETE":
+        warehouse.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

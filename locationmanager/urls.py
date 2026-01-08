@@ -21,7 +21,7 @@ from django.urls import include
 from locationmanager import views
 
 urlpatterns = [
-    #path('locations/', views.show_locations),
-    #path('writelocation/', views.write_location),
-    path('', views.location_list_ui),
+    path("", views.location_list_ui, name="location_list_ui"),
+    path("api/", views.show_all_locations, name="location_api_list_create"),
+    path("api/<int:id>/", views.location_detail, name="location_api_detail"),
 ]

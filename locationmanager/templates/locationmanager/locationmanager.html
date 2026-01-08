@@ -152,6 +152,12 @@
             <div class="card-body">
                 <form id="createLocationForm">
                     <div class="form-group">
+                        <label>Warehouse *</label>
+                        <select id="warehouse_id" required style="padding:10px; border:1px solid #dcdde1; border-radius:4px;">
+                            <option value="">Lade Warehouses...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label>Name *</label>
                         <input type="text" id="name" required placeholder="z.B. Hauptlager Halle A">
                     </div>
@@ -228,116 +234,147 @@
 </div>
 
 <script>
-    // --- 1. CSRF Token Helper ---
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
+  // --- 1. CSRF Token Helper ---
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
         }
-        return cookieValue;
+      }
     }
-    const csrftoken = getCookie('csrftoken');
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
 
-    // --- 2. Daten laden (GET) ---
-    async function loadLocations() {
-        const tbody = document.getElementById('locationTableBody');
+  // --- 2. Warehouses für Dropdown laden ---
+  async function loadWarehouses() {
+    const select = document.getElementById('warehouse_id');
 
-        try {
-            // WICHTIG: Hier ist die neue URL für die Liste
-            const response = await fetch('/locations/api/list/');
+    try {
+      const res = await fetch('/warehouses/api/');
+      if (!res.ok) throw new Error('Warehouse API Fehler');
 
-            if (!response.ok) throw new Error('Netzwerk Fehler');
+      const warehouses = await res.json();
+      select.innerHTML = '<option value="">Bitte wählen...</option>';
 
-            const data = await response.json();
-            tbody.innerHTML = ''; // Tabelle leeren
+      warehouses.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w.id;
+        opt.textContent = w.short_code ? `${w.name} (${w.short_code})` : w.name;
+        select.appendChild(opt);
+      });
 
-            if (data.length === 0) {
-                tbody.innerHTML = `
-                    <tr><td colspan="3"><div class="empty-state"><span class="empty-icon">📭</span>Keine Standorte gefunden.</div></td></tr>
-                `;
-                return;
-            }
+    } catch (e) {
+      console.error(e);
+      select.innerHTML = '<option value="">Warehouses konnten nicht geladen werden</option>';
+    }
+  }
 
-            data.forEach(loc => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>
-                        <strong>${loc.name}</strong><br>
-                        <small style="color:#7f8c8d">${loc.description || ''}</small>
-                    </td>
-                    <td>
-                        ${loc.street}<br>
-                        ${loc.zip_code} ${loc.city}<br>
-                        <small>${loc.country}</small>
-                    </td>
-                    <td>
-                        ${loc.latitude ? `Lat: ${loc.latitude}` : '-'}<br>
-                        ${loc.longitude ? `Lon: ${loc.longitude}` : '-'}
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
+  // --- 3. Locations laden (GET) ---
+  async function loadLocations() {
+    const tbody = document.getElementById('locationTableBody');
 
-        } catch (error) {
-            console.error('Error:', error);
-            tbody.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center; padding:20px;">Fehler beim Laden der Daten.</td></tr>`;
-        }
+    try {
+      const response = await fetch('/locations/api/');
+      if (!response.ok) throw new Error('Netzwerk Fehler');
+
+      const data = await response.json();
+      tbody.innerHTML = '';
+
+      if (data.length === 0) {
+        tbody.innerHTML = `
+          <tr><td colspan="3">
+            <div class="empty-state"><span class="empty-icon">📭</span>Keine Standorte gefunden.</div>
+          </td></tr>
+        `;
+        return;
+      }
+
+      data.forEach(loc => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>
+            <strong>${loc.name ?? ''}</strong><br>
+            <small style="color:#7f8c8d">${loc.description ?? ''}</small>
+          </td>
+          <td>
+            ${(loc.street ?? '')}<br>
+            ${(loc.zip_code ?? '')} ${(loc.city ?? '')}<br>
+            <small>${loc.country ?? ''}</small>
+          </td>
+          <td>
+            ${loc.latitude !== null && loc.latitude !== undefined ? `Lat: ${loc.latitude}` : '-'}<br>
+            ${loc.longitude !== null && loc.longitude !== undefined ? `Lon: ${loc.longitude}` : '-'}
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+    } catch (error) {
+      console.error('Error:', error);
+      tbody.innerHTML = `
+        <tr><td colspan="3" style="color:red; text-align:center; padding:20px;">
+          Fehler beim Laden der Daten.
+        </td></tr>
+      `;
+    }
+  }
+
+  // --- 4. Location speichern (POST) ---
+  document.getElementById('createLocationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const warehouseId = document.getElementById('warehouse_id').value;
+    if (!warehouseId) {
+      alert("Bitte ein Warehouse auswählen.");
+      return;
     }
 
-    // --- 3. Daten speichern (POST) ---
-    document.getElementById('createLocationForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
+    const formData = {
+      warehouse: parseInt(warehouseId, 10),
+      name: document.getElementById('name').value,
+      description: document.getElementById('description').value || null,
+      street: document.getElementById('street').value || null,
+      zip_code: document.getElementById('zip_code').value || null,
+      city: document.getElementById('city').value || null,
+      country: document.getElementById('country').value || "Deutschland",
+      latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
+      longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null
+    };
 
-        // Daten sammeln
-        const formData = {
-            name: document.getElementById('name').value,
-            description: document.getElementById('description').value,
-            street: document.getElementById('street').value,
-            zip_code: document.getElementById('zip_code').value,
-            city: document.getElementById('city').value,
-            country: document.getElementById('country').value,
-            latitude: document.getElementById('latitude').value || null,
-            longitude: document.getElementById('longitude').value || null
-        };
+    try {
+      const response = await fetch('/locations/api/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formData)
+      });
 
-        try {
-            // WICHTIG: Hier ist die neue URL für das Speichern
-            const response = await fetch('/locations/api/create/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify(formData)
-            });
+      if (response.ok) {
+        document.getElementById('createLocationForm').reset();
+        await loadLocations();
+        alert("Standort erfolgreich gespeichert!");
+      } else {
+        const errorData = await response.json();
+        alert("Fehler: " + JSON.stringify(errorData));
+      }
 
-            if (response.ok) {
-                // Formular leeren
-                document.getElementById('createLocationForm').reset();
-                // Liste neu laden (damit der neue Eintrag sofort erscheint)
-                loadLocations();
-                alert("Standort erfolgreich gespeichert!");
-            } else {
-                const errorData = await response.json();
-                alert("Fehler: " + JSON.stringify(errorData));
-            }
+    } catch (error) {
+      console.error('Error:', error);
+      alert("Ein Fehler ist aufgetreten.");
+    }
+  });
 
-        } catch (error) {
-            console.error('Error:', error);
-            alert("Ein Fehler ist aufgetreten.");
-        }
-    });
-
-    // --- Start: Initial Laden ---
-    loadLocations();
-
+  // --- Start ---
+  loadWarehouses();
+  loadLocations();
 </script>
 
 </body>

@@ -14,41 +14,46 @@ from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
 
 # Create your views here.
-def show_locations(request):
-    return HttpResponse("Hier sind die verschiedenen Standorte")
+def location_list_ui(request):
+    return render(request, "locationmanager/locationmanager.html")
+
 
 @api_view(["GET", "POST"])
 @permission_classes([AllowAny])
 def show_all_locations(request):
     if request.method == "GET":
-        searchterm = request.query.get("searchterm")
-        if searchterm is not None:
-            location = Location.objects.filter(name__icontains=searchterm)
-        elif searchterm is None:
-            location = Location.objects.all()
+        searchterm = request.query_params.get("searchterm")
+        locations = Location.objects.all()
 
-        serialized_location = LocationSerializer(location, many=True)
-        return Response(serialized_location.data)
+        if searchterm:
+            locations = locations.filter(name__icontains=searchterm)
 
-    elif request.method == "POST":
-        serializer = LocationSerializer(data=request.data)
+        serializer = LocationSerializer(locations, many=True)
+        return Response(serializer.data)
+
+    # POST
+    serializer = LocationSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET", "PUT", "DELETE"])
+@permission_classes([AllowAny])
+def location_detail(request, id):
+    location = get_object_or_404(Location, pk=id)
+
+    if request.method == "GET":
+        return Response(LocationSerializer(location).data)
+
+    if request.method == "PUT":
+        serializer = LocationSerializer(location, data=request.data)
         if serializer.is_valid():
             serializer.save()
-        return Response(LocationSerializer.data, status=status.HTTP_201_CREATED)
-    return Response(LocationSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-def write_location(request):
-    location = Location(address="Kurfürstendamm 1", warehouse="W3")
-    location.save()
-    location = Location.objects.last()
-    return HttpResponse(f"Addresse: {location.address}, Warenhaus: {location.warehouse}")
-
-def location_list_ui(request):
-    searchterm = request.GET.get("searchterm")
-    if searchterm:
-        location = Location.objects.filter(name__icontains=searchterm)
-    else:
-        location = Location.objects.all()
-
-    return render(request, "locationmanager/locationmanager.html")
+    if request.method == "DELETE":
+        location.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

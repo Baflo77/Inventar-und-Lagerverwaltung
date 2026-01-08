@@ -10,9 +10,9 @@
             <h2 class="fw-bold text-dark"> Warehouse Overview</h2>
             <p class="text-muted">Hier ist die Übersicht deiner Lagerstandorte.</p>
         </div>
-        <a href="#" class="btn btn-primary shadow-sm">
+         <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#createWarehouseModal">
             <i class="bi bi-plus-lg"></i> Neues Lager
-        </a>
+         </button>
     </div>
 
     <div class="card shadow-sm border-0">
@@ -56,9 +56,9 @@
                             </td>
 
                             <td class="text-end pe-4">
-                                <a href="#" class="btn btn-sm btn-outline-secondary">
+                               <a href="/warehouses/api/{{ warehouse.id }}/" class="btn btn-sm btn-outline-secondary">
                                     Details ansehen
-                                </a>
+                               </a>
                             </td>
                         </tr>
                         {% empty %}
@@ -75,4 +75,85 @@
         </div>
     </div>
 </div>
+<!-- Modal: Warehouse erstellen -->
+<div class="modal fade" id="createWarehouseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Neues Lager anlegen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+      </div>
+
+      <div class="modal-body">
+        <label class="form-label">Name</label>
+        <input id="warehouseNameInput" type="text" class="form-control" placeholder="z.B. Zentrallager" />
+        <div id="warehouseCreateError" class="text-danger small mt-2" style="display:none;"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="button" id="createWarehouseBtn" class="btn btn-primary">Speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const createBtn = document.getElementById("createWarehouseBtn");
+  const nameInput = document.getElementById("warehouseNameInput");
+  const errBox = document.getElementById("warehouseCreateError");
+
+  async function createWarehouse() {
+    const name = nameInput.value.trim();
+    errBox.style.display = "none";
+    errBox.textContent = "";
+
+    if (!name) {
+      errBox.textContent = "Bitte einen Namen eingeben.";
+      errBox.style.display = "block";
+      return;
+    }
+
+    const res = await fetch("/warehouses/api/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: JSON.stringify({ name: name })
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      errBox.textContent = "Fehler beim Speichern: " + text;
+      errBox.style.display = "block";
+      return;
+    }
+
+    // Erfolg: Seite neu laden -> neues Warehouse erscheint in Tabelle
+    window.location.reload();
+  }
+
+  createBtn.addEventListener("click", createWarehouse);
+
+  // Enter = Speichern
+  nameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") createWarehouse();
+  });
+</script>
 {% endblock %}
