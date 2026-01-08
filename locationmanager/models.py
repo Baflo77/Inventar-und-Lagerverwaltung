@@ -1,15 +1,25 @@
 from django.db import models
 
-# Create your models here.
 class Location(models.Model):
-    address = models.CharField(max_length=100)
+    # Basis-Informationen
+    name = models.CharField(max_length=255, verbose_name="Name des Standorts")
+    description = models.TextField(blank=True, null=True, verbose_name="Beschreibung")
+    warehouse = models.ForeignKey('warehousemanager.Warehouse', on_delete=models.CASCADE,related_name='locations',null=True, blank=True)
+    # Adresse
+    street = models.CharField(max_length=255, verbose_name="Straße & Hausnummer")
+    city = models.CharField(max_length=100, verbose_name="Stadt")
+    zip_code = models.CharField(max_length=20, verbose_name="PLZ")
+    country = models.CharField(max_length=100, default="Deutschland", verbose_name="Land")
 
-    ##warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='warehouses')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    warehouse = models.ForeignKey( 'warehousemanager.Warehouse',on_delete=models.CASCADE,related_name='locations'
-    )
 
+    class Meta:
+        verbose_name = "Standort"
+        verbose_name_plural = "Standorte"
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"Addresse: {self.address}, Warenhaus: {self.warehouse}"
+        return f"{self.name} ({self.city})"
 

@@ -20,6 +20,7 @@ from django.urls import include
 from warehousemanager import views
 
 urlpatterns = [
+    path('', views.show_warehouses_ui),
     path('warehouses/', views.show_warehouses),
     path('firstwarehouse/', views.show_first_warehouse),
     path('writewarehouse/', views.write_warehouse),

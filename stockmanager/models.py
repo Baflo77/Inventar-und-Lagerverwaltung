@@ -12,10 +12,8 @@ class Stock(models.Model):
     quantity = models.PositiveIntegerField(default=0,verbose_name="Aktueller Bestand")
     quantity_on_order = models.PositiveIntegerField(default=0, verbose_name="Bestellte Menge (Einkauf)")
     threshold = models.PositiveIntegerField(default=0,verbose_name="Meldebestand (Mindestmenge)")
-    status = models.BooleanField(default=False)
 
-    warehouse = models.ForeignKey('warehousemanager.Warehouse', on_delete=models.CASCADE, related_name='stock_items')
-    location = models.ForeignKey('locationmanager.Location', on_delete=models.CASCADE, related_name='Lagerplatz')
+    location = models.ForeignKey('locationmanager.Location', on_delete=models.CASCADE, related_name='stock_items')
     product = models.ForeignKey('productmanager.Product', on_delete=models.CASCADE, related_name='stock_entries')
 
     class Meta:
@@ -43,5 +41,5 @@ class Stock(models.Model):
         return "OK"
 
     def __str__(self):
-        return f"{Produkt} - {self.product}, Standort - {self.location}, Anzahl - {self.quantity}, Mindestbestand - {self.threshold}, Status - {self.status}, Warenhaus: {self.warehouse}"
+        return f"Produkt - {self.product}, Standort - {self.location}, Anzahl - {self.quantity}, Mindestbestand - {self.threshold}, Status - {self.status}"
 

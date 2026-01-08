@@ -1,4 +1,10 @@
 from rest_framework import serializers
 
-class LocationSerializer(serializers.Serializer):
-    address = serializers.CharField(max_length=100)
+from locationmanager.models import Location
+
+
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Location
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']

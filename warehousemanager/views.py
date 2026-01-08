@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, get_list_or_404
 from rest_framework.decorators import api_view
 from yaml import serialize
-
+from django.db.models import Count, Sum
 from .models import Warehouse
 from rest_framework.response import Response
 from warehousemanager.serializers import WarehouseSerializer
@@ -27,3 +27,12 @@ def write_warehouse(request):
     warehouse.save()
     warehouse = Warehouse.objects.last()
     return HttpResponse(f"Name: {warehouse.name}, Standort: {warehouse.location}")
+
+
+def show_warehouses_ui(request):
+
+    warehouses = Warehouse.objects.annotate(location_count=Count('locations', distinct=True),total_stock_quantity=Sum('locations__stock_items__quantity')
+    )
+
+    context = {'warehouses': warehouses}
+    return render(request, 'warehousemanager/warehousemanager.html', context)

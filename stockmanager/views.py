@@ -10,7 +10,13 @@ from .serializers import StockSerializer
 # Create your views here.
 @api_view()
 def show_stock(request):
-    return Response("Hier sind deine Lager")
+    # 'select_related' optimiert die Datenbankabfrage für Fremdschlüssel (Product & Location)
+    stocks = Stock.objects.select_related('product', 'location').all()
+
+    context = {
+        'stocks': stocks
+    }
+    return render(request, 'stockmanager/stockmanager.html', context)
 
 @api_view()
 def show_all_stocks_by_id(request, id):
@@ -30,20 +36,44 @@ def write_stock(request):
 
 
 def stock_list_ui(request):
-    searchterm = request.GET.get('searchterm')
-    lagerbestandsdaten = Stock.objects.select_related('product', 'warehouse', 'location')
-    if searchterm:
-        suche_produkt = lagerbestandsdaten.filter(product__name__icontains=searchterm)
-        suche_ort = lagerbestandsdaten.filter(location__name__icontains=searchterm)
-
-        stocks = (suche_produkt | suche_ort).distinct()
-    else:
-        stocks = lagerbestandsdaten.all()
-
-    stocks = stocks.order_by('product__name')
+    # 1. Daten holen (mit select_related für Performance)
+    stocks = Stock.objects.select_related('product', 'location').all()
 
     context = {
-        'stocks': stocks,
-        'searchterm': searchterm
+        'stocks': stocks
     }
+
+    # 2. An das Template schicken
+    # WICHTIG: Prüfe, ob deine HTML-Datei wirklich in diesem Ordner liegt!
     return render(request, 'stockmanager/stockmanager.html', context)
+
+
+# ... deine anderen Funktionen (outgoing_goods_view etc.) kannst du lassen ..
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import OutgoingStockForm
+from .services import process_outgoing_goods
+from django.core.exceptions import ValidationError
+
+
+def outgoing_goods_view(request):
+    if request.method == 'POST':
+        form = OutgoingStockForm(request.POST)
+        if form.is_valid():
+            stock_item = form.cleaned_data['stock_item']
+            quantity = form.cleaned_data['quantity']
+            notes = form.cleaned_data['notes']
+
+            try:
+                process_outgoing_goods(stock_item.id, quantity, user=request.user, notes=notes)
+                messages.success(request, f"{quantity}x {stock_item.product} erfolgreich ausgebucht.")
+                return redirect('stock_list_ui')  # Zurück zur Übersicht
+            except ValidationError as e:
+                # Fehler aus dem Service im Formular anzeigen
+                form.add_error(None, e)
+    else:
+        form = OutgoingStockForm()
+
+    return render(request, 'stockmanager/outgoing_form.html', {'form': form})

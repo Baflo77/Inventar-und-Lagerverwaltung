@@ -1,177 +1,258 @@
 {% extends 'base.html' %}
 
+{% block title %}Stock Manager | Lagerverwaltung{% endblock %}
+
 {% block extra_css %}
 <style>
-    /* --- Lokale Styles für die Lager-Tabelle --- */
-    
-    .stock-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-        border: 1px solid #edf2f7;
-        overflow: hidden; /* Damit die Ecken der Tabelle rund bleiben */
+    /* --- DESIGN VARIABLES (Identisch zum Location Manager) --- */
+    :root {
+        --primary-dark: #2c3e50;
+        --accent-blue: #3498db;
+        --bg-light: #f4f6f9;
+        --text-dark: #343a40;
+        --text-muted: #6c757d;
+        --danger-red: #e74c3c;
+        --warning-yellow: #f1c40f;
+        --success-green: #27ae60;
     }
 
-    .table-custom {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
+    .stock-manager-wrapper {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: var(--bg-light);
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        color: var(--text-dark);
     }
 
-    .table-custom thead th {
-        background-color: #f8f9fa;
-        color: #6c757d;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
-        padding: 1.2rem 1.5rem;
-        border-bottom: 2px solid #e9ecef;
+    .lm-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
     }
 
-    .table-custom tbody td {
-        padding: 1.2rem 1.5rem;
-        vertical-align: middle;
-        border-bottom: 1px solid #f1f3f5;
-        color: #2d3436;
-        font-size: 0.95rem;
-    }
-
-    .table-custom tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .table-custom tbody tr:hover {
-        background-color: #fcfcfc;
-    }
-
-    /* --- Status Badges (Ampel) --- */
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 12px;
-        border-radius: 50px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-    .status-ok { background-color: #d1e7dd; color: #0f5132; }       /* Grün */
-    .status-critical { background-color: #fff3cd; color: #856404; } /* Gelb/Orange */
-    .status-empty { background-color: #f8d7da; color: #842029; }    /* Rot */
-
-    /* --- Action Button --- */
-    .btn-action {
-        padding: 6px 12px;
-        border-radius: 8px;
-        border: 1px solid #dfe6e9;
-        background: white;
-        color: #636e72;
-        font-size: 0.85rem;
-        transition: all 0.2s;
-        text-decoration: none;
-        display: inline-block;
-    }
-    .btn-action:hover {
-        background: #f1f3f5;
-        color: #2d3436;
-        border-color: #b2bec3;
-    }
-
+    /* --- TITEL BEREICH --- */
     .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
         margin-bottom: 2rem;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 1rem;
+    }
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        margin: 0;
+    }
+
+    /* --- GRID LAYOUT --- */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    /* --- CARDS --- */
+    .data-card {
+        background: white;
+        border-radius: 6px;
+        box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+        border-top: 3px solid var(--accent-blue);
+        margin-bottom: 1rem;
+    }
+    .data-card.form-card { border-top-color: var(--success-green); }
+
+    .card-header {
+        background-color: transparent;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+        padding: 1rem 1.25rem;
+    }
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--primary-dark);
+    }
+    .card-body { padding: 1.25rem; }
+    .card-body.p-0 { padding: 0; }
+
+    /* --- FORM FIELDS --- */
+    .form-group { margin-bottom: 1rem; }
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 0.4rem;
+        display: block;
+    }
+    .form-control {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.95rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    /* --- GRÜNER BUTTON --- */
+    .btn-submit {
+        display: block;
+        width: 100%;
+        font-weight: 600;
+        text-align: center;
+        background-color: var(--success-green);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        font-size: 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        margin-top: 1.5rem;
+    }
+    .btn-submit:hover { background-color: #218838; }
+
+    /* --- TABLE STYLES --- */
+    .table-modern { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    .table-modern thead th {
+        vertical-align: bottom;
+        border-bottom: 2px solid #dee2e6;
+        background-color: var(--primary-dark);
+        color: white;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 12px 15px;
+        text-align: left;
+    }
+    .table-modern tbody tr { border-bottom: 1px solid #e9ecef; }
+    .table-modern tbody tr:nth-of-type(odd) { background-color: rgba(0,0,0,.02); }
+    .table-modern td { padding: 12px 15px; vertical-align: middle; font-size: 0.9rem; }
+
+    /* Status Badges */
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 12px;
+        text-transform: uppercase;
+    }
+    .status-ok { background-color: #d4edda; color: #155724; }
+    .status-low { background-color: #f8d7da; color: #721c24; }
+
+    .quantity-display { font-weight: 700; color: var(--primary-dark); }
+    .quantity-low { color: var(--danger-red); }
+
+    @media (max-width: 992px) {
+        .content-grid { grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-    
-    <main class="w-100 p-5">
-        
+<div class="stock-manager-wrapper">
+    <div class="lm-container">
+
         <div class="page-header">
-            <div>
-                <h2 style="font-weight: 800; color: #2d3436; margin-bottom: 5px;">Lagerbestand</h2>
-                <span style="color: #8e9aaf;">Übersicht aller Artikel und Verfügbarkeiten</span>
+            <h1 class="page-title">Bestandsübersicht</h1>
+            <p style="color: #6c757d;">Aktuelle Lagerbestände und Mindestmengen überwachen.</p>
+        </div>
+
+        <div class="content-grid">
+
+            <div class="data-card form-card">
+                <div class="card-header">
+                    <h3 class="card-title">Initial-Bestand anlegen</h3>
+                </div>
+                <div class="card-body">
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 1rem;">
+                        Nutze dies nur, um ein Produkt erstmals einem Lagerort zuzuweisen. Für tägliche Änderungen nutze "Warenbewegung".
+                    </p>
+                    <form>
+                        <div class="form-group">
+                            <label class="form-label">Produkt ID</label>
+                            <input type="number" class="form-control" placeholder="Produkt ID eingeben">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Lagerort ID</label>
+                            <input type="number" class="form-control" placeholder="Location ID eingeben">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Startmenge</label>
+                            <input type="number" class="form-control" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Mindestbestand (Alarm)</label>
+                            <input type="number" class="form-control" value="10">
+                        </div>
+
+                        <button type="button" class="btn-submit">Bestand initialisieren</button>
+                    </form>
+                </div>
             </div>
-            
-            <a href="#" class="btn btn-primary" style="border-radius: 12px; padding: 10px 20px;">
-                <i class="bi bi-plus-lg me-2"></i> Bestand erfassen
-            </a>
-        </div>
 
-        <div class="stock-card">
-            <table class="table-custom">
-                <thead>
-                    <tr>
-                        <th>Produkt</th>
-                        <th>Lagerort</th>
-                        <th class="text-center">Bestand</th>
-                        <th class="text-center">Status</th>
-                        <th>Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in stocks %}
-                    <tr>
-                        <td>
-                            <div style="font-weight: 600;">{{ item.product.name }}</div>
-                            <small class="text-muted">Art.Nr: {{ item.product.sku|default:"-" }}</small>
-                        </td>
-                        <td>
-                            <div>{{ item.warehouse.name }}</div>
-                            <small class="text-muted"><i class="bi bi-geo-alt"></i> {{ item.location.name }}</small>
-                        </td>
-                        <td class="text-center">
-                            <span style="font-size: 1.1rem; font-weight: 700;">{{ item.quantity }}</span>
-                            <small class="text-muted d-block">Min: {{ item.threshold }}</small>
-                        </td>
-                        <td class="text-center">
-                            {% if item.status == 'OK' %}
-                                <span class="status-badge status-ok">
-                                    <i class="bi bi-check-circle-fill me-1"></i> OK
-                                </span>
-                            {% elif item.status == 'KRITISCH' %}
-                                <span class="status-badge status-critical">
-                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Knapp
-                                </span>
-                            {% else %}
-                                <span class="status-badge status-empty">
-                                    <i class="bi bi-x-circle-fill me-1"></i> Leer
-                                </span>
-                            {% endif %}
-                            
-                            {% if item.quantity_on_order > 0 %}
-                                <div style="font-size: 0.7rem; color: #0d6efd; margin-top: 5px;">
-                                    <i class="bi bi-truck"></i> +{{ item.quantity_on_order }} bestellt
-                                </div>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="d-flex gap-2">
-                                <a href="#" class="btn-action" title="Bearbeiten">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a href="#" class="btn-action text-danger" title="Ausbuchen">
-                                    <i class="bi bi-box-arrow-right"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-                            <p class="mt-2">Noch keine Lagerbestände vorhanden.</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            <div class="data-card">
+                <div class="card-header">
+                    <h3 class="card-title">Aktueller Lagerbestand</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Produkt / SKU</th>
+                                    <th>Lagerort</th>
+                                    <th>Bestand</th>
+                                    <th>Min. / Nachbestellt</th>
+                                    <th style="text-align: right;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stock in stocks %}
+                                <tr>
+                                    <td>
+                                        <strong style="color: #2c3e50;">{{ stock.product.name }}</strong><br>
+                                        <small style="color: #999;">{{ stock.product.sku }}</small>
+                                    </td>
 
-    </main>
+                                    <td>
+                                        {{ stock.location.name }}<br>
+                                        <small style="color: #999;">{{ stock.location.warehouse.name|default:"-" }}</small>
+                                    </td>
+
+                                    <td>
+                                        <span class="quantity-display {% if stock.quantity < stock.threshold %}quantity-low{% endif %}">
+                                            {{ stock.quantity }} Stk.
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <small>Min: {{ stock.threshold }}</small><br>
+                                        <small style="color: #3498db;">Order: {{ stock.quantity_on_order }}</small>
+                                    </td>
+
+                                    <td style="text-align: right;">
+                                        {% if stock.quantity < stock.threshold %}
+                                            <span class="status-badge status-low">Kritisch</span>
+                                        {% else %}
+                                            <span class="status-badge status-ok">OK</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 3rem; color: #adb5bd;">
+                                        Keine Bestandsdaten gefunden.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </div>
 {% endblock %}

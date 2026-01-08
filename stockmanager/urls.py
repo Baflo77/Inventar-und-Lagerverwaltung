@@ -23,7 +23,8 @@ from stockmanager import views
 
 urlpatterns = [
 
-    path('', views.stock_list_ui),
+    path('', views.stock_list_ui,name='stock_list_ui'),
+    path('outgoing/', views.outgoing_goods_view, name='outgoing_goods'),
     path('stocks/', views.show_stock),
     path('firststock/', views.show_first_stock),
     path('writestock/', views.write_stock),

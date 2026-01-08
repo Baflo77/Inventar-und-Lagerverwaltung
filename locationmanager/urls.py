@@ -21,7 +21,15 @@ from django.urls import include
 from locationmanager import views
 
 urlpatterns = [
-    path('locations/', views.show_locations),
-    path('writelocation/', views.write_location),
-    path('locationbyid/<id>', views.show_all_locations_by_id),
+    # 1. Die HTML Seite (ruft man im Browser auf)
+    # URL: /locations/
+    path('', views.show_locations, name='show_locations'),
+
+    # 2. Die API für die Daten (nutzt das JavaScript im Hintergrund)
+    # URL: /locations/api/list/
+    path('api/list/', views.get_locations, name='get_locations'),
+
+    # 3. Die API zum Speichern
+    # URL: /locations/api/create/
+    path('api/create/', views.write_location, name='write_location'),
 ]

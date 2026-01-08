@@ -1,11 +1,16 @@
 from django.db import models
-from locationmanager.models import Location
 
-# Create your models here.
+from locationmanager.models import Location as PhysicalLocation
+
+
 class Warehouse(models.Model):
-    name = models.CharField(max_length=200)
+    location = models.OneToOneField(PhysicalLocation,on_delete=models.PROTECT,related_name='warehouse_data',verbose_name="Physischer Standort")
+    name = models.CharField(max_length=100)
 
-    location = models.ForeignKey('locationmanager.Location', on_delete=models.CASCADE , related_name='locations')
+    class Meta:
+        verbose_name = "Warenhaus"
+        verbose_name_plural = "Warenhäuser"
 
     def __str__(self):
-        return f"Name: {self.name}, Standort: {self.location}"
+        return f"{self.name}"
+
