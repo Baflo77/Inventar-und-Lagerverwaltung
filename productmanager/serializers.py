@@ -1,9 +1,7 @@
 from rest_framework import serializers
-
 from categorymanager.models import Category
 from productmanager.models import Product
 from suppliermanager.models import Supplier
-
 
 class ProductSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
