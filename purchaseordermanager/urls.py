@@ -21,4 +21,6 @@ urlpatterns = [
     path("", views.purchaseorder_ui, name="purchaseorder_ui"),
     path("api/", views.purchaseorder_list, name="purchaseorder_list"),
     path("api/<int:id>/", views.purchaseorder_detail, name="purchaseorder_detail"),
+    path("<int:id>/receive/", views.purchaseorder_receive_ui, name="purchaseorder_receive_ui"),
+    path("api/<int:id>/receive/", views.purchaseorder_receive_api, name="purchaseorder_receive_api"),
 ]

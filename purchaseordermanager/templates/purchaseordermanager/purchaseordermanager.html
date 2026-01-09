@@ -205,9 +205,14 @@
                     </td>
                     <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
                     <td class="actions">
+                        <button onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'">
+                            📥 Wareneingang
+                        </button>
+
                         <button>✏️ Bearbeiten</button>
                         <button class="danger">🗑 Löschen</button>
                     </td>
+
                 </tr>
             {% empty %}
                 <tr>

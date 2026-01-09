@@ -1,0 +1,400 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Wareneingang | PO #{{ order.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-dark: #2c3e50;
+        --accent-blue: #3498db;
+        --bg-light: #f4f6f9;
+        --text-dark: #343a40;
+        --text-muted: #6c757d;
+        --danger-red: #e74c3c;
+        --success-green: #27ae60;
+    }
+
+    .stock-manager-wrapper {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: var(--bg-light);
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        color: var(--text-dark);
+        min-height: 100vh;
+    }
+
+    .lm-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 1rem;
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        margin: 0;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .data-card {
+        background: white;
+        border-radius: 6px;
+        box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+        border-top: 3px solid var(--accent-blue);
+        margin-bottom: 1rem;
+    }
+    .data-card.form-card { border-top-color: var(--success-green); }
+
+    .card-header {
+        background-color: transparent;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+        padding: 1rem 1.25rem;
+    }
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--primary-dark);
+    }
+    .card-body { padding: 1.25rem; }
+    .card-body.p-0 { padding: 0; }
+
+    .form-group { margin-bottom: 1rem; }
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 0.4rem;
+        display: block;
+    }
+    .form-control, .form-select {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.95rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .btn-submit {
+        display: block;
+        width: 100%;
+        font-weight: 700;
+        text-align: center;
+        background-color: var(--success-green);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        font-size: 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        margin-top: 1.25rem;
+    }
+    .btn-submit:hover { background-color: #218838; }
+
+    .table-modern { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    .table-modern thead th {
+        vertical-align: bottom;
+        border-bottom: 2px solid #dee2e6;
+        background-color: var(--primary-dark);
+        color: white;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 12px 15px;
+        text-align: left;
+    }
+    .table-modern tbody tr { border-bottom: 1px solid #e9ecef; }
+    .table-modern tbody tr:nth-of-type(odd) { background-color: rgba(0,0,0,.02); }
+    .table-modern td { padding: 12px 15px; vertical-align: middle; font-size: 0.9rem; }
+
+    .badge-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        background: #eef2f7;
+        color: #34495e;
+        font-weight: 600;
+    }
+
+    .num-input {
+        max-width: 140px;
+    }
+
+    .muted { color: var(--text-muted); }
+
+    @media (max-width: 992px) {
+        .content-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stock-manager-wrapper">
+  <div class="lm-container">
+
+    <div class="page-header">
+      <h1 class="page-title">Wareneingang buchen</h1>
+      <p class="muted" style="margin: 6px 0 0 0;">
+        PurchaseOrder <strong>#{{ order.id }}</strong> · Lieferant: <strong>{{ order.supplier.name }}</strong> · Status: <span class="badge-pill">{{ order.status }}</span>
+      </p>
+    </div>
+
+    <div class="content-grid">
+
+      <!-- Left: Settings -->
+      <div class="data-card form-card">
+        <div class="card-header">
+          <h3 class="card-title">Buchungsdaten</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Ziel-Lagerort</label>
+            <select id="destinationLocationId" class="form-select" required>
+              <option value="" selected disabled>Bitte wählen...</option>
+              {% for loc in locations %}
+                <option value="{{ loc.id }}">
+                  {{ loc.name }} {% if loc.warehouse %}({{ loc.warehouse.name }}){% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Notiz (optional)</label>
+            <input id="notes" class="form-control" type="text" placeholder="z.B. Lieferschein-Nr., Kommentar...">
+          </div>
+
+          <button class="btn-submit" id="bookInBtn">Wareneingang jetzt buchen</button>
+
+          <div id="msg" class="mt-3" style="margin-top: 14px;"></div>
+
+          <p class="muted" style="font-size: 0.85rem; margin-top: 14px;">
+            Hinweis: Gib rechts pro Position die Menge ein, die du jetzt einbuchen willst (maximal offene Menge).
+          </p>
+        </div>
+      </div>
+
+      <!-- Right: Items -->
+      <div class="data-card">
+        <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap: 10px;">
+          <h3 class="card-title">Positionen</h3>
+          <button class="btn btn-primary" id="reloadBtn" style="background:#3498db; border:none; font-weight:700;">
+            Neu laden
+          </button>
+        </div>
+
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table-modern">
+              <thead>
+                <tr>
+                  <th>PO-Item</th>
+                  <th>Produkt</th>
+                  <th>Bestellt</th>
+                  <th>Erhalten</th>
+                  <th>Offen</th>
+                  <th>Jetzt buchen</th>
+                </tr>
+              </thead>
+              <tbody id="itemsTbody">
+                <tr>
+                  <td colspan="6" style="text-align:center; padding: 2rem; color: #adb5bd;">
+                    Lade Positionen...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // --- CSRF Helper (wie im Stock-Manager) ---
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  const ORDER_ID = {{ order.id }};
+  const ITEMS_API = `/purchaseorderitems/api/?purchase_order_id=${ORDER_ID}`;
+  const RECEIVE_API = `/purchaseorders/api/${ORDER_ID}/receive/`;
+
+  const tbody = document.getElementById("itemsTbody");
+  const msgBox = document.getElementById("msg");
+
+  function setMsg(text, type="") {
+    msgBox.className = type;
+    msgBox.textContent = text;
+    msgBox.style.color = (type === "error") ? "#b00020" : (type === "success" ? "#1b5e20" : "#343a40");
+    msgBox.style.fontWeight = "600";
+  }
+
+  async function loadItems() {
+    tbody.innerHTML = "";
+    setMsg("");
+
+    try {
+      const res = await fetch(ITEMS_API);
+      if (!res.ok) throw new Error("PurchaseOrderItem API nicht erreichbar");
+      const items = await res.json();
+
+      if (!items.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center; padding: 2.5rem; color: #adb5bd;">
+              Keine Items für diese PurchaseOrder gefunden.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      items.forEach(i => {
+        const ordered = parseInt(i.quantity, 10) || 0;
+        const received = parseInt(i.received_quantity, 10) || 0;
+        const remaining = Math.max(0, ordered - received);
+
+        const tr = document.createElement("tr");
+        tr.dataset.poiId = i.id;
+        tr.dataset.remaining = remaining;
+
+        tr.innerHTML = `
+          <td><strong>#${i.id}</strong></td>
+          <td>
+            <span class="badge-pill">Produkt ID: ${i.product}</span>
+            <div class="muted" style="font-size:0.85rem; margin-top:4px;">
+              (Optional: Produktname/SKU kann später ergänzt werden)
+            </div>
+          </td>
+          <td><strong>${ordered}</strong></td>
+          <td>${received}</td>
+          <td><strong>${remaining}</strong></td>
+          <td>
+            <input class="form-control num-input" type="number" min="0" max="${remaining}" value="0" />
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+    } catch (e) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center; padding: 2.5rem; color: #b00020;">
+            Fehler beim Laden: ${e.message}
+          </td>
+        </tr>
+      `;
+    }
+  }
+
+  async function bookIn() {
+    setMsg("");
+
+    const destId = document.getElementById("destinationLocationId").value;
+    const notes = document.getElementById("notes").value;
+
+    if (!destId) {
+      setMsg("Bitte Ziel-Lagerort auswählen.", "error");
+      return;
+    }
+
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    const payloadItems = [];
+
+    for (const tr of rows) {
+      const poiId = tr.dataset.poiId;
+      const remaining = parseInt(tr.dataset.remaining || "0", 10);
+      const input = tr.querySelector("input[type='number']");
+      if (!poiId || !input) continue;
+
+      const qty = parseInt(input.value || "0", 10);
+
+      if (qty > 0) {
+        if (qty > remaining) {
+          setMsg(`Menge zu hoch bei Item #${poiId}. Offen: ${remaining}`, "error");
+          return;
+        }
+        payloadItems.push({ po_item_id: parseInt(poiId, 10), quantity: qty });
+      }
+    }
+
+    if (!payloadItems.length) {
+      setMsg("Bitte mindestens eine Menge > 0 eingeben.", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch(RECEIVE_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken
+        },
+        body: JSON.stringify({
+          destination_location_id: parseInt(destId, 10),
+          notes: notes,
+          items: payloadItems
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || "Unbekannter Fehler");
+      }
+
+      setMsg("Wareneingang wurde gebucht.", "success");
+      await loadItems();
+
+      // optional: nach kurzer Zeit zurück zur PO-Liste
+      // window.location.href = "/purchaseorders/";
+
+    } catch (e) {
+      setMsg("Fehler beim Buchen: " + e.message, "error");
+    }
+  }
+
+  document.getElementById("reloadBtn").addEventListener("click", loadItems);
+  document.getElementById("bookInBtn").addEventListener("click", bookIn);
+
+  (async function init() {
+    await loadItems();
+  })();
+</script>
+{% endblock %}
