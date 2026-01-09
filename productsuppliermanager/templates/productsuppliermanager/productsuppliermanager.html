@@ -102,7 +102,7 @@
       {% for link in links %}
         <tr>
           <td><strong>{{ link.product }}</strong></td>
-          <td class="text-muted">{{ link.supplier }}</td>
+          <td class="text-muted">{{ link.supplier.name }}</td>
           <td>{{ link.purchase_price|default:"—" }}</td>
           <td>{{ link.delivery_time_days|default:"—" }}</td>
           <td>{{ link.min_order_quantity|default:"—" }}</td>
