@@ -206,7 +206,7 @@
             text-transform: uppercase;
         }
 
-        .form-group input, .form-group textarea {
+        .form-group input, .form-group textarea, .form-group select {
             padding: 10px;
             border: 1px solid #dcdde1;
             border-radius: 4px;
@@ -285,19 +285,21 @@
         <button class="btn-add" onclick="openCreate()">➕ Neues Produkt</button>
     </div>
 
-    <p class="hint">Hinweis: Lieferant und Kategorie werden als <strong>ID</strong> gespeichert (ForeignKey).</p>
+    <p class="hint">
+        Hinweis: Lieferant und Kategorie sind ForeignKeys. Wähle sie am besten aus (statt IDs zu raten).
+    </p>
 
     <div class="data-card">
         <table>
             <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>SKU</th>
-                    <th>Beschreibung</th>
-                    <th>Lieferant</th>
-                    <th>Kategorie</th>
-                    <th>Aktionen</th>
-                </tr>
+            <tr>
+                <th>Name</th>
+                <th>SKU</th>
+                <th>Beschreibung</th>
+                <th>Lieferant</th>
+                <th>Kategorie</th>
+                <th>Aktionen</th>
+            </tr>
             </thead>
             <tbody>
 
@@ -351,11 +353,11 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label for="pName">Name</label>
-                    <input id="pName" type="text" placeholder="z.B. Schraubendreher">
+                    <input id="pName" type="text" placeholder="z.B. Schraubendreher" autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label for="pSku">SKU</label>
-                    <input id="pSku" type="text" placeholder="z.B. SKU-12345">
+                    <input id="pSku" type="text" placeholder="z.B. SKU-12345" autocomplete="off">
                 </div>
 
                 <div class="form-group full">
@@ -363,13 +365,25 @@
                     <textarea id="pDesc" placeholder="Kurzbeschreibung..."></textarea>
                 </div>
 
+                <!-- Dropdowns statt ID-Felder -->
                 <div class="form-group">
-                    <label for="pSupplierId">Lieferant-ID</label>
-                    <input id="pSupplierId" type="number" min="1" placeholder="z.B. 1">
+                    <label for="pSupplierId">Lieferant</label>
+                    <select id="pSupplierId">
+                        <option value="">Bitte wählen…</option>
+                        {% for s in suppliers %}
+                            <option value="{{ s.id }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
+
                 <div class="form-group">
-                    <label for="pCategoryId">Kategorie-ID</label>
-                    <input id="pCategoryId" type="number" min="1" placeholder="z.B. 2">
+                    <label for="pCategoryId">Kategorie</label>
+                    <select id="pCategoryId">
+                        <option value="">Bitte wählen…</option>
+                        {% for c in categories %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
         </div>
@@ -379,6 +393,7 @@
 </div>
 
 <script>
+    // Relativ zur UI-Route /products/
     const API_LIST = "api/";
     const API_DETAIL = (id) => `api/${id}/`;
 
@@ -398,7 +413,59 @@
         toast.style.display = "block";
         toast.textContent = msg;
         toast.style.borderLeft = isError ? "4px solid #e74c3c" : "4px solid #2ecc71";
-        setTimeout(() => { toast.style.display = "none"; }, 3000);
+        setTimeout(() => { toast.style.display = "none"; }, 3500);
+    }
+
+    // --- CSRF + Fetch Wrapper (Django SessionAuth) ---
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+        return "";
+    }
+
+    async function apiFetch(url, options = {}) {
+        const method = (options.method || "GET").toUpperCase();
+        const unsafe = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+
+        const headers = new Headers(options.headers || {});
+        if (!headers.has("Accept")) headers.set("Accept", "application/json");
+
+        if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
+            headers.set("Content-Type", "application/json");
+        }
+
+        if (unsafe) {
+            const csrf = getCookie("csrftoken");
+            if (csrf) headers.set("X-CSRFToken", csrf);
+        }
+
+        const res = await fetch(url, {
+            ...options,
+            headers,
+            credentials: "same-origin",
+        });
+
+        let data = null;
+        const ct = res.headers.get("content-type") || "";
+        if (ct.includes("application/json")) data = await res.json().catch(() => null);
+        else data = await res.text().catch(() => null);
+
+        return { res, data };
+    }
+
+    function formatErrors(data) {
+        if (!data) return "";
+        if (typeof data === "string") return data;
+        if (typeof data !== "object") return "";
+        if (data.detail) return data.detail;
+
+        const parts = [];
+        for (const [k, v] of Object.entries(data)) {
+            if (Array.isArray(v) && v.length) parts.push(`${k}: ${v[0]}`);
+            else if (typeof v === "string") parts.push(`${k}: ${v}`);
+        }
+        return parts.join(" | ");
     }
 
     function openModal() {
@@ -455,8 +522,8 @@
     }
 
     function buildPayload() {
-        const supplierVal = pSupplierId.value.trim();
-        const categoryVal = pCategoryId.value.trim();
+        const supplierVal = String(pSupplierId.value || "").trim();
+        const categoryVal = String(pCategoryId.value || "").trim();
 
         return {
             name: pName.value.trim(),
@@ -472,12 +539,11 @@
         if (!payload.name) return showToast("Bitte einen Namen eingeben.", true);
         if (!payload.sku) return showToast("Bitte eine SKU eingeben.", true);
         if (!payload.description) return showToast("Bitte eine Beschreibung eingeben.", true);
-        if (!payload.supplier) return showToast("Bitte eine gültige Lieferant-ID eingeben.", true);
-        if (!payload.category) return showToast("Bitte eine gültige Kategorie-ID eingeben.", true);
+        if (!payload.supplier) return showToast("Bitte einen Lieferanten auswählen.", true);
+        if (!payload.category) return showToast("Bitte eine Kategorie auswählen.", true);
 
-        const res = await fetch(API_LIST, {
+        const { res, data } = await apiFetch(API_LIST, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
 
@@ -485,9 +551,8 @@
             showToast("Produkt angelegt.");
             location.reload();
         } else {
-            const data = await res.json().catch(() => ({}));
-            showToast("Fehler beim Anlegen.", true);
-            console.log(data);
+            showToast(formatErrors(data) || `Fehler beim Anlegen. (${res.status})`, true);
+            console.log("STATUS:", res.status, "DATA:", data);
         }
     }
 
@@ -496,12 +561,11 @@
         if (!payload.name) return showToast("Bitte einen Namen eingeben.", true);
         if (!payload.sku) return showToast("Bitte eine SKU eingeben.", true);
         if (!payload.description) return showToast("Bitte eine Beschreibung eingeben.", true);
-        if (!payload.supplier) return showToast("Bitte eine gültige Lieferant-ID eingeben.", true);
-        if (!payload.category) return showToast("Bitte eine gültige Kategorie-ID eingeben.", true);
+        if (!payload.supplier) return showToast("Bitte einen Lieferanten auswählen.", true);
+        if (!payload.category) return showToast("Bitte eine Kategorie auswählen.", true);
 
-        const res = await fetch(API_DETAIL(id), {
+        const { res, data } = await apiFetch(API_DETAIL(id), {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
 
@@ -509,22 +573,31 @@
             showToast("Produkt gespeichert.");
             location.reload();
         } else {
-            const data = await res.json().catch(() => ({}));
-            showToast("Fehler beim Speichern.", true);
-            console.log(data);
+            showToast(formatErrors(data) || `Fehler beim Speichern. (${res.status})`, true);
+            console.log("STATUS:", res.status, "DATA:", data);
         }
     }
 
     async function deleteProduct(id) {
-        const res = await fetch(API_DETAIL(id), { method: "DELETE" });
+        const { res, data } = await apiFetch(API_DETAIL(id), { method: "DELETE" });
+
         if (res.ok) {
             showToast("Produkt gelöscht.");
             location.reload();
         } else {
-            showToast("Fehler beim Löschen.", true);
+            showToast(formatErrors(data) || `Fehler beim Löschen. (${res.status})`, true);
+            console.log("STATUS:", res.status, "DATA:", data);
         }
     }
+
+    // Debug-Hinweis, falls csrftoken fehlt
+    (function csrfSanityCheck() {
+        if (!document.cookie.includes("csrftoken=")) {
+            console.warn("Kein csrftoken Cookie gefunden. Stelle sicher, dass die UI-View @ensure_csrf_cookie hat und die Seite über Django gerendert wird.");
+        }
+    })();
 </script>
 
 </body>
 </html>
+
