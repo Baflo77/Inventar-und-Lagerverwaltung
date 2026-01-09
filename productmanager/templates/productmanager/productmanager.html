@@ -282,7 +282,7 @@
 
     <div class="page-title-section">
         <h2 class="page-title">Produktübersicht</h2>
-        <button class="btn-add" onclick="openCreate()">➕ Neues Produkt</button>
+        <button class="btn-add" onclick="openCreate()">➕ Neues Produkt </button>
     </div>
 
     <p class="hint">Hinweis: Kategorie wird als <strong>ID</strong> gespeichert (ForeignKey).
@@ -507,15 +507,6 @@
     function buildPayload() {
 
         const categoryVal = String(pCategoryId.value || "").trim();
-        return {
-            name: pName.value.trim(),
-            sku: pSku.value.trim(),
-            description: pDesc.value.trim(),
-            category: categoryVal ? Number(categoryVal) : null
-        };
-    }
-
-
         return {
             name: pName.value.trim(),
             sku: pSku.value.trim(),
