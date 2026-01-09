@@ -60,6 +60,23 @@
     .toast { margin: 0 0 16px 0; padding: 12px 14px; border-radius: 8px; background: #ffffff; box-shadow: var(--shadow); display: none; }
     .hint { font-size: 0.85rem; color: #7f8c8d; margin: 0 0 10px 0; }
 
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border: 1px solid rgba(0,0,0,0.08);
+      margin-left: 10px;
+      white-space: nowrap;
+    }
+
+    .badge-best { background: rgba(52, 152, 219, 0.12); color: #2c3e50; }
+    .badge-cheap { background: rgba(241, 196, 15, 0.18); color: #2c3e50; }
+    .badge-fast { background: rgba(46, 204, 113, 0.15); color: #2c3e50; }
+
   </style>
 </head>
 
@@ -90,7 +107,7 @@
       <thead>
       <tr>
         <th>Produkt</th>
-        <th>Supplier</th>
+        <th>Lieferant</th>
         <th>Einkaufspreis</th>
         <th>Lieferzeit (Tage)</th>
         <th>Min. Bestellmenge</th>
@@ -101,10 +118,16 @@
       <tbody>
       {% for link in links %}
         <tr>
-          <td><strong>{{ link.product }}</strong></td>
+          <td class="cell-product" data-product="{{ link.product_id }}">
+            <strong>{{ link.product }}</strong>
+          </td>
           <td class="text-muted">{{ link.supplier.name }}</td>
-          <td>{{ link.purchase_price|default:"—" }}</td>
-          <td>{{ link.delivery_time_days|default:"—" }}</td>
+          <td class="cell-price" data-price="{{ link.purchase_price|default_if_none:'' }}">
+            {{ link.purchase_price|default:"—" }}€
+          </td>
+          <td class="cell-days" data-days="{{ link.delivery_time_days|default_if_none:'' }}">
+            {{ link.delivery_time_days|default:"—" }}
+          </td>
           <td>{{ link.min_order_quantity|default:"—" }}</td>
 
           <td class="actions">
@@ -350,6 +373,93 @@
       showToast("Fehler beim Löschen.", true);
     }
   }
+    (function addDecisionBadges() {
+    const tbody = document.querySelector("table tbody");
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll("tr"))
+      .filter(tr => tr.querySelector(".cell-product")); // ignoriert Empty-State
+
+    const byProduct = new Map();
+
+    // Sammeln: pro Produkt alle Supplier-Zeilen
+    for (const tr of rows) {
+      const productCell = tr.querySelector(".cell-product");
+      const priceCell = tr.querySelector(".cell-price");
+      const daysCell = tr.querySelector(".cell-days");
+
+      const productId = (productCell?.dataset.product || "").trim();
+      if (!productId) continue;
+
+      const rawPrice = (priceCell?.dataset.price || "").trim();
+      const rawDays = (daysCell?.dataset.days || "").trim();
+
+      const price = rawPrice ? parseFloat(rawPrice.replace(",", ".")) : NaN;
+      const days = rawDays ? parseInt(rawDays, 10) : NaN;
+
+      if (!byProduct.has(productId)) byProduct.set(productId, []);
+      byProduct.get(productId).push({ tr, price, days });
+    }
+
+    function addBadge(productCell, text, className) {
+      // doppelte Badges vermeiden (falls Reload via HTMX etc.)
+      const existing = Array.from(productCell.querySelectorAll(".badge"))
+        .some(b => b.textContent.trim() === text.trim());
+      if (existing) return;
+
+      const badge = document.createElement("span");
+      badge.className = `badge ${className}`;
+      badge.textContent = text;
+      productCell.appendChild(badge);
+    }
+
+    // Pro Produkt Gewinner ermitteln
+    for (const [productId, items] of byProduct.entries()) {
+      if (!items.length) continue;
+
+      // günstigster Preis (nur Zeilen mit gültigem Preis)
+      const withPrice = items.filter(x => Number.isFinite(x.price));
+      let cheapest = null;
+      if (withPrice.length) {
+        cheapest = withPrice.reduce((best, cur) => (cur.price < best.price ? cur : best));
+      }
+
+      // schnellste Lieferzeit (nur Zeilen mit gültigen days)
+      const withDays = items.filter(x => Number.isFinite(x.days));
+      let fastest = null;
+      if (withDays.length) {
+        fastest = withDays.reduce((best, cur) => (cur.days < best.days ? cur : best));
+      }
+
+      // Best Choice (Score: Preis + Lieferzeit)
+      // Gewichtung: Preis stärker, Lieferzeit etwas schwächer
+      // Falls ein Wert fehlt, wird er stark "bestraft", damit er nicht gewinnt.
+      const scored = items.map(x => {
+        const p = Number.isFinite(x.price) ? x.price : 999999;
+        const d = Number.isFinite(x.days) ? x.days : 999999;
+        return { ...x, score: p * 1.0 + d * 0.6 };
+      });
+
+      const bestChoice = scored.reduce((best, cur) => (cur.score < best.score ? cur : best));
+
+      // Badges setzen
+      if (cheapest) {
+        const cell = cheapest.tr.querySelector(".cell-product");
+        if (cell) addBadge(cell, "🏆 Günstigster", "badge-cheap");
+      }
+
+      if (fastest) {
+        const cell = fastest.tr.querySelector(".cell-product");
+        if (cell) addBadge(cell, "🟢 Schnellster", "badge-fast");
+      }
+
+      if (bestChoice) {
+        const cell = bestChoice.tr.querySelector(".cell-product");
+        if (cell) addBadge(cell, "⭐ Best Choice", "badge-best");
+      }
+  }
+})();
+
 </script>
 </body>
 </html>
