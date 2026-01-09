@@ -15,8 +15,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-from django.urls import include
+from django.urls import path, include
+from django.contrib.auth import views as auth_views
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
@@ -26,28 +26,31 @@ from inventory.views import dashboard
 schema_view = get_schema_view(
     openapi.Info(
         title="Inventar Lagerverwaltung UI",
-        default_version='v1',
+        default_version="v1",
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', dashboard, name='dashboard'),
-    path('suppliers/', include('suppliermanager.urls')),
-    path('products/', include('productmanager.urls')),
-    path('categories/', include('categorymanager.urls')),
-    path('stockmovement/', include('stockmovementmanager.urls')),
-    path('stocks/', include('stockmanager.urls')),
-    path('locations/', include('locationmanager.urls')),
-    path('warehouses/', include('warehousemanager.urls')),
-    path('orders/', include('ordermanager.urls')),
-    path('customers/', include('customermanager.urls')),
-    path('deliveries/', include('deliverymanager.urls')),
+    path("admin/", admin.site.urls),
+    path("login/", auth_views.LoginView.as_view(template_name="auth/login.html"), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("", dashboard, name="dashboard"),
+    path("suppliers/", include("suppliermanager.urls")),
+    path("products/", include("productmanager.urls")),
+    path("categories/", include("categorymanager.urls")),
+    path("stockmovement/", include("stockmovementmanager.urls")),
+    path("stocks/", include("stockmanager.urls")),
+    path("locations/", include("locationmanager.urls")),
+    path("warehouses/", include("warehousemanager.urls")),
+    path("orders/", include("ordermanager.urls")),
+    path("customers/", include("customermanager.urls")),
+    path("deliveries/", include("deliverymanager.urls")),
     path("purchaseorders/", include("purchaseordermanager.urls")),
     path("purchaseorderitems/", include("purchaseorderitemmanager.urls")),
-    path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
+    path("api/swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
+    path("auth/", include("djoser.urls")),
+    path("auth/", include("djoser.urls.jwt")),
 ]
+
