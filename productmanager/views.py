@@ -9,11 +9,6 @@ from productmanager.serializers import ProductSerializer
 
 from suppliermanager.models import Supplier
 from categorymanager.models import Category #Kategorie für Dropdown im Fe
-<<<<<<< HEAD
->>>>>>> 74f91af (Product Serializer/Views Supplier entfertn, UI vom Produkt hinzufügen angepasst, Kategorie wird jetzt über Dropdown ausgewählt)
-=======
-
->>>>>>> 1473615 (Productsuppliermanager in dev gemerged)
 
 
 @api_view(["GET", "POST"])
@@ -75,9 +70,4 @@ def product_list_ui(request):
         {
             "products": products,
             "categories": categories,
-        },
-<<<<<<< HEAD
-    )
-=======
-    )
->>>>>>> 1473615 (Productsuppliermanager in dev gemerged)
+        })

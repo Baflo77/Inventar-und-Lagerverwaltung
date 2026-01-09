@@ -362,10 +362,6 @@
                     <textarea id="pDesc" placeholder="Kurzbeschreibung..."></textarea>
                 </div>
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 1473615 (Productsuppliermanager in dev gemerged)
                 <div class="form-group">
                     <label for="pCategoryId">Kategorie</label>
                     <select id="pCategoryId">
@@ -509,12 +505,8 @@
     }
 
     function buildPayload() {
-<<<<<<< HEAD
-        const categoryVal = pCategoryId.value.trim();
 
-=======
         const categoryVal = String(pCategoryId.value || "").trim();
-
         return {
             name: pName.value.trim(),
             sku: pSku.value.trim(),
@@ -522,7 +514,6 @@
             category: categoryVal ? Number(categoryVal) : null
         };
     }
->>>>>>> 1473615 (Productsuppliermanager in dev gemerged)
 
 
         return {
@@ -538,11 +529,7 @@
         if (!payload.name) return showToast("Bitte einen Namen eingeben.", true);
         if (!payload.sku) return showToast("Bitte eine SKU eingeben.", true);
         if (!payload.description) return showToast("Bitte eine Beschreibung eingeben.", true);
-<<<<<<< HEAD
-        if (!payload.category) return showToast("Bitte eine gültige Kategorie-ID eingeben.", true);
-=======
         if (!payload.category) return showToast("Bitte eine Kategorie auswählen.", true);
->>>>>>> 1473615 (Productsuppliermanager in dev gemerged)
 
 
         const { res, data } = await apiFetch(API_LIST, {
