@@ -1,20 +1,119 @@
-<!doctype html>
-<html lang="de">
-<head>
-  <meta charset="utf-8">
-  <title>Login</title>
-</head>
-<body>
-  <h1>Anmeldung</h1>
+{% extends "base.html" %}
 
-  {% if form.errors %}
-    <p style="color:red;">Login fehlgeschlagen. Bitte prüfen.</p>
-  {% endif %}
+{% block title %}Login | Lagerverwaltung{% endblock %}
 
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Anmelden</button>
-  </form>
-</body>
-</html>
+{% block extra_css %}
+<style>
+  .login-wrap {
+    min-height: calc(100vh - 85px); /* Headerhöhe aus base.html */
+    display: grid;
+    place-items: center;
+    padding: 2rem 1rem;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 460px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+
+  .login-card-header {
+    background: var(--header-bg);
+    color: #fff;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 3px solid var(--accent-line);
+  }
+
+  .login-card-header h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  .login-card-body {
+    padding: 1.5rem;
+  }
+
+  /* Django form.as_p hübscher machen */
+  .login-card-body form p {
+    margin-bottom: 1rem;
+  }
+
+  .login-card-body label {
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 0.35rem;
+    display: inline-block;
+  }
+
+  .login-card-body input[type="text"],
+  .login-card-body input[type="password"] {
+    width: 100%;
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.12);
+    outline: none;
+  }
+
+  .login-card-body input[type="text"]:focus,
+  .login-card-body input[type="password"]:focus {
+    border-color: var(--accent-line);
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.15);
+  }
+
+  .login-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+  }
+
+  .btn-login {
+    border-radius: 12px;
+    padding: 0.7rem 1rem;
+    font-weight: 700;
+  }
+
+  .hint {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: 0.75rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-card-header">
+      <h2><i class="bi bi-shield-lock-fill me-2"></i>Anmeldung</h2>
+    </div>
+
+    <div class="login-card-body">
+      {% if form.errors %}
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <div>Login fehlgeschlagen. Bitte Benutzername/Passwort prüfen.</div>
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <div class="login-actions">
+          <button type="submit" class="btn btn-primary btn-login">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Anmelden
+          </button>
+          <span class="hint">Nur für berechtigte Nutzer</span>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
