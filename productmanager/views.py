@@ -6,8 +6,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from productmanager.models import Product
 from productmanager.serializers import ProductSerializer
+<<<<<<< HEAD
 from suppliermanager.models import Supplier
 from categorymanager.models import Category
+=======
+from categorymanager.models import Category #Kategorie für Dropdown im Fe
+>>>>>>> 74f91af (Product Serializer/Views Supplier entfertn, UI vom Produkt hinzufügen angepasst, Kategorie wird jetzt über Dropdown ausgewählt)
 
 
 @api_view(["GET", "POST"])
@@ -57,7 +61,7 @@ def product_list_ui(request):
     else:
         products = Product.objects.all()
 
-    suppliers = Supplier.objects.all()
+
     categories = Category.objects.all()
 
     return render(
@@ -65,7 +69,6 @@ def product_list_ui(request):
         "productmanager/productmanager.html",
         {
             "products": products,
-            "suppliers": suppliers,
             "categories": categories,
         },
     )

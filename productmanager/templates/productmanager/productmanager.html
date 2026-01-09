@@ -296,7 +296,6 @@
                 <th>Name</th>
                 <th>SKU</th>
                 <th>Beschreibung</th>
-                <th>Lieferant</th>
                 <th>Kategorie</th>
                 <th>Aktionen</th>
             </tr>
@@ -308,13 +307,6 @@
                     <td><strong>{{ product.name }}</strong></td>
                     <td class="text-muted">{{ product.sku }}</td>
                     <td>{{ product.description|default:"—"|truncatechars:80 }}</td>
-                    <td>
-                        {% for s in product.suppliers.all %}
-                        {{ s.name }}{% if not forloop.last %}, {% endif %}
-                        {% empty %}
-                            —
-                        {% endfor %}
-                    </td>
                     <td>{{ product.category.name|default:product.category }}</td>
                     <td class="actions">
                         <button onclick="openEdit(
@@ -332,7 +324,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6">
+                    <td colspan="5">
                         <div class="empty-state">
                             <span class="empty-icon">📦</span>
                             Keine Produkte vorhanden.
@@ -398,7 +390,7 @@
     const pName = document.getElementById("pName");
     const pSku = document.getElementById("pSku");
     const pDesc = document.getElementById("pDesc");
-    const pSupplierId = document.getElementById("pSupplierId");
+
     const pCategoryId = document.getElementById("pCategoryId");
 
     const toast = document.getElementById("toast");
@@ -472,7 +464,6 @@
         pName.value = "";
         pSku.value = "";
         pDesc.value = "";
-        pSupplierId.value = "";
         pCategoryId.value = "";
     }
 
@@ -490,10 +481,9 @@
         pName.value = name || "";
         pSku.value = sku || "";
         pDesc.value = desc || "";
-        pSupplierId.value = supplierId || "";
         pCategoryId.value = categoryId || "";
 
-        pSupplierId.value = "";
+
 
         modalActions.innerHTML = `
             <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
@@ -507,7 +497,6 @@
         pName.value = name || "";
         pSku.value = "";
         pDesc.value = "";
-        pSupplierId.value = "";
         pCategoryId.value = "";
 
         modalActions.innerHTML = `
@@ -518,8 +507,9 @@
     }
 
     function buildPayload() {
-        const supplierVal = String(pSupplierId.value || "").trim();
-        const categoryVal = String(pCategoryId.value || "").trim();
+        const categoryVal = pCategoryId.value.trim();
+
+
 
         return {
             name: pName.value.trim(),
@@ -556,7 +546,6 @@
         if (!payload.name) return showToast("Bitte einen Namen eingeben.", true);
         if (!payload.sku) return showToast("Bitte eine SKU eingeben.", true);
         if (!payload.description) return showToast("Bitte eine Beschreibung eingeben.", true);
-        if (!payload.supplier) return showToast("Bitte einen Lieferanten auswählen.", true);
         if (!payload.category) return showToast("Bitte eine Kategorie auswählen.", true);
 
         const { res, data } = await apiFetch(API_DETAIL(id), {
