@@ -145,7 +145,7 @@
             font-size: 0.95rem;
         }
 
-        /* --- Toast (wie im Categorymanager) --- */
+        /* --- Toast --- */
         .toast {
             margin: 0 0 16px 0;
             padding: 12px 14px;
@@ -155,7 +155,7 @@
             display: none;
         }
 
-        /* --- Modal (aus Categorymanager übernommen) --- */
+        /* --- Modal --- */
         .modal-backdrop {
             position: fixed;
             inset: 0;
@@ -347,42 +347,42 @@
         <div class="modal-body">
             <div class="form-group">
                 <label for="s_name">Name</label>
-                <input id="s_name" type="text" placeholder="z.B. Muster GmbH">
+                <input id="s_name" type="text" placeholder="z.B. Muster GmbH" autocomplete="off">
             </div>
 
             <div class="form-group">
                 <label for="s_contact">Kontaktperson</label>
-                <input id="s_contact" type="text" placeholder="z.B. Max Mustermann">
+                <input id="s_contact" type="text" placeholder="z.B. Max Mustermann" autocomplete="off">
             </div>
 
             <div class="form-group">
                 <label for="s_email">E-Mail</label>
-                <input id="s_email" type="email" placeholder="z.B. info@muster.de">
+                <input id="s_email" type="email" placeholder="z.B. info@muster.de" autocomplete="off">
             </div>
 
             <div class="form-group">
                 <label for="s_phone">Telefon</label>
-                <input id="s_phone" type="text" placeholder="z.B. +49 123 456">
+                <input id="s_phone" type="text" placeholder="z.B. +49 123 456" autocomplete="off">
             </div>
 
             <div class="form-group">
                 <label for="s_postal">PLZ</label>
-                <input id="s_postal" type="number" placeholder="z.B. 10115">
+                <input id="s_postal" type="number" placeholder="z.B. 10115" min="0" step="1">
             </div>
 
             <div class="form-group">
                 <label for="s_city">Stadt</label>
-                <input id="s_city" type="text" placeholder="z.B. Berlin">
+                <input id="s_city" type="text" placeholder="z.B. Berlin" autocomplete="off">
             </div>
 
             <div class="form-group">
                 <label for="s_street">Straße</label>
-                <input id="s_street" type="text" placeholder="z.B. Hauptstraße">
+                <input id="s_street" type="text" placeholder="z.B. Hauptstraße" autocomplete="off">
             </div>
 
             <div class="form-group">
                 <label for="s_house">Hausnummer</label>
-                <input id="s_house" type="number" placeholder="z.B. 12">
+                <input id="s_house" type="number" placeholder="z.B. 12" min="0" step="1">
             </div>
         </div>
 
@@ -391,13 +391,13 @@
 </div>
 
 <script>
+    // Relativ zu /suppliers/
     const API_LIST = "api/";
     const API_DETAIL = (id) => `api/${id}/`;
 
     const backdrop = document.getElementById("modalBackdrop");
     const modalTitle = document.getElementById("modalTitle");
     const modalActions = document.getElementById("modalActions");
-
     const toast = document.getElementById("toast");
 
     const f = {
@@ -412,7 +412,54 @@
         house_number: document.getElementById("s_house"),
     };
 
-    function showToast(msg, isError=false) {
+    // --- CSRF helpers (für Django SessionAuth) ---
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+
+    function getCsrfToken() {
+        return getCookie("csrftoken") || "";
+    }
+
+    async function apiFetch(url, options = {}) {
+        const method = (options.method || "GET").toUpperCase();
+        const unsafe = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+
+        const headers = new Headers(options.headers || {});
+        if (!headers.has("Accept")) headers.set("Accept", "application/json");
+
+        // JSON body -> Content-Type automatisch setzen
+        if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
+            headers.set("Content-Type", "application/json");
+        }
+
+        if (unsafe) {
+            const csrf = getCsrfToken();
+            if (csrf) headers.set("X-CSRFToken", csrf);
+        }
+
+        const res = await fetch(url, {
+            ...options,
+            headers,
+            credentials: "same-origin", // Cookie (sessionid + csrftoken) mitsenden
+        });
+
+        // Bei 204 kommt kein JSON
+        let data = null;
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+            data = await res.json().catch(() => null);
+        } else {
+            data = await res.text().catch(() => null);
+        }
+
+        return { res, data };
+    }
+
+    // --- UI helpers ---
+    function showToast(msg, isError = false) {
         toast.style.display = "block";
         toast.textContent = msg;
         toast.style.borderLeft = isError ? "4px solid #e74c3c" : "4px solid #2ecc71";
@@ -463,7 +510,6 @@
 
     function openDelete(id, name) {
         modalTitle.textContent = "Lieferant löschen";
-        // Felder füllen wir hier nicht zwingend – reicht Confirm
         modalActions.innerHTML = `
             <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
             <button class="btn btn-danger" onclick="deleteSupplier('${id}', '${name}')">Löschen</button>
@@ -483,7 +529,6 @@
             house_number: Number(f.house_number.value),
         };
 
-        // Pflichtfeldchecks (weil dein Model alles required hat)
         for (const [k, v] of Object.entries(payload)) {
             if (typeof v === "string" && !v) return { error: `Bitte Feld "${k}" ausfüllen.` };
         }
@@ -497,17 +542,15 @@
         const { payload, error } = buildPayload();
         if (error) { showToast(error, true); return; }
 
-        const res = await fetch(API_LIST, {
+        const { res, data } = await apiFetch(API_LIST, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
         });
 
         if (res.ok) {
             showToast("Lieferant angelegt.");
             location.reload();
         } else {
-            const data = await res.json().catch(() => ({}));
             showToast(formatErrors(data) || "Fehler beim Anlegen.", true);
         }
     }
@@ -516,35 +559,37 @@
         const { payload, error } = buildPayload();
         if (error) { showToast(error, true); return; }
 
-        const res = await fetch(API_DETAIL(id), {
+        const { res, data } = await apiFetch(API_DETAIL(id), {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
         });
 
         if (res.ok) {
             showToast("Lieferant gespeichert.");
             location.reload();
         } else {
-            const data = await res.json().catch(() => ({}));
             showToast(formatErrors(data) || "Fehler beim Speichern.", true);
         }
     }
 
     async function deleteSupplier(id, name) {
-        const res = await fetch(API_DETAIL(id), { method: "DELETE" });
+        const { res, data } = await apiFetch(API_DETAIL(id), {
+            method: "DELETE",
+        });
 
         if (res.ok) {
             showToast(`Lieferant "${name}" gelöscht.`);
             location.reload();
         } else {
-            showToast("Fehler beim Löschen.", true);
+            showToast(formatErrors(data) || "Fehler beim Löschen.", true);
         }
     }
 
     function formatErrors(data) {
-        if (!data || typeof data !== "object") return "";
-        // DRF errors: {field: ["msg"]} oder {detail: "..."}
+        if (!data) return "";
+        if (typeof data === "string") return data;
+        if (typeof data !== "object") return "";
+
         if (data.detail) return data.detail;
 
         const parts = [];
@@ -554,8 +599,17 @@
         }
         return parts.join(" | ");
     }
+
+    // Optional: Warnung, falls csrftoken nicht da ist (hilft beim Debuggen)
+    (function csrfSanityCheck() {
+        const has = document.cookie.includes("csrftoken=");
+        if (!has) {
+            console.warn("Kein csrftoken Cookie gefunden. Stelle sicher, dass die UI-View @ensure_csrf_cookie hat und die Seite über Django gerendert wird.");
+        }
+    })();
 </script>
 
 </body>
 </html>
+
 

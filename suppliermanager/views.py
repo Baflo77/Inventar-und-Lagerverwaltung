@@ -1,49 +1,47 @@
-from django.http import HttpResponse
-from django.shortcuts import render, get_object_or_404, get_list_or_404
+from django.shortcuts import render, get_object_or_404
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
-from rest_framework.permissions import IsAdminUser, AllowAny
-from suppliermanager.models import Supplier
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from suppliermanager.models import Supplier
 from suppliermanager.serializers import SupplierSerializer
 
 
-# Create your views here.
 @api_view(["GET", "POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def show_all_suppliers(request):
     if request.method == "GET":
         suppliers = Supplier.objects.all()
-        serialized_suppliers = SupplierSerializer(suppliers, many=True)
-        return Response(serialized_suppliers.data)
-    elif request.method == "POST":
-        supplier_serializer = SupplierSerializer(data=request.data)
-        if supplier_serializer.is_valid():
-            supplier_serializer.save()
-            return Response(supplier_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(supplier_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    return None
+        return Response(SupplierSerializer(suppliers, many=True).data)
+
+    serializer = SupplierSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def show_supplier_details(request, id):
     supplier = get_object_or_404(Supplier, pk=id)
-    if request.method == "GET":
-        serializer = SupplierSerializer(supplier)
-        return Response(serializer.data)
-    elif request.method == "DELETE":
-        supplier.delete()
-        return Response(data="msg: Der Lieferant wurde gelöscht", status=status.HTTP_204_NO_CONTENT)
-    elif request.method == "PUT":
-        supplier_serializer = SupplierSerializer(instance=supplier, data=request.data)
-        if supplier_serializer.is_valid():
-            supplier_serializer.save()
-            return Response(supplier_serializer.data)
-        return Response(supplier_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    return None
 
+    if request.method == "GET":
+        return Response(SupplierSerializer(supplier).data)
+
+    if request.method == "DELETE":
+        supplier.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    serializer = SupplierSerializer(instance=supplier, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@ensure_csrf_cookie
 def suppliermanager_ui(request):
     suppliers = Supplier.objects.all()
-    return render(
-        request,"suppliermanager/suppliermanager.html",{"suppliers": suppliers}
-    )
+    return render(request, "suppliermanager/suppliermanager.html", {"suppliers": suppliers})

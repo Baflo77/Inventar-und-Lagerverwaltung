@@ -309,7 +309,7 @@
         <div class="modal-body">
             <div class="form-group">
                 <label for="categoryName">Name</label>
-                <input id="categoryName" type="text" placeholder="z.B. Elektronik">
+                <input id="categoryName" type="text" placeholder="z.B. Elektronik" autocomplete="off">
             </div>
         </div>
 
@@ -318,6 +318,7 @@
 </div>
 
 <script>
+    // Relativ zur UI-Route /categories/
     const API_LIST = "api/";
     const API_DETAIL = (id) => `api/${id}/`;
 
@@ -325,8 +326,45 @@
     const modalTitle = document.getElementById("modalTitle");
     const modalActions = document.getElementById("modalActions");
     const categoryNameInput = document.getElementById("categoryName");
-
     const toast = document.getElementById("toast");
+
+    // --- CSRF + Fetch Wrapper (Django SessionAuth) ---
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+        return "";
+    }
+
+    async function apiFetch(url, options = {}) {
+        const method = (options.method || "GET").toUpperCase();
+        const unsafe = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+
+        const headers = new Headers(options.headers || {});
+        if (!headers.has("Accept")) headers.set("Accept", "application/json");
+
+        if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
+            headers.set("Content-Type", "application/json");
+        }
+
+        if (unsafe) {
+            const csrf = getCookie("csrftoken");
+            if (csrf) headers.set("X-CSRFToken", csrf);
+        }
+
+        const res = await fetch(url, {
+            ...options,
+            headers,
+            credentials: "same-origin",
+        });
+
+        let data = null;
+        const ct = res.headers.get("content-type") || "";
+        if (ct.includes("application/json")) data = await res.json().catch(() => null);
+        else data = await res.text().catch(() => null);
+
+        return { res, data };
+    }
 
     function showToast(msg, isError=false) {
         toast.style.display = "block";
@@ -357,7 +395,7 @@
 
     function openEdit(id, name) {
         modalTitle.textContent = "Kategorie bearbeiten";
-        categoryNameInput.value = name;
+        categoryNameInput.value = name || "";
         modalActions.innerHTML = `
             <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
             <button class="btn btn-primary" onclick="updateCategory('${id}')">Speichern</button>
@@ -367,12 +405,26 @@
 
     function openDelete(id, name) {
         modalTitle.textContent = "Kategorie löschen";
-        categoryNameInput.value = name;
+        categoryNameInput.value = name || "";
         modalActions.innerHTML = `
             <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
             <button class="btn btn-danger" onclick="deleteCategory('${id}')">Löschen</button>
         `;
         openModal();
+    }
+
+    function formatErrors(data) {
+        if (!data) return "";
+        if (typeof data === "string") return data;
+        if (typeof data !== "object") return "";
+        if (data.detail) return data.detail;
+
+        const parts = [];
+        for (const [k, v] of Object.entries(data)) {
+            if (Array.isArray(v) && v.length) parts.push(`${k}: ${v[0]}`);
+            else if (typeof v === "string") parts.push(`${k}: ${v}`);
+        }
+        return parts.join(" | ");
     }
 
     async function createCategory() {
@@ -382,11 +434,8 @@
             return;
         }
 
-        const res = await fetch(API_LIST, {
+        const { res, data } = await apiFetch(API_LIST, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
             body: JSON.stringify({ name })
         });
 
@@ -394,8 +443,7 @@
             showToast("Kategorie angelegt.");
             location.reload();
         } else {
-            const data = await res.json().catch(() => ({}));
-            showToast(data?.name?.[0] || "Fehler beim Anlegen.", true);
+            showToast(formatErrors(data) || `Fehler beim Anlegen. (${res.status})`, true);
         }
     }
 
@@ -406,11 +454,8 @@
             return;
         }
 
-        const res = await fetch(API_DETAIL(id), {
+        const { res, data } = await apiFetch(API_DETAIL(id), {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
             body: JSON.stringify({ name })
         });
 
@@ -418,13 +463,12 @@
             showToast("Kategorie gespeichert.");
             location.reload();
         } else {
-            const data = await res.json().catch(() => ({}));
-            showToast(data?.name?.[0] || "Fehler beim Speichern.", true);
+            showToast(formatErrors(data) || `Fehler beim Speichern. (${res.status})`, true);
         }
     }
 
     async function deleteCategory(id) {
-        const res = await fetch(API_DETAIL(id), {
+        const { res, data } = await apiFetch(API_DETAIL(id), {
             method: "DELETE"
         });
 
@@ -432,10 +476,18 @@
             showToast("Kategorie gelöscht.");
             location.reload();
         } else {
-            showToast("Fehler beim Löschen.", true);
+            showToast(formatErrors(data) || `Fehler beim Löschen. (${res.status})`, true);
         }
     }
+
+    // Debug-Hinweis, falls csrftoken fehlt
+    (function csrfSanityCheck() {
+        if (!document.cookie.includes("csrftoken=")) {
+            console.warn("Kein csrftoken Cookie gefunden. Stelle sicher, dass die UI-View @ensure_csrf_cookie hat und die Seite über Django gerendert wird.");
+        }
+    })();
 </script>
 
 </body>
 </html>
+
