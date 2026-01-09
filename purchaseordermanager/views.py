@@ -51,14 +51,14 @@ def purchaseorder_ui(request):
     orders = PurchaseOrder.objects.select_related("supplier").all().order_by("-created_at")
     return render(request, "purchaseordermanager/purchaseordermanager.html", {"orders": orders})
 
-
+@ensure_csrf_cookie
 def purchaseorder_receive_ui(request, id):
     order = get_object_or_404(PurchaseOrder.objects.select_related("supplier"), id=id)
     locations = Location.objects.select_related("warehouse").all()
     return render(
         request,
         "purchaseordermanager/purchaseorder_receive.html",
-        {"order": order, "locations": locations},
+        {"order": order, "locations": locations,}
     )
 
 

@@ -10,10 +10,10 @@ class Location(models.Model):
     city = models.CharField(max_length=100, verbose_name="Stadt")
     zip_code = models.CharField(max_length=20, verbose_name="PLZ")
     country = models.CharField(max_length=100, default="Deutschland", verbose_name="Land")
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     class Meta:
         verbose_name = "Standort"

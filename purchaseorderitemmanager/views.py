@@ -5,6 +5,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404, render
 from .models import PurchaseOrderItem
 from .serializers import PurchaseOrderItemSerializer
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 
 @api_view(["GET", "POST"])
@@ -46,6 +47,7 @@ def purchaseorderitem_detail(request, id):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@ensure_csrf_cookie
 def purchaseorderitem_ui(request):
     items = PurchaseOrderItem.objects.select_related("purchase_order", "purchase_order__supplier")
     return render(request, "purchaseorderitemmanager/purchaseorderitemmanager.html", {"items": items})

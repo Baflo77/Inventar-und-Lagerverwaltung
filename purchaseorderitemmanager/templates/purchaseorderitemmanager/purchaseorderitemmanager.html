@@ -235,6 +235,11 @@
 
 <body>
 
+<!-- ✅ Wichtig: sorgt dafür, dass Django CSRF-Cookie sauber setzt -->
+<form style="display:none;">
+  {% csrf_token %}
+</form>
+
 <header class="app-header">
   <div class="header-left">
     <a href="/" class="nav-home">🏠 Home</a>
@@ -251,7 +256,7 @@
       <p class="subtitle">Anzeigen & Erstellen von Items zu einer PurchaseOrder</p>
     </div>
 
-    <button class="btn btn-primary" id="reloadBtnTop">
+    <button class="btn btn-primary" id="reloadBtnTop" type="button">
       🔄 Neu laden
     </button>
   </div>
@@ -268,20 +273,20 @@
         <label for="purchaseOrder">PurchaseOrder</label>
         <select id="purchaseOrder"></select>
 
-        <label for="product">Produkt</label>
-        <input id="product" type="text" placeholder="z.B. USB-C Kabel" />
+        <label for="product">Produkt (ID)</label>
+        <input id="product" type="number" min="1" placeholder="z.B. 1" />
 
         <label for="quantity">Menge</label>
         <input id="quantity" type="number" min="1" value="1" />
 
-        <button class="btn btn-primary" id="createBtn" style="margin-top: 14px;">
+        <button class="btn btn-primary" id="createBtn" type="button" style="margin-top: 14px;">
           ✅ Erstellen
         </button>
 
         <div id="msg"></div>
 
         <p class="hint">
-          Tipp: Wähle zuerst eine PurchaseOrder aus, dann Produkt & Menge.
+          Tipp: Wähle zuerst eine PurchaseOrder aus, dann Produkt-ID &amp; Menge.
         </p>
       </div>
     </div>
@@ -290,7 +295,7 @@
     <div class="data-card">
       <div class="card-header">
         <h3 class="card-title">📦 Items</h3>
-        <button class="btn btn-ghost" id="reloadBtn">
+        <button class="btn btn-ghost" id="reloadBtn" type="button">
           🔄 Neu laden
         </button>
       </div>
@@ -315,26 +320,56 @@
 </div>
 
 <script>
-  // UI wird unter /purchaseorderitems/ aufgerufen
-  // API liegt entsprechend unter /purchaseorderitems/api/
-  const ITEMS_API = "/purchaseorderitems/api/";
+  // -----------------------------
+  // CSRF helper (wie Stockmanager)
+  // -----------------------------
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
 
-  // Für Dropdown der PurchaseOrders:
+  const msgBox = document.getElementById("msg");
+  function setMsg(text, type="") {
+    msgBox.className = type;
+    msgBox.textContent = text || "";
+  }
+
+  let csrftoken = getCookie('csrftoken');
+
+  // UI wird unter /purchaseorderitems/ aufgerufen
+  const ITEMS_API = "/purchaseorderitems/api/";
   const ORDERS_API = "/purchaseorders/api/";
 
   const poSelect = document.getElementById("purchaseOrder");
   const itemsTbody = document.getElementById("itemsTbody");
-  const msgBox = document.getElementById("msg");
 
-  function setMsg(text, type="") {
-    msgBox.className = type;
-    msgBox.textContent = text;
+  async function ensureCsrf() {
+    // Falls beim ersten Laden noch kein Cookie da ist → Seite ist aber gerendert,
+    // nach kurzem Tick nochmal lesen.
+    if (!csrftoken) {
+      await new Promise(r => setTimeout(r, 50));
+      csrftoken = getCookie("csrftoken");
+    }
+
+    if (!csrftoken) {
+      setMsg("CSRF Cookie fehlt. Bitte Strg+F5 neu laden. (Oder ensure_csrf_cookie in View setzen)", "error");
+    }
   }
 
   async function loadPurchaseOrders() {
     poSelect.innerHTML = "";
     try {
-      const res = await fetch(ORDERS_API);
+      const res = await fetch(ORDERS_API, { credentials: "same-origin" });
       if (!res.ok) throw new Error("PurchaseOrder API nicht erreichbar");
       const orders = await res.json();
 
@@ -363,7 +398,7 @@
     setMsg("");
 
     try {
-      const res = await fetch(ITEMS_API);
+      const res = await fetch(ITEMS_API, { credentials: "same-origin" });
       if (!res.ok) throw new Error("PurchaseOrderItem API nicht erreichbar");
       const items = await res.json();
 
@@ -389,7 +424,7 @@
           <td>${i.product}</td>
           <td><strong>${i.quantity}</strong></td>
           <td class="actions">
-            <button class="danger" data-del="${i.id}">🗑 Löschen</button>
+            <button class="danger" data-del="${i.id}" type="button">🗑 Löschen</button>
           </td>
         `;
         itemsTbody.appendChild(tr);
@@ -401,8 +436,21 @@
           if (!confirm(`Item #${id} wirklich löschen?`)) return;
 
           try {
-            const delRes = await fetch(`${ITEMS_API}${id}/`, { method: "DELETE" });
-            if (!delRes.ok && delRes.status !== 204) throw new Error("Löschen fehlgeschlagen");
+            await ensureCsrf();
+
+            const delRes = await fetch(`${ITEMS_API}${id}/`, {
+              method: "DELETE",
+              credentials: "same-origin",
+              headers: {
+                "X-CSRFToken": csrftoken
+              }
+            });
+
+            if (!delRes.ok && delRes.status !== 204) {
+              const text = await delRes.text();
+              throw new Error(`HTTP ${delRes.status}: ${text}`);
+            }
+
             setMsg(`Item #${id} gelöscht.`, "success");
             await loadItems();
           } catch (e) {
@@ -420,15 +468,16 @@
     setMsg("");
 
     const purchaseOrderId = poSelect.value;
-    const product = document.getElementById("product").value.trim();
+    const productRaw = document.getElementById("product").value.trim();
+    const productId = parseInt(productRaw, 10);
     const quantity = parseInt(document.getElementById("quantity").value, 10);
 
     if (!purchaseOrderId) {
       setMsg("Bitte eine PurchaseOrder auswählen.", "error");
       return;
     }
-    if (!product) {
-      setMsg("Bitte Produkt eingeben.", "error");
+    if (!Number.isInteger(productId) || productId < 1) {
+      setMsg("Bitte eine gültige Produkt-ID eingeben (>= 1).", "error");
       return;
     }
     if (!Number.isInteger(quantity) || quantity < 1) {
@@ -437,19 +486,28 @@
     }
 
     try {
+      await ensureCsrf();
+
       const res = await fetch(ITEMS_API, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken
+        },
         body: JSON.stringify({
           purchase_order: parseInt(purchaseOrderId, 10),
-          product: product,
+          product: productId,
           quantity: quantity
         })
       });
 
+      // ✅ bessere Fehlermeldung: auch HTML/Plaintext anzeigen
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(JSON.stringify(err));
+        const text = await res.text();
+        let detail = text;
+        try { detail = JSON.stringify(JSON.parse(text)); } catch (_) {}
+        throw new Error(`HTTP ${res.status}: ${detail}`);
       }
 
       document.getElementById("product").value = "";
@@ -467,6 +525,7 @@
   document.getElementById("reloadBtnTop").addEventListener("click", loadItems);
 
   (async function init() {
+    await ensureCsrf();
     await loadPurchaseOrders();
     await loadItems();
   })();
@@ -474,3 +533,4 @@
 
 </body>
 </html>
+

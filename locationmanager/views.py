@@ -5,22 +5,25 @@ from django.http import HttpResponse, request
 from django.shortcuts import render, get_object_or_404, get_list_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view
-
 from .models import Location
 from rest_framework.response import Response
-
 from .serializers import LocationSerializer
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
+from warehousemanager.models import Warehouse
 
 # Create your views here.
 def location_list_ui(request):
+    locations = (Location.objects.select_related('warehouse').annotate(item_count=Count('stocks'),total_quantity=Coalesce(Sum('stocks__quantity'), 0)).all()
+    )
 
-    locations = Location.objects.select_related('warehouse').annotate(item_count=Count('stocks'), total_quantity=Coalesce(Sum('stocks__quantity'), 0)).all()
+    warehouses = Warehouse.objects.all().order_by("name")
+
     context = {
-        'locations': locations
+        'locations': locations,
+        'warehouses': warehouses,
     }
     return render(request, "locationmanager/locationmanager.html", context)
 

@@ -4,7 +4,7 @@ from locationmanager.models import Location as PhysicalLocation
 
 
 class Warehouse(models.Model):
-    location = models.OneToOneField(PhysicalLocation,on_delete=models.PROTECT,related_name='warehouse_data',verbose_name="inventory")
+    location = models.OneToOneField(PhysicalLocation,on_delete=models.PROTECT,related_name='warehouse_data',verbose_name="inventory", null=True, blank=True)
     name = models.CharField(max_length=100)
 
     class Meta:

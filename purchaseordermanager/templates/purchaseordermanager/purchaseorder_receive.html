@@ -182,7 +182,7 @@
             <input id="notes" class="form-control" type="text" placeholder="z.B. Lieferschein-Nr., Kommentar...">
           </div>
 
-          <button class="btn-submit" id="bookInBtn">Wareneingang jetzt buchen</button>
+          <button class="btn-submit" id="bookInBtn" type="button">Wareneingang jetzt buchen</button>
 
           <div id="msg" class="mt-3" style="margin-top: 14px;"></div>
 
@@ -196,7 +196,7 @@
       <div class="data-card">
         <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap: 10px;">
           <h3 class="card-title">Positionen</h3>
-          <button class="btn btn-primary" id="reloadBtn" style="background:#3498db; border:none; font-weight:700;">
+          <button class="btn btn-primary" id="reloadBtn" type="button" style="background:#3498db; border:none; font-weight:700;">
             Neu laden
           </button>
         </div>
@@ -249,7 +249,6 @@
     }
     return cookieValue;
   }
-  const csrftoken = getCookie('csrftoken');
 
   const ORDER_ID = {{ order.id }};
   const ITEMS_API = `/purchaseorderitems/api/?purchase_order_id=${ORDER_ID}`;
@@ -260,7 +259,7 @@
 
   function setMsg(text, type="") {
     msgBox.className = type;
-    msgBox.textContent = text;
+    msgBox.textContent = text || "";
     msgBox.style.color = (type === "error") ? "#b00020" : (type === "success" ? "#1b5e20" : "#343a40");
     msgBox.style.fontWeight = "600";
   }
@@ -270,7 +269,7 @@
     setMsg("");
 
     try {
-      const res = await fetch(ITEMS_API);
+      const res = await fetch(ITEMS_API, { credentials: "same-origin" });
       if (!res.ok) throw new Error("PurchaseOrderItem API nicht erreichbar");
       const items = await res.json();
 
@@ -326,8 +325,14 @@
   async function bookIn() {
     setMsg("");
 
+    const csrftoken = getCookie('csrftoken');
+    if (!csrftoken) {
+      setMsg("CSRF Token fehlt (Cookie). Bitte Seite neu laden (Strg+F5).", "error");
+      return;
+    }
+
     const destId = document.getElementById("destinationLocationId").value;
-    const notes = document.getElementById("notes").value;
+    const notes = (document.getElementById("notes").value || "").trim();
 
     if (!destId) {
       setMsg("Bitte Ziel-Lagerort auswählen.", "error");
@@ -366,6 +371,7 @@
           "Content-Type": "application/json",
           "X-CSRFToken": csrftoken
         },
+        credentials: "same-origin",
         body: JSON.stringify({
           destination_location_id: parseInt(destId, 10),
           notes: notes,
@@ -382,9 +388,6 @@
       setMsg("Wareneingang wurde gebucht.", "success");
       await loadItems();
 
-      // optional: nach kurzer Zeit zurück zur PO-Liste
-      // window.location.href = "/purchaseorders/";
-
     } catch (e) {
       setMsg("Fehler beim Buchen: " + e.message, "error");
     }
@@ -398,3 +401,4 @@
   })();
 </script>
 {% endblock %}
+
