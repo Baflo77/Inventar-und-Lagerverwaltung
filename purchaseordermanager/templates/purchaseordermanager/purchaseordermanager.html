@@ -65,6 +65,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
         }
 
         .page-title {
@@ -153,6 +154,111 @@
             color: #7f8c8d;
             font-size: 0.95rem;
         }
+
+        /* ---------------------------
+           MODAL (Create PurchaseOrder)
+           --------------------------- */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 9999;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 520px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--bg-main);
+        }
+
+        .modal-title {
+            margin: 0;
+            font-size: 1.05rem;
+            color: var(--header-bg);
+        }
+
+        .modal-close {
+            border: none;
+            background: transparent;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .modal-body {
+            padding: 16px 18px 18px;
+        }
+
+        .modal-body label {
+            display: block;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        .modal-body select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-top: 6px;
+            border: 1px solid #dfe6e9;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .modal-body select:focus {
+            border-color: rgba(52, 152, 219, 0.6);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+        }
+
+        .modal-msg {
+            margin-top: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -173,7 +279,7 @@
             <p class="subtitle">Übersicht aller Bestellungen (PurchaseOrders)</p>
         </div>
 
-        <button class="btn-add" onclick="alert('UI ist vorbereitet – API ist angebunden')">
+        <button class="btn-add" id="openCreateModalBtn" type="button">
             ➕ Neue PurchaseOrder
         </button>
     </div>
@@ -205,12 +311,12 @@
                     </td>
                     <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
                     <td class="actions">
-                        <button onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'">
+                        <button type="button" onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'">
                             📥 Wareneingang
                         </button>
 
-                        <button>✏️ Bearbeiten</button>
-                        <button class="danger">🗑 Löschen</button>
+                        <button type="button">✏️ Bearbeiten</button>
+                        <button type="button" class="danger">🗑 Löschen</button>
                     </td>
 
                 </tr>
@@ -230,6 +336,181 @@
     </div>
 
 </div>
+
+<!-- Create PurchaseOrder Modal -->
+<div class="modal-backdrop" id="createModalBackdrop">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
+        <div class="modal-header">
+            <h3 id="createModalTitle" class="modal-title">Neue PurchaseOrder</h3>
+            <button class="modal-close" id="closeCreateModalBtn" type="button" aria-label="Schließen">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <label for="supplierSelect">Lieferant</label>
+            <select id="supplierSelect">
+                <option value="">Lade Supplier...</option>
+            </select>
+
+            <label for="statusSelect">Status</label>
+            <select id="statusSelect">
+                <option value="open" selected>Offen</option>
+                <option value="ordered">Bestellt</option>
+                <option value="delivered">Geliefert</option>
+                <option value="canceled">Storniert</option>
+            </select>
+
+            <div id="createMsg" class="modal-msg"></div>
+
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancelCreateBtn" type="button">Abbrechen</button>
+                <button class="btn-primary" id="createOrderBtn" type="button">✅ Erstellen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- CSRF Helper (wie im Stock-Manager) ---
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // APIs (passt zu deinen suppliermanager/urls.py)
+    const SUPPLIERS_API = "/suppliers/api/";
+    const PURCHASEORDERS_API = "/purchaseorders/api/";
+
+    // Modal elements
+    const backdrop = document.getElementById("createModalBackdrop");
+    const openBtn = document.getElementById("openCreateModalBtn");
+    const closeBtn = document.getElementById("closeCreateModalBtn");
+    const cancelBtn = document.getElementById("cancelCreateBtn");
+    const createBtn = document.getElementById("createOrderBtn");
+
+    const supplierSelect = document.getElementById("supplierSelect");
+    const statusSelect = document.getElementById("statusSelect");
+    const msgBox = document.getElementById("createMsg");
+
+    function setMsg(text, type="") {
+        msgBox.textContent = text || "";
+        msgBox.style.color = type === "error" ? "#b00020" : (type === "success" ? "#1b5e20" : "#2f3640");
+        msgBox.style.display = text ? "block" : "none";
+    }
+
+    function openModal() {
+        backdrop.style.display = "flex";
+        setMsg("");
+    }
+
+    function closeModal() {
+        backdrop.style.display = "none";
+        setMsg("");
+    }
+
+    async function loadSuppliers() {
+        supplierSelect.innerHTML = "";
+        setMsg("");
+
+        try {
+            const res = await fetch(SUPPLIERS_API, { credentials: "same-origin" });
+            if (!res.ok) throw new Error("Supplier API nicht erreichbar");
+            const suppliers = await res.json();
+
+            if (!Array.isArray(suppliers) || suppliers.length === 0) {
+                supplierSelect.innerHTML = `<option value="">Keine Supplier vorhanden</option>`;
+                supplierSelect.disabled = true;
+                setMsg("Bitte zuerst einen Supplier anlegen.", "error");
+                return;
+            }
+
+            supplierSelect.disabled = false;
+
+            suppliers.forEach(s => {
+                const opt = document.createElement("option");
+                opt.value = s.id;
+                opt.textContent = s.name ? `${s.name}` : `Supplier #${s.id}`;
+                supplierSelect.appendChild(opt);
+            });
+
+        } catch (e) {
+            supplierSelect.innerHTML = `<option value="">Fehler beim Laden</option>`;
+            supplierSelect.disabled = true;
+            setMsg("Fehler beim Laden der Supplier: " + e.message, "error");
+        }
+    }
+
+    async function createPurchaseOrder() {
+        setMsg("");
+
+        const supplierId = supplierSelect.value;
+        const poStatus = statusSelect.value;
+
+        if (!supplierId) {
+            setMsg("Bitte einen Lieferanten auswählen.", "error");
+            return;
+        }
+
+        if (!csrftoken) {
+            setMsg("CSRF Token fehlt (Cookie). Bitte Seite neu laden (Strg+F5).", "error");
+            return;
+        }
+
+        try {
+            const res = await fetch(PURCHASEORDERS_API, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken
+                },
+                credentials: "same-origin",
+                body: JSON.stringify({
+                    supplier: parseInt(supplierId, 10),
+                    status: poStatus
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(typeof err === "string" ? err : JSON.stringify(err));
+            }
+
+            setMsg("PurchaseOrder erstellt. Seite wird aktualisiert…", "success");
+            setTimeout(() => window.location.reload(), 350);
+
+        } catch (e) {
+            setMsg("Fehler beim Erstellen: " + e.message, "error");
+        }
+    }
+
+    openBtn.addEventListener("click", async () => {
+        openModal();
+        await loadSuppliers();
+    });
+
+    closeBtn.addEventListener("click", closeModal);
+    cancelBtn.addEventListener("click", closeModal);
+
+    backdrop.addEventListener("click", (e) => {
+        if (e.target === backdrop) closeModal();
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && backdrop.style.display === "flex") closeModal();
+    });
+
+    createBtn.addEventListener("click", createPurchaseOrder);
+</script>
 
 </body>
 </html>

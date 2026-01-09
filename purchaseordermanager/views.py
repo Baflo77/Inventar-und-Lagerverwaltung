@@ -1,8 +1,5 @@
-import json
 from django.db import transaction
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
-from django.views.decorators.http import require_POST
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -13,6 +10,8 @@ from locationmanager.models import Location
 from purchaseorderitemmanager.models import PurchaseOrderItem
 from stockmanager.models import Stock
 from stockmovementmanager.models import StockMovement
+from django.views.decorators.csrf import ensure_csrf_cookie
+
 
 @api_view(["GET", "POST"])
 @permission_classes([AllowAny])
@@ -47,6 +46,7 @@ def purchaseorder_detail(request, id):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@ensure_csrf_cookie
 def purchaseorder_ui(request):
     orders = PurchaseOrder.objects.select_related("supplier").all().order_by("-created_at")
     return render(request, "purchaseordermanager/purchaseordermanager.html", {"orders": orders})
@@ -55,27 +55,35 @@ def purchaseorder_ui(request):
 def purchaseorder_receive_ui(request, id):
     order = get_object_or_404(PurchaseOrder.objects.select_related("supplier"), id=id)
     locations = Location.objects.select_related("warehouse").all()
-    return render(request, "purchaseordermanager/purchaseorder_receive.html", {
-        "order": order,
-        "locations": locations,
-    })
+    return render(
+        request,
+        "purchaseordermanager/purchaseorder_receive.html",
+        {"order": order, "locations": locations},
+    )
 
 
-@require_POST
+@api_view(["POST"])
+@permission_classes([AllowAny])
 def purchaseorder_receive_api(request, id):
+    """
+    Erwarteter Body:
+    {
+      "destination_location_id": 3,
+      "notes": "optional",
+      "items": [{"po_item_id": 7, "quantity": 2}, ...]
+    }
+    """
+    destination_location_id = request.data.get("destination_location_id")
+    items = request.data.get("items", [])
+    notes = (request.data.get("notes") or "").strip()  # aktuell nur akzeptiert
+
+    if not destination_location_id:
+        return Response({"error": "Ziel-Lagerort fehlt."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not isinstance(items, list) or len(items) == 0:
+        return Response({"error": "Keine Positionen übergeben."}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        data = json.loads(request.body)
-
-        destination_location_id = data.get("destination_location_id")
-        items = data.get("items", [])
-        notes = (data.get("notes") or "").strip()
-
-        if not destination_location_id:
-            return JsonResponse({"error": "Ziel-Lagerort fehlt."}, status=400)
-
-        if not isinstance(items, list) or len(items) == 0:
-            return JsonResponse({"error": "Keine Positionen übergeben."}, status=400)
-
         with transaction.atomic():
             order = PurchaseOrder.objects.select_for_update().get(id=id)
             destination = Location.objects.get(id=int(destination_location_id))
@@ -83,6 +91,13 @@ def purchaseorder_receive_api(request, id):
             any_posted_qty = False
 
             for row in items:
+
+                if not isinstance(row, dict):
+                    return Response({"error": "Ungültiges Item-Format."}, status=status.HTTP_400_BAD_REQUEST)
+
+                if "po_item_id" not in row:
+                    return Response({"error": "po_item_id fehlt in items[]"}, status=status.HTTP_400_BAD_REQUEST)
+
                 po_item_id = int(row.get("po_item_id"))
                 qty = int(row.get("quantity", 0))
 
@@ -98,9 +113,10 @@ def purchaseorder_receive_api(request, id):
 
                 remaining = poi.quantity - poi.received_quantity
                 if qty > remaining:
-                    return JsonResponse({
-                        "error": f"Zu hohe Menge bei PO-Item #{poi.id}. Offen: {remaining}"
-                    }, status=400)
+                    return Response(
+                        {"error": f"Zu hohe Menge bei PO-Item #{poi.id}. Offen: {remaining}"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
 
                 stock, _ = Stock.objects.select_for_update().get_or_create(
                     product=poi.product,
@@ -126,21 +142,30 @@ def purchaseorder_receive_api(request, id):
                 poi.save()
 
             if not any_posted_qty:
-                return JsonResponse({"error": "Bitte mindestens eine Menge > 0 eingeben."}, status=400)
+                return Response(
+                    {"error": "Bitte mindestens eine Menge > 0 eingeben."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             all_items = list(PurchaseOrderItem.objects.filter(purchase_order=order))
             if all_items and all(i.received_quantity >= i.quantity for i in all_items):
                 order.status = "delivered"
                 order.save()
 
-        return JsonResponse({"success": True})
+        return Response({"success": True}, status=status.HTTP_200_OK)
 
     except PurchaseOrder.DoesNotExist:
-        return JsonResponse({"error": "PurchaseOrder nicht gefunden."}, status=404)
+        return Response({"error": "PurchaseOrder nicht gefunden."}, status=status.HTTP_404_NOT_FOUND)
     except Location.DoesNotExist:
-        return JsonResponse({"error": "Ziel-Lagerort nicht gefunden."}, status=404)
+        return Response({"error": "Ziel-Lagerort nicht gefunden."}, status=status.HTTP_404_NOT_FOUND)
     except PurchaseOrderItem.DoesNotExist:
-        return JsonResponse({"error": "PurchaseOrderItem nicht gefunden oder gehört nicht zur Bestellung."}, status=404)
+        return Response(
+            {"error": "PurchaseOrderItem nicht gefunden oder gehört nicht zur Bestellung."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except (ValueError, TypeError):
+        return Response({"error": "Ungültige Zahlenwerte übergeben."}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
