@@ -4,11 +4,20 @@
 
 {% block extra_css %}
 <style>
+  /* Login exakt mittig im Viewport (unter dem 85px Header) */
   .login-wrap {
-    min-height: calc(100vh - 85px); /* Headerhöhe aus base.html */
-    display: grid;
-    place-items: center;
-    padding: 2rem 1rem;
+    position: fixed;
+    top: 85px;     /* Header-Höhe aus base.html */
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 1rem;
+    z-index: 10;   /* sicher über dem Content */
   }
 
   .login-card {
@@ -117,3 +126,4 @@
   </div>
 </div>
 {% endblock %}
+
