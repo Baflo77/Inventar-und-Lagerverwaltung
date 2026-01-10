@@ -103,6 +103,8 @@ def purchaseorder_receive_api(request, id):
                     purchase_order=order
                 )
 
+                product = poi.product
+
                 remaining = poi.quantity - poi.received_quantity
                 if qty > remaining:
                     return Response(
@@ -111,7 +113,7 @@ def purchaseorder_receive_api(request, id):
                     )
 
                 stock, _ = Stock.objects.select_for_update().get_or_create(
-                    product=poi.product,
+                    product=product,
                     location=destination,
                     defaults={"quantity": 0, "threshold": 0}
                 )
@@ -123,7 +125,7 @@ def purchaseorder_receive_api(request, id):
                 stock.save()
 
                 StockMovement.objects.create(
-                    product=poi.product,
+                    product=product,
                     source_location=None,
                     destination_location=destination,
                     quantity=qty,

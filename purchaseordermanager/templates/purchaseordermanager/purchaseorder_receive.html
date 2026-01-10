@@ -200,6 +200,28 @@
             Neu laden
           </button>
         </div>
+        <div id="addItemModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); align-items:center; justify-content:center; z-index:9999;">
+          <div style="background:white; width:520px; max-width:95vw; border-radius:10px; overflow:hidden;">
+            <div style="padding:14px 18px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+              <strong>Position hinzufügen</strong>
+              <button id="closeAddItemModal" style="border:none; background:transparent; font-size:18px; cursor:pointer;">✕</button>
+            </div>
+          <div style="padding:16px 18px;">
+            <label class="form-label">Produkt (aus ProductSupplier)</label>
+            <select id="psSelect" class="form-select"></select>
+
+            <label class="form-label" style="margin-top:12px;">Menge</label>
+            <input id="itemQty" class="form-control" type="number" min="1" value="1">
+
+            <div style="display:flex; gap:10px; margin-top:16px;">
+              <button id="cancelAddItem" class="btn-secondary" type="button">Abbrechen</button>
+              <button id="saveAddItem" class="btn-submit" type="button" style="margin-top:0;">Speichern</button>
+            </div>
+
+            <div id="addItemMsg" style="margin-top:12px; font-weight:600;"></div>
+          </div>
+        </div>
+      </div>
 
         <div class="card-body p-0">
           <div class="table-responsive">
@@ -234,6 +256,9 @@
 
 {% block extra_js %}
 <script>
+  const PRODUCTSUPPLIERS_API = `/productsuppliers/api/?supplier_id={{ order.supplier.id }}`;
+  const CREATE_ITEM_API = `/purchaseorderitems/api/`;
+
   // --- CSRF Helper (wie im Stock-Manager) ---
   function getCookie(name) {
     let cookieValue = null;
@@ -293,10 +318,13 @@
         tr.dataset.poiId = i.id;
         tr.dataset.remaining = remaining;
 
+        const name = i.product_name || "(Produkt unbekannt)";
+        const sku = i.product_sku || "";
+        const psId = i.product_supplier || "";
+
         tr.innerHTML = `
           <td><strong>#${i.id}</strong></td>
           <td>
-            <span class="badge-pill">Produkt ID: ${i.product}</span>
             <div class="muted" style="font-size:0.85rem; margin-top:4px;">
               (Optional: Produktname/SKU kann später ergänzt werden)
             </div>
@@ -399,6 +427,108 @@
   (async function init() {
     await loadItems();
   })();
+
+  const addModal = document.getElementById("addItemModal");
+  const addBtn = document.getElementById("addItemBtn");
+  const closeAdd = document.getElementById("closeAddItemModal");
+  const cancelAdd = document.getElementById("cancelAddItem");
+  const saveAdd = document.getElementById("saveAddItem");
+  const psSelect = document.getElementById("psSelect");
+  const itemQty = document.getElementById("itemQty");
+  const addItemMsg = document.getElementById("addItemMsg");
+
+  function setAddMsg(text, type="") {
+    addItemMsg.textContent = text || "";
+    addItemMsg.style.color = type === "error" ? "#b00020" : (type === "success" ? "#1b5e20" : "#343a40");
+  }
+
+  async function loadProductSuppliersForThisPO() {
+    psSelect.innerHTML = "";
+    setAddMsg("");
+
+    const res = await fetch(PRODUCTSUPPLIERS_API, { credentials: "same-origin" });
+    if (!res.ok) throw new Error("ProductSupplier API nicht erreichbar");
+
+    const arr = await res.json();
+    if (!arr.length) {
+      psSelect.innerHTML = `<option value="">Keine Zuordnungen vorhanden</option>`;
+      psSelect.disabled = true;
+      setAddMsg("Bitte zuerst ProductSupplier-Zuordnungen anlegen.", "error");
+      return;
+    }
+
+    psSelect.disabled = false;
+
+    arr.forEach(ps => {
+      const opt = document.createElement("option");
+      opt.value = ps.id;
+      const name = ps.product_name || `Produkt #${ps.product}`;
+      const sku = ps.product_sku || "";
+      opt.textContent = `${name}${sku ? " (" + sku + ")" : ""}`;
+      psSelect.appendChild(opt);
+    });
+  }
+
+  async function createItem() {
+    setAddMsg("");
+    const csrftoken = getCookie("csrftoken");
+    if (!csrftoken) {
+      setAddMsg("CSRF Token fehlt. Seite neu laden.", "error");
+      return;
+    }
+
+    const psId = psSelect.value;
+    const qty = parseInt(itemQty.value || "0", 10);
+
+    if (!psId) {
+      setAddMsg("Bitte ein Produkt auswählen.", "error");
+      return;
+    }
+    if (!qty || qty <= 0) {
+      setAddMsg("Bitte eine Menge > 0 eingeben.", "error");
+      return;
+    }
+
+    const res = await fetch(CREATE_ITEM_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrftoken
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        purchase_order: ORDER_ID,
+        product_supplier: parseInt(psId, 10),
+        quantity: qty
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setAddMsg(JSON.stringify(data), "error");
+      return;
+    }
+
+    setAddMsg("Position hinzugefügt.", "success");
+    addModal.style.display = "none";
+    await loadItems();
+  }
+
+  // Modal wiring
+  addBtn?.addEventListener("click", async () => {
+    addModal.style.display = "flex";
+    itemQty.value = "1";
+    await loadProductSuppliersForThisPO();
+  });
+
+  closeAdd?.addEventListener("click", () => addModal.style.display = "none");
+  cancelAdd?.addEventListener("click", () => addModal.style.display = "none");
+
+  addModal?.addEventListener("click", (e) => {
+    if (e.target === addModal) addModal.style.display = "none";
+  });
+
+  saveAdd?.addEventListener("click", createItem);
 </script>
 {% endblock %}
 

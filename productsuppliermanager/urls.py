@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from .views import ProductSupplierViewSet, productsupplier_list_ui
+from .views import ProductSupplierViewSet, productsupplier_list_ui, productsupplier_by_supplier
 from django.urls import path
 
 router = DefaultRouter()
@@ -8,8 +8,8 @@ router.register("productsupplier", ProductSupplierViewSet, basename="productsupp
 urlpatterns = [
 
     path("", productsupplier_list_ui, name="productsupplier_list_ui"),
+    path("api/", productsupplier_by_supplier, name="productsupplier_by_supplier"),
 ]
-
 
 urlpatterns += router.urls
 

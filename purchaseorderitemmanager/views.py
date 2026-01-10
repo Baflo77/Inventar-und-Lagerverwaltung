@@ -15,7 +15,12 @@ def purchaseorderitem_list(request):
     if request.method == "GET":
         po_id = request.query_params.get("purchase_order_id")
 
-        items = PurchaseOrderItem.objects.all()
+        items = PurchaseOrderItem.objects.select_related(
+            "purchase_order",
+            "product_supplier",
+            "product_supplier__product",
+            "product_supplier__supplier",
+        )
         if po_id:
             items = items.filter(purchase_order_id=po_id)
 
