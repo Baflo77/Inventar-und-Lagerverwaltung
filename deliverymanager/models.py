@@ -1,8 +1,17 @@
 from django.db import models
-from ordermanager.models import Order
 
 
 class Delivery(models.Model):
+    STATUS_OPEN = "open"
+    STATUS_SHIPPED = "shipped"
+    STATUS_DELIVERED = "delivered"
+
+    STATUS_CHOICES = [
+        (STATUS_OPEN, "Open"),
+        (STATUS_SHIPPED, "Shipped"),
+        (STATUS_DELIVERED, "Delivered"),
+    ]
+
     order = models.ForeignKey(
         "ordermanager.Order",
         on_delete=models.CASCADE,
@@ -10,7 +19,13 @@ class Delivery(models.Model):
     )
 
     delivery_date = models.DateField()
-    status = models.BooleanField(default=False)
+
+    # ✅ vorher: BooleanField -> jetzt: 3-stufiger Status
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_OPEN,
+    )
 
     def __str__(self):
         return f"Delivery #{self.id} for Order #{self.order_id}"
