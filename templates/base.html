@@ -54,6 +54,11 @@
             display: flex; align-items: center; gap: 10px;
         }
 
+        .logout-btn {
+            border-radius: 999px;
+            padding: 4px 10px;
+            line-height: 1;
+        }
 
         a { text-decoration: none; }
 
@@ -63,7 +68,17 @@
 <body>
 <header class="app-header">
     <h1 style="font-size: 1.5rem; margin: 0; font-weight: 700;">Inventar-Lagerverwaltung</h1>
-    <div class="user-pill">👤 <strong>Administrator</strong></div>
+    {% if request.user.is_authenticated %}
+        <div class="user-pill">
+            <span>👤 <strong>{{ request.user.username }}</strong></span>
+                <form method="post" action="{% url 'logout' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm-outline-light logout-btn" title="Abmelden">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+            </form>
+        </div>
+    {% endif %}
 </header>
 
 <div class="main-content-area">
