@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404, render
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import PurchaseOrder
@@ -14,7 +14,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 
 @api_view(["GET", "POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def purchaseorder_list(request):
     if request.method == "GET":
         orders = PurchaseOrder.objects.all().order_by("-created_at")
@@ -28,7 +28,7 @@ def purchaseorder_list(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def purchaseorder_detail(request, id):
     order = get_object_or_404(PurchaseOrder, id=id)
 
@@ -63,16 +63,8 @@ def purchaseorder_receive_ui(request, id):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def purchaseorder_receive_api(request, id):
-    """
-    Erwarteter Body:
-    {
-      "destination_location_id": 3,
-      "notes": "optional",
-      "items": [{"po_item_id": 7, "quantity": 2}, ...]
-    }
-    """
     destination_location_id = request.data.get("destination_location_id")
     items = request.data.get("items", [])
     notes = (request.data.get("notes") or "").strip()  # aktuell nur akzeptiert
