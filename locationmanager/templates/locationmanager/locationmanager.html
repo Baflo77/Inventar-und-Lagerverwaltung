@@ -171,6 +171,7 @@
                         <tr>
                             <th style="width: 30%;">Name / Beschreibung</th>
                             <th style="width: 20%;">Zugehörigkeit</th>
+                            <th style="width: 15%;">Auslastung</th>
                             <th style="width: 35%;">Adresse</th>
                             <th style="width: 15%; text-align: right;">Aktionen</th>
                         </tr>
@@ -179,6 +180,8 @@
                         {% for location in locations %}
                         <tr>
                             <td>
+
+
                                 <span class="text-main">{{ location.name }}</span>
                                 {% if location.description %}
                                     <span class="text-sub">{{ location.description|truncatechars:40 }}</span>
@@ -193,21 +196,57 @@
                                     <span style="color: #ccc;">—</span>
                                 {% endif %}
                             </td>
+                              <td>
+                              {% if location.capacity > 0 %}
+                                <span class="badge-soft">
+                                  {{ location.total_quantity }}/{{ location.capacity }}
+                                </span>
+                              {% else %}
+                                <span style="color:#ccc;">—</span>
+                              {% endif %}
+                            </td>
                             <td>
                                 <div style="line-height: 1.4; color: #555;">
                                     {{ location.street }} {{ location.house_number|default:"" }}<br>
                                     {{ location.zip_code }} {{ location.city }}
                                 </div>
                             </td>
-                            <td style="text-align: right;">
-                                <a href="#" class="text-muted hover:text-primary">
-                                    Details
-                                </a>
+
+                          <td style="text-align: right;">
+                              <button type="button"
+                                      class="btn btn-sm btn-outline-primary"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#editLocationModal"
+                                      data-id="{{ location.id }}"
+                                      data-name="{{ location.name|escapejs }}"
+                                      data-description="{{ location.description|default:''|escapejs }}"
+                                      data-warehouse="{{ location.warehouse_id }}"
+                                      data-street="{{ location.street|default:''|escapejs }}"
+                                      data-house="{{ location.house_number|default:''|escapejs }}"
+                                      data-zip="{{ location.zip_code|default:''|escapejs }}"
+                                      data-city="{{ location.city|default:''|escapejs }}"
+                                      data-country="{{ location.country|default:''|escapejs }}"
+                                      data-lat="{{ location.latitude|default_if_none:'' }}"
+                                      data-lon="{{ location.longitude|default_if_none:'' }}"
+                                      data-capacity="{{ location.capacity }}">
+                                Bearbeiten
+                              </button>
+
+                              <button type="button"
+                                      class="btn btn-sm btn-outline-danger"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#deleteLocationModal"
+                                      data-id="{{ location.id }}"
+                                      data-name="{{ location.name|escapejs }}"
+                                      data-warehouse="{% if location.warehouse %}{{ location.warehouse.name|escapejs }}{% else %}-{% endif %}"
+                                      data-total="{{ location.total_quantity }}">
+                                Löschen
+                              </button>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" style="text-align: center; padding: 4rem; color: #adb5bd;">
+                            <td colspan="5" style="text-align: center; padding: 4rem; color: #adb5bd;">
                                 <i class="bi bi-geo-alt" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
                                 Keine Standorte gefunden.
                             </td>
@@ -242,6 +281,10 @@
             <div class="mb-3">
                 <label class="form-label">Beschreibung</label>
                 <textarea id="description" class="form-control" rows="2" placeholder="Optionale Notizen..."></textarea>
+            </div>
+              <div class="mb-3">
+                <label class="form-label">Kapazität (Stück)</label>
+                <input type="number" min="0" id="capacity" class="form-control" placeholder="z.B. 100">
             </div>
 
             <div class="form-section-title">Zugehörigkeit</div>
@@ -301,92 +344,365 @@
     </div>
   </div>
 </div>
+<!-- Modal: Standort bearbeiten -->
+<div class="modal fade" id="editLocationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" style="font-weight:700;">Standort bearbeiten</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="editLocationForm">
+          {% csrf_token %}
+
+          <div class="form-section-title" style="margin-top:0;">Basisdaten</div>
+
+          <div class="mb-3">
+            <label class="form-label">Bezeichnung *</label>
+            <input type="text" id="edit_name" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Beschreibung</label>
+            <textarea id="edit_description" class="form-control" rows="2"></textarea>
+          </div>
+
+          <div class="mb-3">
+              <label class="form-label">Kapazität (Stück)</label>
+              <input type="number" min="0" id="edit_capacity" class="form-control">
+          </div>
+
+          <div class="form-section-title">Zugehörigkeit</div>
+          <div class="mb-3">
+            <label class="form-label">Warehouse *</label>
+            <select id="edit_warehouse" class="form-control" required>
+              <option value="">Bitte wählen...</option>
+              {% for wh in warehouses %}
+                <option value="{{ wh.id }}">{{ wh.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-section-title">Anschrift</div>
+          <div class="row g-2">
+            <div class="col-md-9">
+              <label class="form-label">Straße</label>
+              <input type="text" id="edit_street" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Nr.</label>
+              <input type="text" id="edit_house_number" class="form-control">
+            </div>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label">PLZ</label>
+              <input type="text" id="edit_zip_code" class="form-control">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Stadt</label>
+              <input type="text" id="edit_city" class="form-control">
+            </div>
+          </div>
+
+          <div class="mb-3 mt-2">
+            <label class="form-label">Land</label>
+            <input type="text" id="edit_country" class="form-control">
+          </div>
+
+          <div class="form-section-title">Zusatz (Optional)</div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label">Latitude</label>
+              <input type="number" step="any" id="edit_latitude" class="form-control">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Longitude</label>
+              <input type="number" step="any" id="edit_longitude" class="form-control">
+            </div>
+          </div>
+
+          <div id="edit_error" class="text-danger small mt-3" style="display:none;"></div>
+
+          <div class="mt-4">
+            <button type="submit" class="btn btn-save">Änderungen speichern</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Standort löschen -->
+<div class="modal fade" id="deleteLocationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" style="font-weight: 700;">Standort löschen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <p style="margin-bottom: 0.5rem;">
+          Du bist dabei den Standort <strong id="dl_name"></strong> zu löschen.
+        </p>
+
+        <div class="form-section-title" style="margin-top: 1rem;">Details</div>
+
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label">Warehouse</label>
+            <input id="dl_warehouse" class="form-control" type="text" disabled>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Bestand (Stk.)</label>
+            <input id="dl_total" class="form-control" type="text" disabled>
+          </div>
+        </div>
+
+        <div id="dl_warning" class="alert alert-warning mt-3" style="display:none;">
+          Dieser Standort kann nicht gelöscht werden, weil noch Produkte dort lagern.
+          Bitte umlagern, damit der Standort leer ist.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+
+        <form id="deleteLocationForm" method="post" style="margin:0;">
+          {% csrf_token %}
+          <button type="submit" id="dl_submit" class="btn btn-danger">Ja, löschen</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
         }
-        return cookieValue;
+      }
     }
-    const csrftoken = getCookie('csrftoken');
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
 
-    const toNumberOrNull = (v) => {
-        if (v === undefined || v === null) return null;
-        const s = String(v).trim();
-        if (s === "") return null;
-        const n = Number(s);
-        return Number.isFinite(n) ? n : null;
-    };
+  const toNumberOrNull = (v) => {
+    if (v === undefined || v === null) return null;
+    const s = String(v).trim();
+    if (s === "") return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  };
 
-    document.getElementById('createLocationForm').addEventListener('submit', async function(e) {
+  // -----------------------------
+  // CREATE LOCATION
+  // -----------------------------
+  const createForm = document.getElementById('createLocationForm');
+  if (createForm) {
+    createForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const warehouseValue = document.getElementById('warehouse').value;
+      if (!warehouseValue) {
+        alert("Bitte ein Warehouse auswählen.");
+        return;
+      }
+
+      const formData = {
+        warehouse: Number(warehouseValue),
+        name: document.getElementById('name').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        capacity: Number(document.getElementById('capacity').value || 0),
+
+        street: document.getElementById('street').value.trim(),
+        house_number: document.getElementById('house_number').value.trim(),
+        zip_code: document.getElementById('zip_code').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        country: document.getElementById('country').value.trim(),
+
+        latitude: toNumberOrNull(document.getElementById('latitude').value),
+        longitude: toNumberOrNull(document.getElementById('longitude').value),
+      };
+
+      try {
+        const response = await fetch('/locations/api/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          window.location.reload();
+          return;
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        let errorPayload;
+
+        if (contentType.includes('application/json')) {
+          errorPayload = await response.json();
+        } else {
+          errorPayload = await response.text();
+        }
+
+        alert(
+          "Fehler beim Speichern (HTTP " + response.status + "):\n" +
+          (typeof errorPayload === "string"
+            ? errorPayload.slice(0, 1200)
+            : JSON.stringify(errorPayload, null, 2))
+        );
+
+      } catch (error) {
+        console.error('Error:', error);
+        alert("Verbindungsfehler zum Server.");
+      }
+    });
+  }
+
+  // -----------------------------
+  // DELETE MODAL
+  // -----------------------------
+  const deleteModal = document.getElementById('deleteLocationModal');
+  const dlName = document.getElementById('dl_name');
+  const dlWarehouse = document.getElementById('dl_warehouse');
+  const dlTotal = document.getElementById('dl_total');
+  const dlWarning = document.getElementById('dl_warning');
+  const dlSubmit = document.getElementById('dl_submit');
+  const deleteForm = document.getElementById('deleteLocationForm');
+
+  if (deleteModal) {
+    deleteModal.addEventListener('show.bs.modal', function (event) {
+      const btn = event.relatedTarget;
+
+      const id = btn.getAttribute('data-id');
+      const name = btn.getAttribute('data-name');
+      const warehouseName = btn.getAttribute('data-warehouse');
+      const total = parseInt(btn.getAttribute('data-total') || "0", 10);
+
+      dlName.textContent = name;
+      dlWarehouse.value = warehouseName;
+      dlTotal.value = String(total);
+
+      deleteForm.action = `/locations/${id}/delete/`;
+
+      if (total > 0) {
+        dlWarning.style.display = 'block';
+        dlSubmit.disabled = true;
+      } else {
+        dlWarning.style.display = 'none';
+        dlSubmit.disabled = false;
+      }
+    });
+  }
+
+  // -----------------------------
+  // EDIT LOCATION
+  // -----------------------------
+  const editModal = document.getElementById('editLocationModal');
+  let currentEditId = null;
+
+  if (editModal) {
+    editModal.addEventListener('show.bs.modal', function (event) {
+      const btn = event.relatedTarget;
+
+      currentEditId = btn.getAttribute('data-id');
+
+      document.getElementById('edit_name').value = btn.getAttribute('data-name') || "";
+      document.getElementById('edit_description').value = btn.getAttribute('data-description') || "";
+      document.getElementById('edit_capacity').value = btn.getAttribute('data-capacity') || 0;
+
+      document.getElementById('edit_warehouse').value = btn.getAttribute('data-warehouse') || "";
+      document.getElementById('edit_street').value = btn.getAttribute('data-street') || "";
+      document.getElementById('edit_house_number').value = btn.getAttribute('data-house') || "";
+      document.getElementById('edit_zip_code').value = btn.getAttribute('data-zip') || "";
+      document.getElementById('edit_city').value = btn.getAttribute('data-city') || "";
+      document.getElementById('edit_country').value = btn.getAttribute('data-country') || "";
+      document.getElementById('edit_latitude').value = btn.getAttribute('data-lat') || "";
+      document.getElementById('edit_longitude').value = btn.getAttribute('data-lon') || "";
+
+      const err = document.getElementById('edit_error');
+      err.style.display = "none";
+      err.textContent = "";
+    });
+
+    const editForm = document.getElementById('editLocationForm');
+    if (editForm) {
+      editForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        const warehouseValue = document.getElementById('warehouse').value;
+        const err = document.getElementById('edit_error');
+        err.style.display = "none";
+        err.textContent = "";
+
+        const warehouseValue = document.getElementById('edit_warehouse').value;
         if (!warehouseValue) {
-            alert("Bitte ein Warehouse auswählen.");
-            return;
+          err.textContent = "Bitte ein Warehouse auswählen.";
+          err.style.display = "block";
+          return;
         }
 
-        const formData = {
-            warehouse: Number(warehouseValue),
-            name: document.getElementById('name').value.trim(),
-            description: document.getElementById('description').value.trim(),
-            street: document.getElementById('street').value.trim(),
-            house_number: document.getElementById('house_number').value.trim(),
-            zip_code: document.getElementById('zip_code').value.trim(),
-            city: document.getElementById('city').value.trim(),
-            country: document.getElementById('country').value.trim(),
-            latitude: toNumberOrNull(document.getElementById('latitude').value),
-            longitude: toNumberOrNull(document.getElementById('longitude').value)
+        const payload = {
+          warehouse: Number(warehouseValue),
+          name: document.getElementById('edit_name').value.trim(),
+          description: document.getElementById('edit_description').value.trim(),
+          capacity: Number(document.getElementById('edit_capacity').value || 0),
+
+          street: document.getElementById('edit_street').value.trim(),
+          house_number: document.getElementById('edit_house_number').value.trim(),
+          zip_code: document.getElementById('edit_zip_code').value.trim(),
+          city: document.getElementById('edit_city').value.trim(),
+          country: document.getElementById('edit_country').value.trim(),
+
+          latitude: toNumberOrNull(document.getElementById('edit_latitude').value),
+          longitude: toNumberOrNull(document.getElementById('edit_longitude').value),
         };
 
-        try {
-            const response = await fetch('/locations/api/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (response.ok) {
-                window.location.reload();
-                return;
-            }
-
-            const contentType = response.headers.get('content-type') || '';
-            let errorPayload;
-
-            if (contentType.includes('application/json')) {
-                errorPayload = await response.json();
-            } else {
-                errorPayload = await response.text();
-            }
-
-            alert(
-                "Fehler beim Speichern (HTTP " + response.status + "):\n" +
-                (typeof errorPayload === "string"
-                    ? errorPayload.slice(0, 1200)
-                    : JSON.stringify(errorPayload, null, 2))
-            );
-
-        } catch (error) {
-            console.error('Error:', error);
-            alert("Verbindungsfehler zum Server.");
+        if (!payload.name) {
+          err.textContent = "Bitte eine Bezeichnung eingeben.";
+          err.style.display = "block";
+          return;
         }
-    });
+
+        const response = await fetch(`/locations/api/${currentEditId}/`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrftoken
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          window.location.reload();
+          return;
+        }
+
+        const text = await response.text();
+        err.textContent = "Fehler beim Speichern: " + text;
+        err.style.display = "block";
+      });
+    }
+  }
 </script>
 {% endblock %}
+
 

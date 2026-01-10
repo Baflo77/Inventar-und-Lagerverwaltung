@@ -5,6 +5,7 @@ class Location(models.Model):
     name = models.CharField(max_length=255, verbose_name="Name des Standorts")
     description = models.TextField(blank=True, null=True, verbose_name="Beschreibung")
     warehouse = models.ForeignKey('warehousemanager.Warehouse', on_delete=models.CASCADE,related_name='locations',null=True, blank=True)
+    capacity = models.PositiveIntegerField(default=0)
     # Adresse
     street = models.CharField(max_length=255, verbose_name="Straße & Hausnummer")
     city = models.CharField(max_length=100, verbose_name="Stadt")

@@ -21,8 +21,8 @@ from warehousemanager import views
 
 urlpatterns = [
 
-    path('', views.warehouse_list_ui),
+    path('', views.warehouse_list_ui, name="warehouse_list_ui"),
     path('api/', views.show_all_warehouses),
     path('api/<int:id>/', views.show_warehouse_detail),
-
+    path("<int:pk>/delete/", views.warehouse_delete_ui, name="warehouse_delete_ui"),
 ]

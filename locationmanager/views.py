@@ -13,6 +13,10 @@ from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
 from warehousemanager.models import Warehouse
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.db.models import Sum
+from stockmanager.models import Stock
 
 # Create your views here.
 def location_list_ui(request):
@@ -41,7 +45,6 @@ def show_all_locations(request):
         serializer = LocationSerializer(locations, many=True)
         return Response(serializer.data)
 
-    # POST
     serializer = LocationSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
@@ -67,3 +70,22 @@ def location_detail(request, id):
     if request.method == "DELETE":
         location.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+def location_delete_ui(request, pk):
+    location = get_object_or_404(Location, pk=pk)
+    total_qty = location.stocks.aggregate(total=Sum("quantity")).get("total") or 0
+
+    if request.method != "POST":
+        return redirect("location_list_ui")
+
+    if total_qty > 0:
+        messages.warning(
+            request,
+            f"Standort „{location.name}“ kann nicht gelöscht werden, weil noch {total_qty} Stück dort lagern. "
+            "Bitte umlagern."
+        )
+        return redirect("location_list_ui")
+
+    location.delete()
+    messages.success(request, "Standort wurde gelöscht.")
+    return redirect("location_list_ui")

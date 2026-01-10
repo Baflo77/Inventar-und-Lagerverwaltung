@@ -13,6 +13,7 @@ class LocationSerializer(serializers.Serializer):
     latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
     longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
     warehouse = serializers.PrimaryKeyRelatedField(queryset=Warehouse.objects.all())
+    capacity = serializers.IntegerField(required=False, min_value=0)
 
     def validate_warehouse(self, value):
         if value is None:
@@ -29,7 +30,7 @@ class LocationSerializer(serializers.Serializer):
 
         for field in [
             "name", "description", "street", "zip_code",
-            "city", "country", "latitude", "longitude"
+            "city", "country", "latitude", "longitude","capacity",
         ]:
             if field in validated_data:
                 setattr(instance, field, validated_data[field])
