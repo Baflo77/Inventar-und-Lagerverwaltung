@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Stock Manager | Lagerverwaltung{% endblock %}
+{% block title %}Bestandsübersicht | Lagerverwaltung{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* --- DEIN BESTEHENDES CSS --- */
+    /* --- CSS VARIABLEN & BASIS --- */
     :root {
         --primary-dark: #2c3e50;
         --accent-blue: #3498db;
@@ -13,30 +13,30 @@
         --text-dark: #343a40;
         --text-muted: #6c757d;
         --danger-red: #e74c3c;
-        --warning-yellow: #f1c40f;
+        --warning-yellow: #f39c12;
         --success-green: #27ae60;
     }
 
-    .stock-manager-wrapper {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    .stock-wrapper {
         background-color: var(--bg-light);
-        padding-top: 2rem;
-        padding-bottom: 2rem;
+        padding: 2rem 0;
+        min-height: 100vh;
         color: var(--text-dark);
-        min-height: 100vh; /* Wichtig für Fullscreen Feel */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     }
 
-    .lm-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 20px;
-    }
+    .lm-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
 
+    /* --- HEADER & BUTTONS --- */
     .page-header {
         margin-bottom: 2rem;
         border-bottom: 1px solid #dee2e6;
         padding-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
+
     .page-title {
         font-size: 1.75rem;
         font-weight: 700;
@@ -44,441 +44,569 @@
         margin: 0;
     }
 
-    .content-grid {
-        display: grid;
-        grid-template-columns: 350px 1fr;
-        gap: 2rem;
-        align-items: start;
+    .btn-create {
+        background-color: var(--primary-dark);
+        color: white !important;
+        padding: 10px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
     }
+    .btn-create:hover { background-color: #1a252f; }
 
+    /* --- CARD DESIGN --- */
     .data-card {
         background: white;
         border-radius: 6px;
-        box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
-        border-top: 3px solid var(--accent-blue);
-        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.1);
+        margin-bottom: 2rem;
+        width: 100%;
     }
-    .data-card.form-card { border-top-color: var(--success-green); }
 
     .card-header {
-        background-color: transparent;
-        border-bottom: 1px solid rgba(0,0,0,.125);
         padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
     }
+
     .card-title {
         font-size: 1.1rem;
         font-weight: 600;
         margin: 0;
         color: var(--primary-dark);
     }
-    .card-body { padding: 1.25rem; }
+
     .card-body.p-0 { padding: 0; }
 
-    .form-group { margin-bottom: 1rem; }
-    .form-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 0.4rem;
-        display: block;
+    /* --- FILTER BAR --- */
+    .filter-group {
+        display: flex;
+        gap: 10px;
     }
-    .form-control {
-        display: block;
-        width: 100%;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.95rem;
+
+    .filter-select {
+        padding: 8px 12px;
         border: 1px solid #ced4da;
-        border-radius: 4px;
-        box-sizing: border-box;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        min-width: 160px;
+        background-color: #fff;
+        cursor: pointer;
+        color: var(--text-dark);
     }
+    .filter-select:focus {
+        border-color: var(--accent-blue);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    /* --- TABELLE & SORTIERUNG --- */
+    .table-modern { width: 100%; border-collapse: collapse; }
+
+    .table-modern thead th {
+        text-align: left;
+        padding: 15px;
+        background: #f8f9fa;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        border-bottom: 2px solid #dee2e6;
+        color: #6c757d;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .table-modern thead th:hover {
+        background-color: #e2e6ea;
+        color: var(--primary-dark);
+    }
+
+    .sort-icon { margin-left: 5px; font-size: 0.8em; opacity: 0.3; }
+    .sort-asc .sort-icon::after { content: "▲"; }
+    .sort-desc .sort-icon::after { content: "▼"; }
+    .active-sort .sort-icon { opacity: 1; color: var(--accent-blue); }
+
+    .table-modern td {
+        padding: 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 0.95rem;
+    }
+
+    /* STATUS BADGES */
+    .status-badge { font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; display: inline-block; min-width: 80px; text-align: center;}
+
+    .status-crit { background: #ffebeb; color: var(--danger-red); border: 1px solid #fadbd8; }
+    .status-ok { background: #d4edda; color: var(--success-green); border: 1px solid #c3e6cb; }
+    .status-empty { background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; }
+    .status-warn { background: #fef9e7; color: var(--warning-yellow); border: 1px solid #fdebd0; }
+
+    .btn-action { border: none; background: none; cursor: pointer; font-size: 0.9rem; margin-right: 15px; font-weight: 600;}
+    .action-move { color: var(--accent-blue); }
+    .action-out { color: #6c757d; }
+    .action-out:hover { color: var(--danger-red); }
+
+    /* --- MODALS --- */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+    }
+    .modal.show { display: flex; }
+
+    .modal-content {
+        background-color: #fff;
+        padding: 2rem;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        position: relative;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .close-modal {
+        position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #aaa;
+    }
+    .close-modal:hover { color: #000; }
+
+    .form-group { margin-bottom: 1.2rem; }
+    .form-label { font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.5rem; color: var(--text-dark); }
+    .form-control, .form-select {
+        width: 100%; padding: 0.65rem; border: 1px solid #ced4da; border-radius: 5px; display: block; box-sizing: border-box; font-size: 1rem;
+    }
+    .form-control:focus, .form-select:focus { border-color: var(--accent-blue); outline: none; }
 
     .btn-submit {
-        display: block;
-        width: 100%;
-        font-weight: 600;
-        text-align: center;
-        background-color: var(--success-green);
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        font-size: 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        margin-top: 1.5rem;
+        width: 100%; padding: 12px; background: #1a252f; color: white;
+        border: none; border-radius: 5px; font-weight: 600; cursor: pointer; margin-top: 10px; font-size: 1rem;
     }
-    .btn-submit:hover { background-color: #218838; }
-
-    .table-modern { width: 100%; border-collapse: collapse; margin-bottom: 0; }
-    .table-modern thead th {
-        vertical-align: bottom;
-        border-bottom: 2px solid #dee2e6;
-        background-color: var(--primary-dark);
-        color: white;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 12px 15px;
-        text-align: left;
-    }
-    .table-modern tbody tr { border-bottom: 1px solid #e9ecef; }
-    .table-modern tbody tr:nth-of-type(odd) { background-color: rgba(0,0,0,.02); }
-    .table-modern td { padding: 12px 15px; vertical-align: middle; font-size: 0.9rem; }
-
-    .status-badge {
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 12px;
-        text-transform: uppercase;
-    }
-    .status-ok { background-color: #d4edda; color: #155724; }
-    .status-low { background-color: #f8d7da; color: #721c24; }
-
-    .quantity-display { font-weight: 700; color: var(--primary-dark); }
-    .quantity-low { color: var(--danger-red); }
-
-    /* --- NEU: Button für Ausbuchen --- */
-    .btn-book-out {
-        background-color: white;
-        border: 1px solid var(--danger-red);
-        color: var(--danger-red);
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .btn-book-out:hover {
-        background-color: var(--danger-red);
-        color: white;
-    }
-
-    /* Modal Header Anpassung */
-    .modal-header { background-color: #f8f9fa; }
-    .btn-confirm-out { background-color: var(--danger-red); color: white; border: none; width: 100%; padding: 10px; font-weight: bold; border-radius: 4px; }
-    .btn-confirm-out:hover { background-color: #c0392b; }
-
-    @media (max-width: 992px) {
-        .content-grid { grid-template-columns: 1fr; }
-    }
+    .btn-danger-submit { background-color: var(--danger-red); }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="stock-manager-wrapper">
+<div class="stock-wrapper">
     <div class="lm-container">
 
+        {% if messages %}
+            {% for message in messages %}
+                <div style="padding: 12px 20px; margin-bottom: 20px; border-radius: 6px;
+                     background: {% if message.tags == 'error' %}#f8d7da{% else %}#d4edda{% endif %};
+                     color: {% if message.tags == 'error' %}#721c24{% else %}#155724{% endif %};
+                     border: 1px solid {% if message.tags == 'error' %}#f5c6cb{% else %}#c3e6cb{% endif %};">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
         <div class="page-header">
-            <h1 class="page-title">Bestandsübersicht</h1>
-            <p style="color: #6c757d;">Aktuelle Lagerbestände und Mindestmengen überwachen.</p>
+            <div>
+                <h1 class="page-title">Bestandsübersicht</h1>
+                <p style="color: #6c757d; margin: 5px 0 0 0;">Lagerbestände verwalten & überwachen.</p>
+            </div>
+            <button onclick="openModal('initModal')" class="btn-create">
+                <i class="bi bi-plus-lg"></i> Bestand anlegen
+            </button>
         </div>
 
-        <div class="content-grid">
+        <div class="data-card">
+            <div class="card-header">
+                <h3 class="card-title">Filter & Suche</h3>
+                <div class="filter-group">
+                    <select id="filterProduct" onchange="filterTable()" class="filter-select">
+                        <option value="">Alle Produkte</option>
+                    </select>
 
-            <div class="data-card form-card">
-                <div class="card-header">
-                    <h3 class="card-title">Initial-Bestand anlegen</h3>
-                </div>
-                <div class="card-body">
-                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 1rem;">
-                        Nutze dies nur, um ein Produkt erstmals einem Lagerort zuzuweisen.
-                    </p>
-                    <form method="POST">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label class="form-label">Produkt ID</label>
-                            <input type="number" name="product_id" class="form-control" placeholder="Produkt ID" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Lagerort ID</label>
-                            <input type="number" name="location_id" class="form-control" placeholder="Location ID" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Startmenge</label>
-                            <input type="number" name="quantity" class="form-control" placeholder="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Mindestbestand</label>
-                            <input type="number" name="threshold" class="form-control" value="10" required>
-                        </div>
+                    <select id="filterLocation" onchange="filterTable()" class="filter-select">
+                        <option value="">Alle Lagerorte</option>
+                    </select>
 
-                        <button type="submit" name="action" value="initialize" class="btn-submit">Bestand initialisieren</button>
-                    </form>
+                    <select id="filterStatus" onchange="filterTable()" class="filter-select" style="font-weight: 500;">
+                        <option value="">Alle Status</option>
+                        <option value="OK" style="color: green;">✔ OK</option>
+                        <option value="KRITISCH" style="color: red;">⚠ Kritisch</option>
+                        <option value="LEER" style="color: gray;">∅ Leer</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="data-card">
-                <div class="card-header">
-                    <h3 class="card-title">Aktueller Lagerbestand</h3>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table-modern">
-                            <thead>
-                                <tr>
-                                    <th>Produkt / SKU</th>
-                                    <th>Lagerort</th>
-                                    <th>Bestand</th>
-                                    <th>Status</th>
-                                    <th style="text-align: right;">Aktionen</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for stock in stocks %}
-                                <tr>
-                                    <td>
-                                        <strong style="color: #2c3e50;">{{ stock.product.name }}</strong><br>
-                                        <small style="color: #999;">{{ stock.product.sku }}</small>
-                                    </td>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table-modern" id="stockTable">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">Produkt <span class="sort-icon"></span></th>
+                                <th onclick="sortTable(1)">Lagerort <span class="sort-icon"></span></th>
+                                <th onclick="sortTable(2)">Menge <span class="sort-icon"></span></th>
+                                <th onclick="sortTable(3)">Status <span class="sort-icon"></span></th>
+                                <th>Min.</th>
+                                <th style="text-align: right;">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in stocks %}
+                            <tr class="stock-row"
+                                data-product="{{ stock.product.name }}"
+                                data-location="{{ stock.location.name }}"
+                                data-status="{% if stock.quantity == 0 %}LEER{% elif stock.quantity <= stock.threshold %}KRITISCH{% else %}OK{% endif %}">
 
-                                    <td>
-                                        {{ stock.location.name }}<br>
-                                        <small style="color: #999;">{{ stock.location.warehouse.name|default:"-" }}</small>
-                                    </td>
+                                <td data-sort="{{ stock.product.name|lower }}">
+                                    <strong style="color: var(--primary-dark); display: block;">{{ stock.product.name }}</strong>
+                                    <small style="color: #999;">SKU: {{ stock.product.sku|default:"-" }}</small>
+                                </td>
 
-                                    <td>
-                                        <span class="quantity-display {% if stock.quantity < stock.threshold %}quantity-low{% endif %}">
-                                            {{ stock.quantity }} Stk.
-                                        </span>
-                                    </td>
+                                <td data-sort="{{ stock.location.name|lower }}">
+                                    <div style="font-weight: 500;">{{ stock.location.name }}</div>
+                                    <small style="color: #6c757d;">{{ stock.location.warehouse.name|default:"-" }}</small>
+                                </td>
 
-                                    <td>
-                                        {% if stock.quantity == 0 %}
-                                            <span class="status-badge" style="background:#e9ecef; color:#495057;">LEER</span>
-                                        {% elif stock.quantity <= stock.threshold %}
-                                            <span class="status-badge status-low">KRITISCH</span>
-                                        {% else %}
-                                            <span class="status-badge status-ok">OK</span>
-                                        {% endif %}
-                                    </td>
+                                <td data-sort="{{ stock.quantity }}">
+                                    <span style="font-size: 1.1em; font-weight: 700;">{{ stock.quantity }}</span>
+                                </td>
 
-                                    <td style="text-align: right;">
-                                        <button class="btn-book-out" style="border-color: #3498db; color: #3498db; margin-right: 5px;"
-                                                onclick="openTransferModal('{{ stock.id }}', '{{ stock.product.name }}', {{ stock.quantity }})">
-                                            <i class="bi bi-arrow-left-right"></i> Umlagern
-                                        </button>
+                                <td data-sort="{% if stock.quantity == 0 %}1{% elif stock.quantity <= stock.threshold %}2{% else %}3{% endif %}">
+                                    {% if stock.quantity == 0 %}
+                                        <span class="status-badge status-empty">LEER</span>
+                                    {% elif stock.quantity <= stock.threshold %}
+                                        <span class="status-badge status-crit">KRITISCH</span>
+                                    {% else %}
+                                        <span class="status-badge status-ok">OK</span>
+                                    {% endif %}
+                                </td>
 
-                                        <button class="btn-book-out" onclick="openBookOutModal('{{ stock.id }}', '{{ stock.product.name }}', {{ stock.quantity }})">
-                                            Ausbuchen
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" style="text-align: center; padding: 3rem; color: #adb5bd;">
-                                        Keine Bestandsdaten gefunden.
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                <td><span style="color: #999;">{{ stock.threshold }}</span></td>
+
+                                <td style="text-align: right;">
+                                    <button class="btn-action action-move" onclick="openTransferModal('{{ stock.id }}', '{{ stock.product.name|escapejs }}', {{ stock.quantity }})">
+                                        <i class="bi bi-arrow-left-right"></i> Umlagern
+                                    </button>
+                                    <button class="btn-action action-out" onclick="openBookOutModal('{{ stock.id }}', '{{ stock.product.name|escapejs }}', {{ stock.quantity }})">
+                                        <i class="bi bi-box-arrow-right"></i> Ausbuchen
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 4rem; color: #adb5bd;">
+                                    <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                                    Keine Bestände gefunden.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="bookOutModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<div id="initModal" class="modal">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" style="font-weight: 700;">Ware ausbuchen</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-          <p id="modalInfoText" style="color: #666; margin-bottom: 1.5rem;">...</p>
-
-          <form id="bookOutForm">
-            <input type="hidden" id="stockId">
-
-            <div class="mb-3">
-                <label class="form-label">Menge zur Entnahme</label>
-                <input type="number" id="amount" class="form-control" min="1" required placeholder="Menge eingeben">
-                <div class="form-text" id="maxInfo"></div>
+        <span class="close-modal" onclick="closeModal('initModal')">&times;</span>
+        <h3>Bestand anlegen</h3>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="initialize">
+            <div class="form-group">
+                <label class="form-label">Produkt ID / SKU</label>
+                <input type="text" name="product_id" class="form-control" required>
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">Notiz (Optional)</label>
-                <input type="text" id="notes" class="form-control" placeholder="Grund für Entnahme">
-            </div>
-
-            <div class="mt-4">
-                <button type="submit" class="btn btn-confirm-out">Jetzt Ausbuchen</button>
-            </div>
-          </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" style="font-weight: 700;">Ware umlagern</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-          <p id="transferInfoText" style="color: #666; margin-bottom: 1.5rem;">...</p>
-
-          <form id="transferForm">
-            <input type="hidden" id="transferStockId">
-
-            <div class="mb-3">
-                <label class="form-label">Menge zur Umlagerung</label>
-                <input type="number" id="transferAmount" class="form-control" min="1" required placeholder="Menge eingeben">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Nach Lagerort</label>
-                <select id="targetLocationId" class="form-select" required>
-                    <option value="" selected disabled>Bitte wählen...</option>
+            <div class="form-group">
+                <label class="form-label">Lagerort</label>
+                <select name="location_id" class="form-select" required>
                     {% for loc in locations %}
-                        <option value="{{ loc.id }}">{{ loc.name }} {% if loc.warehouse %}({{ loc.warehouse.name }}){% endif %}</option>
+                        <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
                     {% endfor %}
                 </select>
             </div>
-
-            <div class="mt-4">
-                <button type="submit" class="btn btn-primary w-100" style="background-color: #3498db; border: none; font-weight: bold; padding: 10px;">
-                    Jetzt Umlagern
-                </button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label class="form-label">Menge</label>
+                    <input type="number" name="quantity" class="form-control" value="0" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Warn-Limit</label>
+                    <input type="number" name="threshold" class="form-control" value="10" min="0" required>
+                </div>
             </div>
-          </form>
-      </div>
+            <button type="submit" class="btn-submit">Speichern</button>
+        </form>
     </div>
-  </div>
 </div>
+
+<div id="transferModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('transferModal')">&times;</span>
+        <h3>Ware umlagern</h3>
+        <p id="transferInfoText" style="color:#666; margin-bottom:1rem;"></p>
+        <form id="transferForm">
+            <input type="hidden" id="transferStockId">
+            <div class="form-group">
+                <label class="form-label">Menge</label>
+                <input type="number" id="transferAmount" class="form-control" min="1" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Ziel-Lagerort</label>
+                <select id="targetLocationId" class="form-select" required>
+                    <option value="" selected disabled>Wählen...</option>
+                    {% for loc in locations %}
+                        <option value="{{ loc.id }}">{{ loc.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bemerkung (Optional)</label>
+                <textarea id="transferNote" class="form-control" rows="2" placeholder="Grund für die Umlagerung..."></textarea>
+            </div>
+            <button type="submit" class="btn-submit">Umlagern</button>
+        </form>
+    </div>
+</div>
+
+<div id="bookOutModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('bookOutModal')">&times;</span>
+        <h3 style="color: var(--danger-red);">Ware ausbuchen</h3>
+        <p id="bookOutInfoText" style="color:#666; margin-bottom:1rem;"></p>
+        <form id="bookOutForm">
+            <input type="hidden" id="bookOutStockId">
+            <div class="form-group">
+                <label class="form-label">Menge</label>
+                <input type="number" id="bookOutAmount" class="form-control" min="1" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Grund / Bemerkung</label>
+                <input type="text" id="bookOutNotes" class="form-control">
+            </div>
+            <button type="submit" class="btn-submit btn-danger-submit">Ausbuchen</button>
+        </form>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // 1. CSRF Helper
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+    document.addEventListener("DOMContentLoaded", function() {
+        populateFilters();
+
+        // Event Listener für UMLAGERN
+        const transferForm = document.getElementById('transferForm');
+        if (transferForm) {
+            transferForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const stockId = document.getElementById('transferStockId').value;
+                const noteField = document.getElementById('transferNote');
+
+                const body = {
+                    quantity: document.getElementById('transferAmount').value,
+                    target_location_id: document.getElementById('targetLocationId').value,
+                    source_stock_id: stockId,
+                    movement_type: 'MOVE',
+                    note: noteField ? noteField.value : ""
+                };
+
+                // WICHTIG: Hier ist die korrigierte URL!
+                await apiCall('/stockmovement/api/', body);
+            });
+        }
+
+        // Event Listener für AUSBUCHEN
+        const bookOutForm = document.getElementById('bookOutForm');
+        if (bookOutForm) {
+            bookOutForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const stockId = document.getElementById('bookOutStockId').value;
+
+                const body = {
+                    movement_type: 'OUT',
+                    stock_id: stockId,
+                    quantity: document.getElementById('bookOutAmount').value,
+                    note: document.getElementById('bookOutNotes').value
+                };
+
+                // WICHTIG: Hier ist die korrigierte URL!
+                await apiCall('/stockmovement/api/', body);
+            });
+        }
+    });
+
+    // --- GLOBALE FUNKTIONEN ---
+
+    window.openModal = function(id) {
+        const el = document.getElementById(id);
+        if(el) el.classList.add('show');
+    }
+
+    window.closeModal = function(id) {
+        const el = document.getElementById(id);
+        if(el) el.classList.remove('show');
+    }
+
+    window.onclick = function(e) {
+        if(e.target.classList.contains('modal')) e.target.classList.remove('show');
+    }
+
+    // UMLAGERN ÖFFNEN
+    window.openTransferModal = function(id, name, qty) {
+        document.getElementById('transferStockId').value = id;
+        const infoText = document.getElementById('transferInfoText');
+        if(infoText) infoText.innerHTML = `Umlagern: <strong>${name}</strong> (Max: ${qty})`;
+
+        const amountField = document.getElementById('transferAmount');
+        if(amountField) amountField.max = qty;
+
+        const noteField = document.getElementById('transferNote');
+        if(noteField) noteField.value = '';
+
+        openModal('transferModal');
+    }
+
+    // AUSBUCHEN ÖFFNEN
+    window.openBookOutModal = function(id, name, qty) {
+        document.getElementById('bookOutStockId').value = id;
+        const infoText = document.getElementById('bookOutInfoText');
+        if(infoText) infoText.innerHTML = `Ausbuchen: <strong>${name}</strong> (Max: ${qty})`;
+
+        const amountField = document.getElementById('bookOutAmount');
+        if(amountField) amountField.max = qty;
+
+        const notes = document.getElementById('bookOutNotes');
+        if(notes) notes.value = '';
+
+        openModal('bookOutModal');
+    }
+
+    // FILTER & SORTIERUNG
+    function populateFilters() {
+        const rows = document.querySelectorAll('.stock-row');
+        if (rows.length === 0) return;
+
+        const products = new Set();
+        const locations = new Set();
+
+        rows.forEach(row => {
+            products.add(row.getAttribute('data-product'));
+            locations.add(row.getAttribute('data-location'));
+        });
+
+        const prodSelect = document.getElementById('filterProduct');
+        const locSelect = document.getElementById('filterLocation');
+
+        if(prodSelect && prodSelect.options.length === 1) {
+             Array.from(products).sort().forEach(prod => prodSelect.add(new Option(prod, prod)));
+        }
+        if(locSelect && locSelect.options.length === 1) {
+             Array.from(locations).sort().forEach(loc => locSelect.add(new Option(loc, loc)));
+        }
+    }
+
+    window.filterTable = function() {
+        const selProduct = document.getElementById("filterProduct").value;
+        const selLocation = document.getElementById("filterLocation").value;
+        const selStatus = document.getElementById("filterStatus").value;
+        const rows = document.querySelectorAll('.stock-row');
+
+        rows.forEach(row => {
+            const rowProd = row.getAttribute('data-product');
+            const rowLoc = row.getAttribute('data-location');
+            const rowStat = row.getAttribute('data-status');
+
+            const matchProd = selProduct === "" || rowProd === selProduct;
+            const matchLoc = selLocation === "" || rowLoc === selLocation;
+            const matchStat = selStatus === "" || rowStat === selStatus;
+
+            row.style.display = (matchProd && matchLoc && matchStat) ? "" : "none";
+        });
+    }
+
+    window.sortTable = function(n) {
+        const table = document.getElementById("stockTable");
+        if (!table) return;
+        let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        switching = true;
+        dir = "asc";
+        const headers = table.getElementsByTagName("th");
+        for(let h of headers) h.classList.remove('active-sort', 'sort-asc', 'sort-desc');
+
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("td")[n].getAttribute('data-sort');
+                y = rows[i + 1].getElementsByTagName("td")[n].getAttribute('data-sort');
+                let xVal = isNaN(x) ? x.toLowerCase() : parseFloat(x);
+                let yVal = isNaN(y) ? y.toLowerCase() : parseFloat(y);
+
+                if (dir == "asc") {
+                    if (xVal > yVal) { shouldSwitch = true; break; }
+                } else if (dir == "desc") {
+                    if (xVal < yVal) { shouldSwitch = true; break; }
                 }
             }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount ++;
+            } else {
+                if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; }
+            }
         }
-        return cookieValue;
-    }
-    const csrftoken = getCookie('csrftoken');
-
-    // 2. Setup Modals
-    let bookOutModal;
-    let transferModal;
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Init BookOut
-        const bookOutEl = document.getElementById('bookOutModal');
-        if(bookOutEl) bookOutModal = new bootstrap.Modal(bookOutEl);
-
-        // Init Transfer
-        const transferEl = document.getElementById('transferModal');
-        if(transferEl) transferModal = new bootstrap.Modal(transferEl);
-    });
-
-    // ----------------------------------------------------
-    // LOGIK: AUSBUCHEN
-    // ----------------------------------------------------
-    function openBookOutModal(id, productName, currentQty) {
-        document.getElementById('stockId').value = id;
-        document.getElementById('modalInfoText').innerHTML = `Ausbuchen von: <strong>${productName}</strong>`;
-        document.getElementById('maxInfo').innerText = `Maximal verfügbar: ${currentQty} Stück`;
-
-        const amountInput = document.getElementById('amount');
-        amountInput.value = "";
-        amountInput.max = currentQty;
-
-        bookOutModal.show();
+        if (headers[n]) headers[n].classList.add('active-sort', dir === 'asc' ? 'sort-asc' : 'sort-desc');
     }
 
-    document.getElementById('bookOutForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
+    // API CALL HELPER
+    function getCookie(name) {
+        let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+        return v ? v[2] : null;
+    }
 
-        const stockId = document.getElementById('stockId').value;
-        const amount = document.getElementById('amount').value;
-        const notes = document.getElementById('notes').value;
-
+    async function apiCall(url, data) {
+        const csrftoken = getCookie('csrftoken');
         try {
-            const response = await fetch(`/stocks/api/${stockId}/book-out/`, {
+            let res = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrftoken
                 },
-                body: JSON.stringify({ amount: amount, notes: notes })
+                body: JSON.stringify(data)
             });
 
-            if (response.ok) {
+            if(res.ok) {
                 window.location.reload();
             } else {
-                const data = await response.json();
-                alert("Fehler: " + (data.error || "Unbekannter Fehler"));
+                let err = await res.json();
+                alert('Fehler: ' + (err.error || JSON.stringify(err)));
             }
-        } catch (error) {
-            console.error(error);
-            alert("Verbindungsfehler zum Server.");
+        } catch(e) {
+            console.error(e);
+            alert('Netzwerkfehler: Server nicht erreichbar unter ' + url);
         }
-    });
-
-    // ----------------------------------------------------
-    // LOGIK: UMLAGERN
-    // ----------------------------------------------------
-    function openTransferModal(id, productName, currentQty) {
-        document.getElementById('transferStockId').value = id;
-        document.getElementById('transferInfoText').innerHTML = `Umlagern von: <strong>${productName}</strong><br>Verfügbar: ${currentQty}`;
-
-        const amountInput = document.getElementById('transferAmount');
-        amountInput.value = "";
-        amountInput.max = currentQty;
-
-        transferModal.show();
     }
-
-    document.getElementById('transferForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const stockId = document.getElementById('transferStockId').value;
-        const amount = document.getElementById('transferAmount').value;
-        const targetLoc = document.getElementById('targetLocationId').value;
-
-        try {
-            const response = await fetch(`/stocks/api/${stockId}/transfer/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify({
-                    amount: amount,
-                    target_location_id: targetLoc
-                })
-            });
-
-            if (response.ok) {
-                window.location.reload();
-            } else {
-                const data = await response.json();
-                alert("Fehler: " + (data.error || "Unbekannt"));
-            }
-        } catch (error) {
-            console.error(error);
-            alert("Verbindungsfehler.");
-        }
-    });
 </script>
 {% endblock %}

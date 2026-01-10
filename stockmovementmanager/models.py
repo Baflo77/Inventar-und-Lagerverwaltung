@@ -7,16 +7,13 @@ class StockMovement(models.Model):
         ('MOVE', 'Umlagerung'),
     ]
 
-    product = models.ForeignKey(
-        'productmanager.Product',on_delete=models.PROTECT,related_name='movements'
-    )
+    product = models.ForeignKey('productmanager.Product',on_delete=models.PROTECT,related_name='movements')
     source_location = models.ForeignKey('locationmanager.Location', on_delete=models.SET_NULL, null=True, blank=True,related_name='movements_from', verbose_name="Von Lagerort")
     destination_location = models.ForeignKey('locationmanager.Location', on_delete=models.SET_NULL, null=True, blank=True,related_name='movements_to', verbose_name="Nach Lagerort")
     quantity = models.PositiveIntegerField(default=1, verbose_name="Menge")
-
-    movement_type = models.CharField(max_length=4,choices=MOVEMENT_TYPES,verbose_name="Bewegungsart"
-    )
+    movement_type = models.CharField(max_length=4,choices=MOVEMENT_TYPES,verbose_name="Bewegungsart")
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name="Zeitstempel")
+    note = models.TextField(blank=True, null=True, verbose_name="Bemerkung")
 
 
     class Meta:
