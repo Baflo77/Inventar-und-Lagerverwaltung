@@ -134,6 +134,8 @@
     .btn-primary { background: var(--accent-color); color: white; }
     .btn-ghost { background: transparent; color: var(--accent-color); }
     .btn-danger { background: transparent; color: var(--danger-color); }
+    .btn-secondary { background: #ecf0f1; color: #2c3e50; border: 1px solid #dfe6e9; }
+    .btn-outline-danger { background: transparent; color: var(--danger-color); border: 1px solid rgba(231, 76, 60, 0.35); }
 
     label {
       display: block;
@@ -164,8 +166,8 @@
       font-size: 0.9rem;
     }
 
-    .error { color: #b00020; margin-top: 10px; font-size: 0.95rem; }
-    .success { color: #1b5e20; margin-top: 10px; font-size: 0.95rem; }
+    .error { color: #b00020; margin-top: 10px; font-size: 0.95rem; white-space: pre-wrap; }
+    .success { color: #1b5e20; margin-top: 10px; font-size: 0.95rem; white-space: pre-wrap; }
 
     table {
       width: 100%;
@@ -230,6 +232,36 @@
       margin-bottom: 10px;
       display: block;
     }
+
+    /* ✅ Bulk-Zeilen */
+    .bulk-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: end;
+    }
+
+    .bulk-row .remove-row {
+      width: 42px;
+      height: 42px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .divider {
+      margin: 16px 0;
+      height: 1px;
+      background: var(--bg-main);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
   </style>
 </head>
 
@@ -273,15 +305,33 @@
         <label for="purchaseOrder">PurchaseOrder</label>
         <select id="purchaseOrder"></select>
 
+        <!-- ✅ Einzel-Item (wie bisher) -->
         <label for="product">Produkt (ID)</label>
         <input id="product" type="number" min="1" placeholder="z.B. 1" />
 
         <label for="quantity">Menge</label>
         <input id="quantity" type="number" min="1" value="1" />
 
-        <button class="btn btn-primary" id="createBtn" type="button" style="margin-top: 14px;">
-          ✅ Erstellen
-        </button>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="createBtn" type="button">
+            ✅ Erstellen
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- ✅ Bulk-Create -->
+        <h4 style="margin: 0; color: var(--header-bg); font-size: 1rem;">📦 Mehrere Items auf einmal</h4>
+        <p class="hint" style="margin-top:8px;">
+          Füge mehrere Zeilen hinzu (Produkt-ID + Menge) und klicke dann auf „Alle erstellen“.
+        </p>
+
+        <div id="bulkRows"></div>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="addBulkRowBtn" type="button">➕ Zeile hinzufügen</button>
+          <button class="btn btn-primary" id="bulkCreateBtn" type="button">📦 Alle erstellen</button>
+        </div>
 
         <div id="msg"></div>
 
@@ -354,13 +404,10 @@
   const itemsTbody = document.getElementById("itemsTbody");
 
   async function ensureCsrf() {
-    // Falls beim ersten Laden noch kein Cookie da ist → Seite ist aber gerendert,
-    // nach kurzem Tick nochmal lesen.
     if (!csrftoken) {
       await new Promise(r => setTimeout(r, 50));
       csrftoken = getCookie("csrftoken");
     }
-
     if (!csrftoken) {
       setMsg("CSRF Cookie fehlt. Bitte Strg+F5 neu laden. (Oder ensure_csrf_cookie in View setzen)", "error");
     }
@@ -502,7 +549,6 @@
         })
       });
 
-      // ✅ bessere Fehlermeldung: auch HTML/Plaintext anzeigen
       if (!res.ok) {
         const text = await res.text();
         let detail = text;
@@ -520,17 +566,100 @@
     }
   }
 
+  const bulkRows = document.getElementById("bulkRows");
+
+  function addBulkRow(productId = "", qty = 1) {
+    const row = document.createElement("div");
+    row.className = "bulk-row";
+    row.innerHTML = `
+      <div>
+        <label>Produkt (ID)</label>
+        <input class="bulk-product" type="number" min="1" placeholder="z.B. 1" value="${productId}">
+      </div>
+      <div>
+        <label>Menge</label>
+        <input class="bulk-qty" type="number" min="1" value="${qty}">
+      </div>
+      <div>
+        <button type="button" class="btn btn-outline-danger remove-row" title="Zeile entfernen">×</button>
+      </div>
+    `;
+
+    row.querySelector(".remove-row").addEventListener("click", () => row.remove());
+    bulkRows.appendChild(row);
+  }
+
+  async function bulkCreateItems() {
+    setMsg("");
+
+    const purchaseOrderId = poSelect.value;
+    if (!purchaseOrderId) {
+      setMsg("Bitte eine PurchaseOrder auswählen.", "error");
+      return;
+    }
+
+    const rows = Array.from(bulkRows.querySelectorAll(".bulk-row"));
+
+    const payload = rows.map(r => {
+      const product = parseInt(r.querySelector(".bulk-product").value, 10);
+      const quantity = parseInt(r.querySelector(".bulk-qty").value, 10);
+      return {
+        purchase_order: parseInt(purchaseOrderId, 10),
+        product: product,
+        quantity: quantity
+      };
+    }).filter(x => Number.isInteger(x.product) && x.product > 0 && Number.isInteger(x.quantity) && x.quantity > 0);
+
+    if (!payload.length) {
+      setMsg("Bitte mindestens eine gültige Zeile (Produkt-ID & Menge) eingeben.", "error");
+      return;
+    }
+
+    try {
+      await ensureCsrf();
+
+      const res = await fetch(ITEMS_API, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        let detail = text;
+        try { detail = JSON.stringify(JSON.parse(text)); } catch (_) {}
+        throw new Error(`HTTP ${res.status}: ${detail}`);
+      }
+
+      // optional: Inputs resetten
+      bulkRows.innerHTML = "";
+      addBulkRow();
+      setMsg(`✅ ${payload.length} Items wurden erstellt.`, "success");
+      await loadItems();
+    } catch (e) {
+      setMsg("Fehler beim Bulk-Erstellen: " + e.message, "error");
+    }
+  }
+
   document.getElementById("createBtn").addEventListener("click", createItem);
   document.getElementById("reloadBtn").addEventListener("click", loadItems);
   document.getElementById("reloadBtnTop").addEventListener("click", loadItems);
+
+  document.getElementById("addBulkRowBtn").addEventListener("click", () => addBulkRow());
+  document.getElementById("bulkCreateBtn").addEventListener("click", bulkCreateItems);
 
   (async function init() {
     await ensureCsrf();
     await loadPurchaseOrders();
     await loadItems();
+
+    addBulkRow();
   })();
 </script>
 
 </body>
 </html>
-
