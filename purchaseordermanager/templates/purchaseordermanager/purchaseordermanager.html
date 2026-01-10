@@ -4,14 +4,30 @@
 
 {% block content %}
 <style>
-    /* Container Anpassung falls nötig */
-    .page-container {
+    /* Lokale Styles für diese Seite */
+    :root {
+        /* Falls Variablen in base.html fehlen, hier Fallback-Werte */
+        --bg-main: #ebedef;
+        --header-bg: #2c3e50;
+        --card-bg: #ffffff;
+        --text-main: #2f3640;
+        --accent-color: #3498db;
+        --danger-color: #e74c3c;
+        --shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .purchase-order-wrapper {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text-main);
+    }
+
+    /* Container für den Inhalt */
+    .content-container {
         max-width: 1300px;
-        margin: 2.5rem auto;
+        margin: 2rem auto; /* 2rem Abstand nach oben zum Haupt-Header */
         padding: 0 20px;
     }
 
-    /* Titel Sektion */
     .page-title-section {
         margin-bottom: 2rem;
         display: flex;
@@ -23,31 +39,37 @@
     .page-title {
         font-size: 1.8rem;
         margin: 0;
-        color: #2c3e50; /* Fallback oder Variable aus base nutzen */
+        color: var(--header-bg);
     }
 
     .subtitle {
-        margin: 10px 0 0;
+        margin: 5px 0 0;
         color: #7f8c8d;
         font-size: 0.95rem;
     }
 
-    /* Buttons */
     .btn-add {
-        background: #3498db; /* Accent color */
+        background: var(--accent-color);
         color: white;
         border: none;
         padding: 10px 18px;
         border-radius: 4px;
         cursor: pointer;
         font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
     }
 
-    /* Tabelle & Karten */
+    .btn-add:hover {
+        background: #2980b9;
+    }
+
     .data-card {
-        background: white;
+        background: var(--card-bg);
         border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        box-shadow: var(--shadow);
         overflow-x: auto;
     }
 
@@ -63,41 +85,53 @@
         font-size: 0.75rem;
         color: #7f8c8d;
         text-transform: uppercase;
-        border-bottom: 2px solid #ebedef;
+        border-bottom: 2px solid var(--bg-main);
         text-align: left;
     }
 
     td {
         padding: 15px;
-        border-bottom: 1px solid #ebedef;
+        border-bottom: 1px solid #eee;
         font-size: 0.9rem;
         vertical-align: top;
     }
 
-    /* Badges & Actions */
     .badge {
         display: inline-block;
-        padding: 5px 10px;
+        padding: 4px 10px;
         border-radius: 999px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
+        font-weight: 600;
         background: #eef2f7;
         color: #34495e;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
+
+    /* Status Farben */
+    .badge-open { background: #e3f2fd; color: #1565c0; }
+    .badge-ordered { background: #fff3e0; color: #ef6c00; }
+    .badge-delivered { background: #e8f5e9; color: #2e7d32; }
+    .badge-canceled { background: #ffebee; color: #c62828; }
 
     .actions button {
         border: none;
         background: none;
         cursor: pointer;
         font-size: 0.85rem;
-        color: #3498db;
+        color: var(--accent-color);
         margin-right: 10px;
+        font-weight: 500;
+    }
+
+    .actions button:hover {
+        text-decoration: underline;
     }
 
     .actions .danger {
-        color: #e74c3c;
+        color: var(--danger-color);
     }
 
-    /* Empty State */
     .empty-state {
         text-align: center;
         padding: 50px;
@@ -111,97 +145,123 @@
     }
 
     /* ---------------------------
-       MODAL STYLES (Lokal behalten)
+       MODAL (Create PurchaseOrder)
        --------------------------- */
     .modal-backdrop {
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.35);
+        background: rgba(0,0,0,0.5);
         display: none;
         align-items: center;
         justify-content: center;
         padding: 20px;
         z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .modal-backdrop.show {
+        opacity: 1;
     }
 
     .modal-card {
         width: 100%;
         max-width: 520px;
         background: white;
-        border-radius: 10px;
-        box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         overflow: hidden;
+        transform: translateY(20px);
+        transition: transform 0.2s;
+    }
+
+    .modal-backdrop.show .modal-card {
+        transform: translateY(0);
     }
 
     .modal-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 18px;
-        border-bottom: 1px solid #ebedef;
+        padding: 16px 20px;
+        border-bottom: 1px solid #eee;
+        background: #fcfcfc;
     }
 
     .modal-title {
         margin: 0;
-        font-size: 1.05rem;
-        color: #2c3e50;
+        font-size: 1.1rem;
+        color: var(--header-bg);
+        font-weight: 600;
     }
 
     .modal-close {
         border: none;
         background: transparent;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         cursor: pointer;
-        color: #7f8c8d;
+        color: #95a5a6;
     }
 
     .modal-body {
-        padding: 16px 18px 18px;
+        padding: 20px;
     }
 
     .modal-body label {
         display: block;
-        margin-top: 12px;
+        margin-top: 15px;
         font-size: 0.85rem;
-        color: #7f8c8d;
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 5px;
     }
+    .modal-body label:first-child { margin-top: 0; }
 
     .modal-body select {
         width: 100%;
-        padding: 10px 12px;
-        margin-top: 6px;
+        padding: 10px;
         border: 1px solid #dfe6e9;
         border-radius: 6px;
         background: white;
         font-size: 0.95rem;
         outline: none;
+        transition: border 0.2s;
     }
 
     .modal-body select:focus {
-        border-color: rgba(52, 152, 219, 0.6);
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .modal-body select:disabled {
+        background: #f8f9fa;
+        cursor: not-allowed;
     }
 
     .modal-msg {
-        margin-top: 12px;
-        font-size: 0.95rem;
-        font-weight: 600;
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        display: none;
     }
 
     .modal-actions {
         display: flex;
-        gap: 10px;
-        margin-top: 16px;
+        gap: 12px;
+        margin-top: 25px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
     }
 
     .btn-primary {
-        background: #3498db;
+        background: var(--accent-color);
         color: white;
         border: none;
         padding: 10px 14px;
         border-radius: 6px;
         cursor: pointer;
-        font-weight: 700;
+        font-weight: 600;
         flex: 1;
     }
 
@@ -212,112 +272,116 @@
         padding: 10px 14px;
         border-radius: 6px;
         cursor: pointer;
-        font-weight: 700;
+        font-weight: 600;
     }
 </style>
 
-<div class="page-container">
+<div class="purchase-order-wrapper">
 
-    <div class="page-title-section">
-        <div>
-            <h2 class="page-title">PurchaseOrders</h2>
-            <p class="subtitle">Übersicht aller Bestellungen (PurchaseOrders)</p>
+    <div class="content-container">
+
+        <div class="page-title-section">
+            <div>
+                <h2 class="page-title">PurchaseOrders</h2>
+                <p class="subtitle">Verwaltung deiner Lieferantenbestellungen</p>
+            </div>
+
+            <button class="btn-add" id="openCreateModalBtn" type="button">
+                <span>➕</span> Neue Bestellung
+            </button>
         </div>
 
-        <button class="btn-add" id="openCreateModalBtn" type="button">
-            ➕ Neue PurchaseOrder
-        </button>
-    </div>
+        <div class="data-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Lieferant</th>
+                        <th>Status</th>
+                        <th>Erstellt am</th>
+                        <th style="text-align: right;">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
 
-    <div class="data-card">
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Lieferant</th>
-                    <th>Status</th>
-                    <th>Erstellt am</th>
-                    <th>Aktionen</th>
-                </tr>
-            </thead>
-            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td><strong>#{{ order.id }}</strong></td>
+                        <td>
+                            <strong>{{ order.supplier.name }}</strong><br>
+                            <small style="color:#7f8c8d;">
+                                {{ order.supplier.city|default:"-" }}
+                            </small>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ order.status|lower }}">{{ order.status }}</span>
+                        </td>
+                        <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                        <td class="actions" style="text-align: right;">
+                            <button type="button" onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'" title="Ware empfangen">
+                                📥 Eingang
+                            </button>
 
-            {% for order in orders %}
-                <tr>
-                    <td><strong>#{{ order.id }}</strong></td>
-                    <td>
-                        <strong>{{ order.supplier.name }}</strong><br>
-                        <small style="color:#7f8c8d;">
-                            {{ order.supplier.city }}
-                        </small>
-                    </td>
-                    <td>
-                        <span class="badge">{{ order.status }}</span>
-                    </td>
-                    <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
-                    <td class="actions">
-                        <button type="button" onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'">
-                            📥 Wareneingang
-                        </button>
+                            <button type="button">✏️</button>
+                            <button type="button" class="danger">🗑</button>
+                        </td>
 
-                        <button type="button">✏️ Bearbeiten</button>
-                        <button type="button" class="danger">🗑 Löschen</button>
-                    </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <span class="empty-icon">🧾</span>
+                                <p>Keine Bestellungen vorhanden.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
 
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="5">
-                        <div class="empty-state">
-                            <span class="empty-icon">🧾</span>
-                            Keine PurchaseOrders vorhanden.
-                        </div>
-                    </td>
-                </tr>
-            {% endfor %}
-
-            </tbody>
-        </table>
-    </div>
-
-</div>
-
-<div class="modal-backdrop" id="createModalBackdrop">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
-        <div class="modal-header">
-            <h3 id="createModalTitle" class="modal-title">Neue PurchaseOrder</h3>
-            <button class="modal-close" id="closeCreateModalBtn" type="button" aria-label="Schließen">✕</button>
+                </tbody>
+            </table>
         </div>
 
-        <div class="modal-body">
-            <label for="supplierSelect">Lieferant</label>
-            <select id="supplierSelect">
-                <option value="">Lade Supplier...</option>
-            </select>
+    </div>
 
-            <label for="statusSelect">Status</label>
-            <select id="statusSelect">
-                <option value="open" selected>Offen</option>
-                <option value="ordered">Bestellt</option>
-                <option value="delivered">Geliefert</option>
-                <option value="canceled">Storniert</option>
-            </select>
+    <div class="modal-backdrop" id="createModalBackdrop">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
+            <div class="modal-header">
+                <h3 id="createModalTitle" class="modal-title">Neue Bestellung aufgeben</h3>
+                <button class="modal-close" id="closeCreateModalBtn" type="button" aria-label="Schließen">✕</button>
+            </div>
 
-            <div id="createMsg" class="modal-msg"></div>
+            <div class="modal-body">
+                <label for="productSelect">1. Welches Produkt?</label>
+                <select id="productSelect">
+                    <option value="">Lade Produkte...</option>
+                </select>
 
-            <div class="modal-actions">
-                <button class="btn-secondary" id="cancelCreateBtn" type="button">Abbrechen</button>
-                <button class="btn-primary" id="createOrderBtn" type="button">✅ Erstellen</button>
+                <label for="supplierSelect">2. Welcher Lieferant?</label>
+                <select id="supplierSelect" disabled>
+                    <option value="">Bitte zuerst Produkt wählen...</option>
+                </select>
+
+                <label for="statusSelect">3. Status</label>
+                <select id="statusSelect">
+                    <option value="OPEN" selected>Offen (Entwurf)</option>
+                    <option value="ORDERED">Bestellt</option>
+                    <option value="DELIVERED">Geliefert</option>
+                    <option value="CANCELED">Storniert</option>
+                </select>
+
+                <div id="createMsg" class="modal-msg"></div>
+
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="cancelCreateBtn" type="button">Abbrechen</button>
+                    <button class="btn-primary" id="createOrderBtn" type="button">Bestellung anlegen</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // APIs (passt zu deinen suppliermanager/urls.py)
-    const SUPPLIERS_API = "/suppliers/api/";
-    const PURCHASEORDERS_API = "/purchaseorders/api/";
-
     // --- CSRF Helper ---
     function getCookie(name) {
         let cookieValue = null;
@@ -335,78 +399,128 @@
     }
     const csrftoken = getCookie('csrftoken');
 
-    // Modal elements
+    // APIs
+    const PURCHASEORDERS_API = "/purchaseorders/api/";
+    const PRODUCTS_API = "/products/api/";
+    const PS_BY_PRODUCT_API = "/productsuppliers/api/by-product/?product_id=";
+
+    // Elements
     const backdrop = document.getElementById("createModalBackdrop");
     const openBtn = document.getElementById("openCreateModalBtn");
     const closeBtn = document.getElementById("closeCreateModalBtn");
     const cancelBtn = document.getElementById("cancelCreateBtn");
     const createBtn = document.getElementById("createOrderBtn");
 
+    const productSelect = document.getElementById("productSelect");
     const supplierSelect = document.getElementById("supplierSelect");
     const statusSelect = document.getElementById("statusSelect");
     const msgBox = document.getElementById("createMsg");
 
     function setMsg(text, type="") {
         msgBox.textContent = text || "";
-        msgBox.style.color = type === "error" ? "#b00020" : (type === "success" ? "#1b5e20" : "#2f3640");
         msgBox.style.display = text ? "block" : "none";
+        if(type === "error") {
+            msgBox.style.background = "#fee";
+            msgBox.style.color = "#c0392b";
+            msgBox.style.border = "1px solid #fab";
+        } else if (type === "success") {
+            msgBox.style.background = "#eafaf1";
+            msgBox.style.color = "#27ae60";
+            msgBox.style.border = "1px solid #abebc6";
+        } else {
+            msgBox.style.background = "#f1f1f1";
+            msgBox.style.color = "#333";
+            msgBox.style.border = "none";
+        }
     }
 
     function openModal() {
         backdrop.style.display = "flex";
+        // Kleiner Timeout für CSS Transition
+        setTimeout(() => backdrop.classList.add("show"), 10);
         setMsg("");
     }
 
     function closeModal() {
-        backdrop.style.display = "none";
+        backdrop.classList.remove("show");
+        setTimeout(() => {
+            backdrop.style.display = "none";
+        }, 200); // Wartet auf CSS Transition
         setMsg("");
     }
 
-    async function loadSuppliers() {
-        supplierSelect.innerHTML = "";
+    // --- LOGIC ---
+    async function loadProducts() {
+        productSelect.innerHTML = '<option value="">Lade...</option>';
         setMsg("");
 
         try {
-            const res = await fetch(SUPPLIERS_API, { credentials: "same-origin" });
-            if (!res.ok) throw new Error("Supplier API nicht erreichbar");
-            const suppliers = await res.json();
+            const res = await fetch(PRODUCTS_API);
+            if (!res.ok) throw new Error("API Fehler");
+            const products = await res.json();
 
-            if (!Array.isArray(suppliers) || suppliers.length === 0) {
-                supplierSelect.innerHTML = `<option value="">Keine Supplier vorhanden</option>`;
-                supplierSelect.disabled = true;
-                setMsg("Bitte zuerst einen Supplier anlegen.", "error");
+            if (!products.length) {
+                productSelect.innerHTML = `<option value="">Keine Produkte gefunden</option>`;
+                productSelect.disabled = true;
+                return;
+            }
+
+            productSelect.disabled = false;
+            productSelect.innerHTML = `<option value="">-- Produkt wählen --</option>`;
+            products.forEach(p => {
+                const opt = document.createElement("option");
+                opt.value = p.id;
+                opt.textContent = p.sku ? `${p.name} (${p.sku})` : p.name;
+                productSelect.appendChild(opt);
+            });
+        } catch (e) {
+            productSelect.innerHTML = `<option value="">Fehler</option>`;
+            setMsg("Fehler beim Laden der Produkte.", "error");
+        }
+    }
+
+    async function loadSuppliers(prodId) {
+        supplierSelect.innerHTML = '<option value="">Lade Lieferanten...</option>';
+        supplierSelect.disabled = true;
+
+        if(!prodId) {
+            supplierSelect.innerHTML = '<option value="">Bitte zuerst Produkt wählen...</option>';
+            return;
+        }
+
+        try {
+            const res = await fetch(PS_BY_PRODUCT_API + prodId);
+            const data = await res.json();
+
+            // data ist Array von { id, product, supplier, supplier_name, ... }
+            if (!data || data.length === 0) {
+                supplierSelect.innerHTML = '<option value="">Kein Lieferant für dieses Produkt</option>';
                 return;
             }
 
             supplierSelect.disabled = false;
+            supplierSelect.innerHTML = '<option value="">-- Lieferant wählen --</option>';
 
-            suppliers.forEach(s => {
+            // Einfache Dubletten-Prüfung falls nötig, hier nehmen wir an API liefert sauber
+            data.forEach(item => {
                 const opt = document.createElement("option");
-                opt.value = s.id;
-                opt.textContent = s.name ? `${s.name}` : `Supplier #${s.id}`;
+                opt.value = item.supplier; // Wir brauchen die Supplier ID für die Order
+                opt.textContent = item.supplier_name || ("Lieferant #" + item.supplier);
                 supplierSelect.appendChild(opt);
             });
 
         } catch (e) {
-            supplierSelect.innerHTML = `<option value="">Fehler beim Laden</option>`;
-            supplierSelect.disabled = true;
-            setMsg("Fehler beim Laden der Supplier: " + e.message, "error");
+            supplierSelect.innerHTML = '<option value="">Fehler</option>';
+            setMsg("Konnte Lieferanten nicht laden.", "error");
         }
     }
 
-    async function createPurchaseOrder() {
-        setMsg("");
-
+    async function submitOrder() {
         const supplierId = supplierSelect.value;
-        const poStatus = statusSelect.value;
+        const statusVal = statusSelect.value;
 
         if (!supplierId) {
-            setMsg("Bitte einen Lieferanten auswählen.", "error");
-            return;
-        }
-
-        if (!csrftoken) {
-            setMsg("CSRF Token fehlt. Seite neu laden.", "error");
+            setMsg("Bitte wähle einen Lieferanten aus.", "error");
             return;
         }
 
@@ -417,42 +531,42 @@
                     "Content-Type": "application/json",
                     "X-CSRFToken": csrftoken
                 },
-                credentials: "same-origin",
                 body: JSON.stringify({
-                    supplier: parseInt(supplierId, 10),
-                    status: poStatus
+                    supplier: parseInt(supplierId),
+                    status: statusVal
                 })
             });
 
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(typeof err === "string" ? err : JSON.stringify(err));
+            if(res.ok) {
+                setMsg("Erfolgreich! Lade neu...", "success");
+                setTimeout(() => location.reload(), 500);
+            } else {
+                const errData = await res.json();
+                setMsg("Fehler: " + JSON.stringify(errData), "error");
             }
-
-            setMsg("PurchaseOrder erstellt. Seite wird aktualisiert…", "success");
-            setTimeout(() => window.location.reload(), 350);
-
-        } catch (e) {
-            setMsg("Fehler beim Erstellen: " + e.message, "error");
+        } catch(e) {
+            setMsg("Verbindungsfehler.", "error");
         }
     }
 
-    openBtn.addEventListener("click", async () => {
+    // Events
+    openBtn.onclick = () => {
         openModal();
-        await loadSuppliers();
-    });
+        loadProducts();
+        supplierSelect.innerHTML = '<option value="">Zuerst Produkt wählen</option>';
+        supplierSelect.disabled = true;
+    };
+    closeBtn.onclick = closeModal;
+    cancelBtn.onclick = closeModal;
+    backdrop.onclick = (e) => {
+        if(e.target === backdrop) closeModal();
+    };
 
-    closeBtn.addEventListener("click", closeModal);
-    cancelBtn.addEventListener("click", closeModal);
+    productSelect.onchange = () => {
+        loadSuppliers(productSelect.value);
+    };
 
-    backdrop.addEventListener("click", (e) => {
-        if (e.target === backdrop) closeModal();
-    });
+    createBtn.onclick = submitOrder;
 
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && backdrop.style.display === "flex") closeModal();
-    });
-
-    createBtn.addEventListener("click", createPurchaseOrder);
 </script>
 {% endblock %}
