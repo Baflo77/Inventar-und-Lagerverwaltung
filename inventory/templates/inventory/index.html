@@ -198,6 +198,67 @@
     .timeline-time { font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 2px; }
     .timeline-text { font-size: 0.85rem; color: var(--text-dark); line-height: 1.3; }
 
+
+
+    /* --- NEUE STYLES FÜR STATUS WIDGET --- */
+    .status-item {
+        margin-bottom: 1.5rem;
+    }
+    .status-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .status-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 0.5rem;
+    }
+
+    .status-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-value {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: var(--text-dark);
+    }
+
+    /* Progress Bar Styles */
+    .progress-track {
+        width: 100%;
+        height: 8px;
+        background-color: #f1f3f5;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+
+    /* Alert Box Style */
+    .alert-box {
+        background-color: #fff5f5;
+        border: 1px solid #ffc9c9;
+        color: #fa5252;
+        padding: 0.75rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .alert-icon { font-size: 1.2rem; }
 </style>
 {% endblock %}
 
@@ -336,7 +397,7 @@
                         <div class="stat-icon-box bg-light-red"><i class="bi bi-exclamation-triangle"></i></div>
                         <div>
                             <div style="font-size: 0.75rem; color: var(--text-muted); text-transform:uppercase; font-weight:700;">Kritisch</div>
-                            <div style="font-weight: 800; font-size: 1.1rem; color: #e74c3c;">3 Artikel</div>
+                            <div style="font-weight: 800; font-size: 1.1rem; color: #e74c3c;">{{ critical_stock_count }} Artikel</div>
                         </div>
                     </div>
                 </div>
@@ -345,7 +406,7 @@
                         <div class="stat-icon-box bg-light-orange"><i class="bi bi-truck"></i></div>
                         <div>
                             <div style="font-size: 0.75rem; color: var(--text-muted); text-transform:uppercase; font-weight:700;">Offen</div>
-                            <div style="font-weight: 800; font-size: 1.1rem;">12 Aufträge</div>
+                            <div style="font-weight: 800; font-size: 1.1rem;">{{ open_orders_count }} Aufträge</div>
                         </div>
                     </div>
                 </div>

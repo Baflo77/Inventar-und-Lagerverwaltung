@@ -20,9 +20,9 @@ from django.urls import include
 from stockmovementmanager import views
 
 urlpatterns = [
-
+    # 1. Die HTML-Seite (Frontend)
     path('', views.stock_movement_ui, name='movement_list'),
 
     path('api/', views.stock_movement_list, name='api_list'),
-    path('<id>/', views.stock_movement_detail, name='api_detail'),
+    path('api/<int:id>/', views.stock_movement_detail, name='api_detail'),
 ]

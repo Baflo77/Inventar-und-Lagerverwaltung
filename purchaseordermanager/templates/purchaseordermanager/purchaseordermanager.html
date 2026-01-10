@@ -1,277 +1,222 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <title>PurchaseOrders | Inventar-Verwaltung</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
 
-    <style>
-        :root {
-            --bg-main: #ebedef;
-            --header-bg: #2c3e50;
-            --card-bg: #ffffff;
-            --text-main: #2f3640;
-            --accent-color: #3498db;
-            --danger-color: #e74c3c;
-            --shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+{% block title %}PurchaseOrders | Inventar-Verwaltung{% endblock %}
 
-        body {
-            background-color: var(--bg-main);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            color: var(--text-main);
-        }
+{% block content %}
+<style>
+    /* Container Anpassung falls nötig */
+    .page-container {
+        max-width: 1300px;
+        margin: 2.5rem auto;
+        padding: 0 20px;
+    }
 
-        .app-header {
-            background-color: var(--header-bg);
-            color: white;
-            padding: 1.2rem 2.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
+    /* Titel Sektion */
+    .page-title-section {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
+    .page-title {
+        font-size: 1.8rem;
+        margin: 0;
+        color: #2c3e50; /* Fallback oder Variable aus base nutzen */
+    }
 
-        .header-title {
-            font-size: 1.4rem;
-            margin: 0;
-            font-weight: 500;
-        }
+    .subtitle {
+        margin: 10px 0 0;
+        color: #7f8c8d;
+        font-size: 0.95rem;
+    }
 
-        .nav-home {
-            text-decoration: none;
-            color: white;
-            font-size: 0.9rem;
-            padding: 5px 10px;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 4px;
-        }
+    /* Buttons */
+    .btn-add {
+        background: #3498db; /* Accent color */
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+    }
 
-        .container {
-            max-width: 1300px;
-            margin: 2.5rem auto;
-            padding: 0 20px;
-        }
+    /* Tabelle & Karten */
+    .data-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        overflow-x: auto;
+    }
 
-        .page-title-section {
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+    }
 
-        .page-title {
-            font-size: 1.8rem;
-            margin: 0;
-            color: var(--header-bg);
-        }
+    th {
+        background: #f8f9fa;
+        padding: 15px;
+        font-size: 0.75rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        border-bottom: 2px solid #ebedef;
+        text-align: left;
+    }
 
-        .btn-add {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-        }
+    td {
+        padding: 15px;
+        border-bottom: 1px solid #ebedef;
+        font-size: 0.9rem;
+        vertical-align: top;
+    }
 
-        .data-card {
-            background: var(--card-bg);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            overflow-x: auto;
-        }
+    /* Badges & Actions */
+    .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        background: #eef2f7;
+        color: #34495e;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 900px;
-        }
+    .actions button {
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: #3498db;
+        margin-right: 10px;
+    }
 
-        th {
-            background: #f8f9fa;
-            padding: 15px;
-            font-size: 0.75rem;
-            color: #7f8c8d;
-            text-transform: uppercase;
-            border-bottom: 2px solid var(--bg-main);
-            text-align: left;
-        }
+    .actions .danger {
+        color: #e74c3c;
+    }
 
-        td {
-            padding: 15px;
-            border-bottom: 1px solid var(--bg-main);
-            font-size: 0.9rem;
-            vertical-align: top;
-        }
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 50px;
+        color: #bdc3c7;
+    }
 
-        .badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            background: #eef2f7;
-            color: #34495e;
-        }
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 10px;
+        display: block;
+    }
 
-        .actions button {
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 0.85rem;
-            color: var(--accent-color);
-            margin-right: 10px;
-        }
+    /* ---------------------------
+       MODAL STYLES (Lokal behalten)
+       --------------------------- */
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 9999;
+    }
 
-        .actions .danger {
-            color: var(--danger-color);
-        }
+    .modal-card {
+        width: 100%;
+        max-width: 520px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+        overflow: hidden;
+    }
 
-        .empty-state {
-            text-align: center;
-            padding: 50px;
-            color: #bdc3c7;
-        }
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-bottom: 1px solid #ebedef;
+    }
 
-        .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            display: block;
-        }
+    .modal-title {
+        margin: 0;
+        font-size: 1.05rem;
+        color: #2c3e50;
+    }
 
-        /* Optional: kleiner Hinweistext unter Titel */
-        .subtitle {
-            margin: 10px 0 0;
-            color: #7f8c8d;
-            font-size: 0.95rem;
-        }
+    .modal-close {
+        border: none;
+        background: transparent;
+        font-size: 1.1rem;
+        cursor: pointer;
+        color: #7f8c8d;
+    }
 
-        /* ---------------------------
-           MODAL (Create PurchaseOrder)
-           --------------------------- */
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.35);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 9999;
-        }
+    .modal-body {
+        padding: 16px 18px 18px;
+    }
 
-        .modal-card {
-            width: 100%;
-            max-width: 520px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 35px rgba(0,0,0,0.25);
-            overflow: hidden;
-        }
+    .modal-body label {
+        display: block;
+        margin-top: 12px;
+        font-size: 0.85rem;
+        color: #7f8c8d;
+    }
 
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 18px;
-            border-bottom: 1px solid var(--bg-main);
-        }
+    .modal-body select {
+        width: 100%;
+        padding: 10px 12px;
+        margin-top: 6px;
+        border: 1px solid #dfe6e9;
+        border-radius: 6px;
+        background: white;
+        font-size: 0.95rem;
+        outline: none;
+    }
 
-        .modal-title {
-            margin: 0;
-            font-size: 1.05rem;
-            color: var(--header-bg);
-        }
+    .modal-body select:focus {
+        border-color: rgba(52, 152, 219, 0.6);
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+    }
 
-        .modal-close {
-            border: none;
-            background: transparent;
-            font-size: 1.1rem;
-            cursor: pointer;
-            color: #7f8c8d;
-        }
+    .modal-msg {
+        margin-top: 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
 
-        .modal-body {
-            padding: 16px 18px 18px;
-        }
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+    }
 
-        .modal-body label {
-            display: block;
-            margin-top: 12px;
-            font-size: 0.85rem;
-            color: #7f8c8d;
-        }
+    .btn-primary {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 700;
+        flex: 1;
+    }
 
-        .modal-body select {
-            width: 100%;
-            padding: 10px 12px;
-            margin-top: 6px;
-            border: 1px solid #dfe6e9;
-            border-radius: 6px;
-            background: white;
-            font-size: 0.95rem;
-            outline: none;
-        }
+    .btn-secondary {
+        background: #ecf0f1;
+        color: #2c3e50;
+        border: none;
+        padding: 10px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 700;
+    }
+</style>
 
-        .modal-body select:focus {
-            border-color: rgba(52, 152, 219, 0.6);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
-        }
-
-        .modal-msg {
-            margin-top: 12px;
-            font-size: 0.95rem;
-            font-weight: 600;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 16px;
-        }
-
-        .btn-primary {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 10px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 700;
-            flex: 1;
-        }
-
-        .btn-secondary {
-            background: #ecf0f1;
-            color: #2c3e50;
-            border: none;
-            padding: 10px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 700;
-        }
-    </style>
-</head>
-<body>
-
-<header class="app-header">
-    <div class="header-left">
-        <a href="/" class="nav-home">🏠 Home</a>
-        <h1 class="header-title">Inventar-Lagerverwaltung</h1>
-    </div>
-    <div>PurchaseOrdermanager</div>
-</header>
-
-<div class="container">
+<div class="page-container">
 
     <div class="page-title-section">
         <div>
@@ -337,7 +282,6 @@
 
 </div>
 
-<!-- Create PurchaseOrder Modal -->
 <div class="modal-backdrop" id="createModalBackdrop">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
         <div class="modal-header">
@@ -346,15 +290,11 @@
         </div>
 
         <div class="modal-body">
-            <label for="productSelect">Produkt</label>
-            <select id="productSelect">
-                <option value="">Lade Produkte...</option>
+            <label for="supplierSelect">Lieferant</label>
+            <select id="supplierSelect">
+                <option value="">Lade Supplier...</option>
             </select>
 
-            <label for="supplierSelect">Lieferant</label>
-            <select id="supplierSelect" disabled>
-                <option value="">Bitte zuerst Produkt wählen...</option>
-            </select>
             <label for="statusSelect">Status</label>
             <select id="statusSelect">
                 <option value="open" selected>Offen</option>
@@ -374,7 +314,11 @@
 </div>
 
 <script>
-    // --- CSRF Helper (wie im Stock-Manager) ---
+    // APIs (passt zu deinen suppliermanager/urls.py)
+    const SUPPLIERS_API = "/suppliers/api/";
+    const PURCHASEORDERS_API = "/purchaseorders/api/";
+
+    // --- CSRF Helper ---
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -391,18 +335,13 @@
     }
     const csrftoken = getCookie('csrftoken');
 
-    // APIs (passt zu deinen suppliermanager/urls.py)
-    const PURCHASEORDERS_API = "/purchaseorders/api/";
-    const PRODUCTS_API = "/products/api/";
-    const PS_BY_PRODUCT_API = "/productsuppliers/api/by-product/?product_id=";
-
     // Modal elements
     const backdrop = document.getElementById("createModalBackdrop");
     const openBtn = document.getElementById("openCreateModalBtn");
     const closeBtn = document.getElementById("closeCreateModalBtn");
     const cancelBtn = document.getElementById("cancelCreateBtn");
     const createBtn = document.getElementById("createOrderBtn");
-    const productSelect = document.getElementById("productSelect");
+
     const supplierSelect = document.getElementById("supplierSelect");
     const statusSelect = document.getElementById("statusSelect");
     const msgBox = document.getElementById("createMsg");
@@ -423,98 +362,51 @@
         setMsg("");
     }
 
-    async function loadProducts() {
-        productSelect.innerHTML = "";
+    async function loadSuppliers() {
+        supplierSelect.innerHTML = "";
         setMsg("");
 
         try {
-            const res = await fetch(PRODUCTS_API, { credentials: "same-origin" });
-            if (!res.ok) throw new Error("Product API nicht erreichbar");
+            const res = await fetch(SUPPLIERS_API, { credentials: "same-origin" });
+            if (!res.ok) throw new Error("Supplier API nicht erreichbar");
+            const suppliers = await res.json();
 
-            const products = await res.json();
-
-            if (!Array.isArray(products) || products.length === 0) {
-                productSelect.innerHTML = `<option value="">Keine Produkte vorhanden</option>`;
-                productSelect.disabled = true;
+            if (!Array.isArray(suppliers) || suppliers.length === 0) {
+                supplierSelect.innerHTML = `<option value="">Keine Supplier vorhanden</option>`;
+                supplierSelect.disabled = true;
+                setMsg("Bitte zuerst einen Supplier anlegen.", "error");
                 return;
-            }
-
-            productSelect.disabled = false;
-            productSelect.innerHTML = `<option value="">Bitte wählen...</option>`;
-
-            products.forEach(p => {
-                const opt = document.createElement("option");
-                opt.value = p.id;
-                opt.textContent = p.sku ? `${p.name} (${p.sku})` : `${p.name}`;
-                productSelect.appendChild(opt);
-            });
-
-        } catch (e) {
-            productSelect.innerHTML = `<option value="">Fehler beim Laden</option>`;
-            productSelect.disabled = true;
-            setMsg("Fehler beim Laden der Produkte: " + e.message, "error");
-        }
-    }
-    async function loadSuppliersForProduct(productId) {
-        supplierSelect.innerHTML = "";
-        supplierSelect.disabled = true;
-
-        if (!productId) {
-            supplierSelect.innerHTML = `<option value="">Bitte zuerst Produkt wählen...</option>`;
-            return;
-        }
-
-        try {
-            const res = await fetch(PS_BY_PRODUCT_API + productId, { credentials: "same-origin" });
-            if (!res.ok) throw new Error("ProductSupplier API nicht erreichbar");
-
-            const psLinks = await res.json();
-
-            if (!Array.isArray(psLinks) || psLinks.length === 0) {
-                supplierSelect.innerHTML = `<option value="">Kein Lieferant für dieses Produkt</option>`;
-                return;
-            }
-
-
-            const unique = new Map();
-            psLinks.forEach(ps => {
-                unique.set(ps.supplier, ps.supplier_name || `Supplier #${ps.supplier}`);
-            });
-
-            supplierSelect.innerHTML = `<option value="">Bitte wählen...</option>`;
-            for (const [id, name] of unique.entries()) {
-                const opt = document.createElement("option");
-                opt.value = id;
-                opt.textContent = name;
-                supplierSelect.appendChild(opt);
             }
 
             supplierSelect.disabled = false;
 
+            suppliers.forEach(s => {
+                const opt = document.createElement("option");
+                opt.value = s.id;
+                opt.textContent = s.name ? `${s.name}` : `Supplier #${s.id}`;
+                supplierSelect.appendChild(opt);
+            });
+
         } catch (e) {
             supplierSelect.innerHTML = `<option value="">Fehler beim Laden</option>`;
             supplierSelect.disabled = true;
-            setMsg("Fehler beim Laden der Lieferanten: " + e.message, "error");
+            setMsg("Fehler beim Laden der Supplier: " + e.message, "error");
         }
     }
+
     async function createPurchaseOrder() {
         setMsg("");
 
-        const productId = productSelect.value;
-        if (!productId) {
-            setMsg("Bitte zuerst ein Produkt auswählen.", "error");
-            return;
-        }
         const supplierId = supplierSelect.value;
         const poStatus = statusSelect.value;
 
         if (!supplierId) {
-            setMsg("Bitte einen passenden Lieferanten auswählen.", "error");
+            setMsg("Bitte einen Lieferanten auswählen.", "error");
             return;
         }
 
         if (!csrftoken) {
-            setMsg("CSRF Token fehlt (Cookie). Bitte Seite neu laden (Strg+F5).", "error");
+            setMsg("CSRF Token fehlt. Seite neu laden.", "error");
             return;
         }
 
@@ -545,15 +437,9 @@
         }
     }
 
-    productSelect.addEventListener("change", async () => {
-        await loadSuppliersForProduct(productSelect.value);
-    });
     openBtn.addEventListener("click", async () => {
         openModal();
-        await loadProducts();
-
-        supplierSelect.innerHTML = `<option value="">Bitte zuerst Produkt wählen...</option>`;
-        supplierSelect.disabled = true;
+        await loadSuppliers();
     });
 
     closeBtn.addEventListener("click", closeModal);
@@ -569,6 +455,4 @@
 
     createBtn.addEventListener("click", createPurchaseOrder);
 </script>
-
-</body>
-</html>
+{% endblock %}
