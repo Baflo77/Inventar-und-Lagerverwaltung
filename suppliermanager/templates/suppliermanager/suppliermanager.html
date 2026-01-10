@@ -5,6 +5,7 @@
 {% block extra_css %}
 <style>
     /* Lokale Variablen für die Lieferanten-Seite */
+
     :root {
         --supp-bg-main: #ebedef;
         --supp-card-bg: #ffffff;
@@ -113,7 +114,7 @@
         backdrop-filter: blur(2px);
     }
 
-    .modal {
+    .supplier-modal {
         background: white;
         width: 100%;
         max-width: 720px;
@@ -252,7 +253,7 @@
 </div>
 
 <div id="modalBackdrop" class="modal-backdrop">
-    <div class="modal">
+    <div class="supplier-modal">
         <div class="modal-header">
             <h3 id="modalTitle" class="modal-title">Lieferant</h3>
             <button class="btn-modal btn-secondary-modal" onclick="closeModal()">
