@@ -68,7 +68,7 @@
 </head>
 <body>
 <header class="app-header">
-    <h1 style="font-size: 1.5rem; margin: 0; font-weight: 700;">Inventar-Lagerverwaltung</h1>
+    <h1 style="font-size: 1.5rem; margin: 0; font-weight: 700;"><a href="{% url 'dashboard' %}" style="color: white; text-decoration: none;">Inventar-Lagerverwaltung</a></h1>
     {% if request.user.is_authenticated %}
         <div class="user-pill">
             <span>👤 <strong>{{ request.user.username }}</strong></span>
