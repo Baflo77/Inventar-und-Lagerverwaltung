@@ -346,11 +346,15 @@
         </div>
 
         <div class="modal-body">
-            <label for="supplierSelect">Lieferant</label>
-            <select id="supplierSelect">
-                <option value="">Lade Supplier...</option>
+            <label for="productSelect">Produkt</label>
+            <select id="productSelect">
+                <option value="">Lade Produkte...</option>
             </select>
 
+            <label for="supplierSelect">Lieferant</label>
+            <select id="supplierSelect" disabled>
+                <option value="">Bitte zuerst Produkt wählen...</option>
+            </select>
             <label for="statusSelect">Status</label>
             <select id="statusSelect">
                 <option value="open" selected>Offen</option>
@@ -388,8 +392,9 @@
     const csrftoken = getCookie('csrftoken');
 
     // APIs (passt zu deinen suppliermanager/urls.py)
-    const SUPPLIERS_API = "/suppliers/api/";
     const PURCHASEORDERS_API = "/purchaseorders/api/";
+    const PRODUCTS_API = "/products/api/";
+    const PS_BY_PRODUCT_API = "/productsuppliers/api/by-product/?product_id=";
 
     // Modal elements
     const backdrop = document.getElementById("createModalBackdrop");
@@ -397,7 +402,7 @@
     const closeBtn = document.getElementById("closeCreateModalBtn");
     const cancelBtn = document.getElementById("cancelCreateBtn");
     const createBtn = document.getElementById("createOrderBtn");
-
+    const productSelect = document.getElementById("productSelect");
     const supplierSelect = document.getElementById("supplierSelect");
     const statusSelect = document.getElementById("statusSelect");
     const msgBox = document.getElementById("createMsg");
@@ -418,46 +423,93 @@
         setMsg("");
     }
 
-    async function loadSuppliers() {
-        supplierSelect.innerHTML = "";
+    async function loadProducts() {
+        productSelect.innerHTML = "";
         setMsg("");
 
         try {
-            const res = await fetch(SUPPLIERS_API, { credentials: "same-origin" });
-            if (!res.ok) throw new Error("Supplier API nicht erreichbar");
-            const suppliers = await res.json();
+            const res = await fetch(PRODUCTS_API, { credentials: "same-origin" });
+            if (!res.ok) throw new Error("Product API nicht erreichbar");
 
-            if (!Array.isArray(suppliers) || suppliers.length === 0) {
-                supplierSelect.innerHTML = `<option value="">Keine Supplier vorhanden</option>`;
-                supplierSelect.disabled = true;
-                setMsg("Bitte zuerst einen Supplier anlegen.", "error");
+            const products = await res.json();
+
+            if (!Array.isArray(products) || products.length === 0) {
+                productSelect.innerHTML = `<option value="">Keine Produkte vorhanden</option>`;
+                productSelect.disabled = true;
                 return;
+            }
+
+            productSelect.disabled = false;
+            productSelect.innerHTML = `<option value="">Bitte wählen...</option>`;
+
+            products.forEach(p => {
+                const opt = document.createElement("option");
+                opt.value = p.id;
+                opt.textContent = p.sku ? `${p.name} (${p.sku})` : `${p.name}`;
+                productSelect.appendChild(opt);
+            });
+
+        } catch (e) {
+            productSelect.innerHTML = `<option value="">Fehler beim Laden</option>`;
+            productSelect.disabled = true;
+            setMsg("Fehler beim Laden der Produkte: " + e.message, "error");
+        }
+    }
+    async function loadSuppliersForProduct(productId) {
+        supplierSelect.innerHTML = "";
+        supplierSelect.disabled = true;
+
+        if (!productId) {
+            supplierSelect.innerHTML = `<option value="">Bitte zuerst Produkt wählen...</option>`;
+            return;
+        }
+
+        try {
+            const res = await fetch(PS_BY_PRODUCT_API + productId, { credentials: "same-origin" });
+            if (!res.ok) throw new Error("ProductSupplier API nicht erreichbar");
+
+            const psLinks = await res.json();
+
+            if (!Array.isArray(psLinks) || psLinks.length === 0) {
+                supplierSelect.innerHTML = `<option value="">Kein Lieferant für dieses Produkt</option>`;
+                return;
+            }
+
+
+            const unique = new Map();
+            psLinks.forEach(ps => {
+                unique.set(ps.supplier, ps.supplier_name || `Supplier #${ps.supplier}`);
+            });
+
+            supplierSelect.innerHTML = `<option value="">Bitte wählen...</option>`;
+            for (const [id, name] of unique.entries()) {
+                const opt = document.createElement("option");
+                opt.value = id;
+                opt.textContent = name;
+                supplierSelect.appendChild(opt);
             }
 
             supplierSelect.disabled = false;
 
-            suppliers.forEach(s => {
-                const opt = document.createElement("option");
-                opt.value = s.id;
-                opt.textContent = s.name ? `${s.name}` : `Supplier #${s.id}`;
-                supplierSelect.appendChild(opt);
-            });
-
         } catch (e) {
             supplierSelect.innerHTML = `<option value="">Fehler beim Laden</option>`;
             supplierSelect.disabled = true;
-            setMsg("Fehler beim Laden der Supplier: " + e.message, "error");
+            setMsg("Fehler beim Laden der Lieferanten: " + e.message, "error");
         }
     }
-
     async function createPurchaseOrder() {
         setMsg("");
 
+        const productId = productSelect.value;
+        if (!productId) {
+            setMsg("Bitte zuerst ein Produkt auswählen.", "error");
+            return;
+        }
         const supplierId = supplierSelect.value;
         const poStatus = statusSelect.value;
 
         if (!supplierId) {
-            setMsg("Bitte einen Lieferanten auswählen.", "error");
+            setMsg("Bitte einen passenden Lieferanten auswählen.", "error");
             return;
         }
 
@@ -493,9 +545,15 @@
         }
     }
 
+    productSelect.addEventListener("change", async () => {
+        await loadSuppliersForProduct(productSelect.value);
+    });
     openBtn.addEventListener("click", async () => {
         openModal();
-        await loadSuppliers();
+        await loadProducts();
+
+        supplierSelect.innerHTML = `<option value="">Bitte zuerst Produkt wählen...</option>`;
+        supplierSelect.disabled = true;
     });
 
     closeBtn.addEventListener("click", closeModal);
