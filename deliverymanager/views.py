@@ -39,7 +39,8 @@ def show_delivery_details(request, pk):
         return Response(serializer.data)
 
     if request.method == "PUT":
-        serializer = DeliverySerializer(delivery, data=request.data)
+        # ✅ partial=True -> Updates sind flexibler (Swagger / API)
+        serializer = DeliverySerializer(delivery, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -57,14 +58,18 @@ def deliveries_page(request):
     if request.method == "POST":
         order_id = request.POST.get("order")
         delivery_date = request.POST.get("delivery_date")
-        status_value = request.POST.get("status")
-        delivered = True if status_value == "on" else False
+
+        # ✅ Neuer 3-stufiger Status (open/shipped/delivered)
+        status_value = (request.POST.get("status") or Delivery.STATUS_OPEN).strip().lower()
+        allowed = {Delivery.STATUS_OPEN, Delivery.STATUS_SHIPPED, Delivery.STATUS_DELIVERED}
+        if status_value not in allowed:
+            status_value = Delivery.STATUS_OPEN
 
         # Create Delivery
         delivery = Delivery.objects.create(
             order_id=order_id,
             delivery_date=delivery_date,
-            status=delivered,
+            status=status_value,
         )
 
         # Create up to 3 DeliveryItems (ignore empty rows)
@@ -72,26 +77,35 @@ def deliveries_page(request):
             desc = (request.POST.get(f"description_{i}") or "").strip()
             qty_raw = (request.POST.get(f"quantity_{i}") or "").strip()
 
-            if desc and qty_raw:
-                try:
-                    qty = int(qty_raw)
-                except ValueError:
-                    qty = 1
+            # ✅ Wenn Beschreibung da ist, aber Menge leer -> default 1
+            if not desc:
+                continue
 
-                if qty < 1:
-                    qty = 1
+            try:
+                qty = int(qty_raw) if qty_raw else 1
+            except ValueError:
+                qty = 1
 
-                DeliveryItem.objects.create(
-                    delivery=delivery,
-                    description=desc,
-                    quantity=qty,
-                )
+            if qty < 1:
+                qty = 1
+
+            DeliveryItem.objects.create(
+                delivery=delivery,
+                description=desc,
+                quantity=qty,
+            )
 
         return redirect("deliveries_page")
 
     # READ (render list + items)
-    deliveries = Delivery.objects.prefetch_related("items").all()
-    orders = Order.objects.all()
+    deliveries = (
+        Delivery.objects
+        .select_related("order")
+        .prefetch_related("items")
+        .all()
+        .order_by("-delivery_date", "-id")
+    )
+    orders = Order.objects.all().order_by("id")
 
     return render(
         request,
