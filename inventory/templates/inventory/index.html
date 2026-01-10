@@ -8,7 +8,7 @@
         --bg-dashboard: #f4f7f9;
         --text-dark: #2d3436;
         --text-muted: #8e9aaf;
-        --accent-line: #0d6efd;
+        --accent-line: #3498db;
         --shadow-soft: 0 4px 15px rgba(0,0,0,0.03);
     }
 
@@ -288,7 +288,7 @@
             </div>
         </div>
 
-        {% if not is_mitarbeiter %}
+       {% if request.user.is_superuser %}
         <div class="section-group">
             <div class="section-label">Systemverwaltung</div>
             <div class="tile-grid">

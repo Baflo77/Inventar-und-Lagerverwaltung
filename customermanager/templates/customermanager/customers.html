@@ -1,257 +1,204 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Manager</title>
+{% extends 'base.html' %}
 
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+{% block title %}Kunden | Inventar-Verwaltung{% endblock %}
 
-    <style>
-        :root{
-            --nav-bg:#2f3f4f;
-            --primary:#2d89c8;
-            --danger:#e25555;
-            --bg:#f4f6f8;
-            --card:#ffffff;
-            --text:#2f3640;
-            --muted:#7f8c8d;
-            --border:#e6e6e6;
-            --shadow:0 2px 8px rgba(0,0,0,0.08);
-            --radius:10px;
-        }
+{% block extra_css %}
+<style>
+    /* Wir nutzen lokale Variablen mit Prefix "cm-", um Konflikte zu vermeiden */
+    :root {
+        --cm-bg-main: #f4f6f8;
+        --cm-primary: #2d89c8;
+        --cm-danger: #e25555;
+        --cm-card-bg: #ffffff;
+        --cm-text: #2f3640;
+        --cm-muted: #7f8c8d;
+        --cm-border: #e6e6e6;
+        --cm-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        --cm-radius: 10px;
+    }
 
-        *{ box-sizing:border-box; }
+    /* Container */
+    .cm-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+        color: var(--cm-text);
+        font-family: Arial, Helvetica, sans-serif;
+    }
 
-        body{
-            margin:0;
-            font-family: Arial, Helvetica, sans-serif;
-            background:var(--bg);
-            color:var(--text);
-        }
+    .page-title {
+        font-size: 1.8rem;
+        margin-bottom: 4px;
+        font-weight: 700;
+        color: var(--text-dark); /* Variable aus base.html */
+    }
 
-        /* ================= HEADER ================= */
-        header{
-            background:var(--nav-bg);
-            color:#fff;
-            padding:18px 30px;
-            display:flex;
-            align-items:center;
-            gap:18px;
-        }
+    .page-subtitle {
+        color: var(--cm-muted);
+        margin-bottom: 22px;
+    }
 
-        .btn-home{
-            border:2px solid rgba(255,255,255,0.6);
-            color:#fff;
-            background:transparent;
-            padding:10px 16px;
-            border-radius:10px;
-            text-decoration:none;
-            font-weight:700;
-            display:inline-flex;
-            align-items:center;
-            gap:8px;
-        }
+    /* Cards */
+    .cm-card {
+        background: var(--cm-card-bg);
+        border-radius: var(--cm-radius);
+        box-shadow: var(--cm-shadow);
+        border: 1px solid var(--cm-border);
+        margin-bottom: 22px;
+        overflow: hidden; /* Wichtig für rounded corners */
+    }
 
-        .btn-home:hover{
-            background:rgba(255,255,255,0.08);
-            border-color:#fff;
-        }
+    .cm-card-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--cm-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fff;
+    }
 
-        .brand{
-            font-size:1.4rem;
-            font-weight:700;
-        }
+    .cm-card-body {
+        padding: 16px;
+    }
 
-        /* ================= LAYOUT ================= */
-        .container{
-            max-width:1200px;
-            margin:30px auto;
-            padding:0 20px;
-        }
+    /* Toolbar */
+    .toolbar {
+        padding: 16px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
 
-        .page-title{
-            font-size:1.8rem;
-            margin-bottom:4px;
-        }
+    .search-input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+    }
 
-        .page-subtitle{
-            color:var(--muted);
-            margin-bottom:22px;
-        }
+    /* Custom Buttons (damit Bootstrap sie nicht überschreibt) */
+    .btn-cm {
+        height: 40px;
+        min-width: 120px;
+        padding: 0 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        border: 2px solid transparent;
+        background: #fff;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
 
-        .card{
-            background:var(--card);
-            border-radius:var(--radius);
-            box-shadow:var(--shadow);
-            border:1px solid var(--border);
-            margin-bottom:22px;
-        }
+    .btn-cm-primary {
+        background: var(--cm-primary);
+        color: #fff;
+        border: none;
+    }
+    .btn-cm-primary:hover { background: #2475a8; color: white; }
 
-        /* ================= TOOLBAR ================= */
-        .toolbar{
-            padding:16px;
-            display:flex;
-            gap:12px;
-            align-items:center;
-        }
+    .btn-cm-outline {
+        color: var(--cm-primary);
+        border-color: var(--cm-primary);
+    }
+    .btn-cm-outline:hover { background: #f0f8ff; }
 
-        .search-input{
-            flex:1;
-            padding:12px;
-            border:1px solid #ccc;
-            border-radius:8px;
-            font-size:14px;
-        }
+    .btn-cm-danger {
+        color: var(--cm-danger);
+        border-color: var(--cm-danger);
+    }
+    .btn-cm-danger:hover { background: #fff0f0; }
 
-        /* ================= BUTTONS ================= */
-        .btn{
-            height:40px;                /* gleiche Höhe */
-            min-width:120px;            /* gleiche Breite */
-            padding:0 16px;
-            border-radius:8px;
-            cursor:pointer;
-            font-weight:700;
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            gap:8px;
-            text-decoration:none;
-            border:2px solid transparent;
-            background:#fff;
-            font-size:14px;
-        }
+    /* Forms */
+    .grid-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
 
-        .btn-primary{
-            background:var(--primary);
-            color:#fff;
-            border:none;
-        }
+    .grid-layout input, .grid-layout select {
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        width: 100%;
+        background: white;
+    }
 
-        .btn-outline-primary{
-            color:var(--primary);
-            border-color:var(--primary);
-        }
+    /* Table */
+    .cm-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
 
-        .btn-outline-danger{
-            color:var(--danger);
-            border-color:var(--danger);
-        }
+    .cm-table th {
+        background: #f8f9fa;
+        text-align: left;
+        padding: 14px;
+        font-size: 13px;
+        color: var(--cm-muted);
+        border-bottom: 1px solid var(--cm-border);
+    }
 
-        /* ================= FORM ================= */
-        .card-header{
-            padding:16px;
-            border-bottom:1px solid var(--border);
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-        }
+    .cm-table td {
+        padding: 14px;
+        border-top: 1px solid #eee;
+        vertical-align: middle;
+    }
 
-        .card-body{
-            padding:16px;
-        }
+    .actions {
+        display: flex;
+        gap: 10px;
+    }
 
-        .grid{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:12px;
-        }
+    @media(max-width:900px){
+        .grid-layout { grid-template-columns: 1fr; }
+        .toolbar { flex-direction: column; align-items: stretch; }
+        .btn-cm { width: 100%; }
+    }
+</style>
+{% endblock %}
 
-        .grid input, .grid select{
-            padding:12px;
-            border:1px solid #ccc;
-            border-radius:8px;
-            font-size:14px;
-        }
-
-        /* ================= TABLE ================= */
-        table{
-            width:100%;
-            border-collapse:collapse;
-        }
-
-        th{
-            background:#f8f9fa;
-            text-align:left;
-            padding:14px;
-            font-size:13px;
-            color:var(--muted);
-            border-bottom:1px solid var(--border);
-        }
-
-        td{
-            padding:14px;
-            border-top:1px solid #eee;
-        }
-
-        .actions{
-            display:flex;
-            gap:10px;
-        }
-
-        @media(max-width:900px){
-            .grid{ grid-template-columns:1fr; }
-            .toolbar{ flex-direction:column; }
-        }
-    </style>
-</head>
-
-<body>
-
-<!-- ================= HEADER ================= -->
-<header>
-    <a href="{% url 'dashboard' %}" class="btn-home">
-        <i class="bi bi-house"></i> Home
-    </a>
-    <div class="brand">Inventar-Lagerverwaltung · Customer Manager</div>
-</header>
-
-<div class="container">
+{% block content %}
+<div class="cm-container">
 
     <div class="page-title">Kunden</div>
     <div class="page-subtitle">Anlegen, bearbeiten und verwalten</div>
 
-    <!-- ================= TOOLBAR ================= -->
-    <div class="card">
+    <div class="cm-card">
         <div class="toolbar">
             <input class="search-input" type="text" placeholder="Suche nach Name, E-Mail, Stadt …">
-            <a href="{% url 'customers_page' %}?create=1" class="btn btn-primary">
+            <a href="{% url 'customers_page' %}?create=1" class="btn-cm btn-cm-primary">
                 <i class="bi bi-plus-lg"></i> Kunde anlegen
             </a>
         </div>
     </div>
 
-    <!-- ================= CREATE / EDIT ================= -->
     {% if create_mode or edit_customer %}
-    <div class="card">
-        <div class="card-header">
+    <div class="cm-card">
+        <div class="cm-card-header">
             <strong>{% if edit_customer %}Kunde bearbeiten{% else %}Kunde anlegen{% endif %}</strong>
-            <a href="{% url 'customers_page' %}" class="btn btn-outline-primary">
+            <a href="{% url 'customers_page' %}" class="btn-cm btn-cm-outline" style="min-width: auto;">
                 Abbrechen
             </a>
         </div>
 
-        <div class="card-body">
+        <div class="cm-card-body">
             <form method="post"
                   action="{% if edit_customer %}{% url 'customer_edit' edit_customer.id %}{% else %}{% url 'customer_create' %}{% endif %}">
                 {% csrf_token %}
 
-                <div class="grid">
-                    <!-- ✅ FIX: Template-Bedingung repariert + Create-Fallback "Herr" -->
+                <div class="grid-layout">
                     <select name="salutation" required>
-                        <option value="Herr"
-                                {% if not edit_customer or edit_customer.salutation == "Herr" %}selected{% endif %}>
-                            Herr
-                        </option>
-                        <option value="Frau"
-                                {% if edit_customer and edit_customer.salutation == "Frau" %}selected{% endif %}>
-                            Frau
-                        </option>
-                        <option value="Divers"
-                                {% if edit_customer and edit_customer.salutation == "Divers" %}selected{% endif %}>
-                            Divers
-                        </option>
+                        <option value="Herr" {% if not edit_customer or edit_customer.salutation == "Herr" %}selected{% endif %}>Herr</option>
+                        <option value="Frau" {% if edit_customer and edit_customer.salutation == "Frau" %}selected{% endif %}>Frau</option>
+                        <option value="Divers" {% if edit_customer and edit_customer.salutation == "Divers" %}selected{% endif %}>Divers</option>
                     </select>
 
                     <input name="name" placeholder="Name" value="{{ edit_customer.name|default:'' }}" required>
@@ -264,7 +211,7 @@
                 </div>
 
                 <div style="margin-top:14px; text-align:right;">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn-cm btn-cm-primary">
                         <i class="bi bi-check2"></i>
                         {% if edit_customer %}Speichern{% else %}Anlegen{% endif %}
                     </button>
@@ -274,9 +221,8 @@
     </div>
     {% endif %}
 
-    <!-- ================= LIST ================= -->
-    <div class="card">
-        <table>
+    <div class="cm-card">
+        <table class="cm-table">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -289,24 +235,35 @@
             <tbody>
                 {% for c in customers %}
                 <tr>
-                    <td>{{ c.name }}</td>
+                    <td>
+                        <div style="font-weight: bold;">{{ c.salutation }} {{ c.name }}</div>
+                    </td>
                     <td>{{ c.email }}</td>
                     <td>{{ c.phone }}</td>
-                    <td>{{ c.street }} {{ c.house_number }}, {{ c.zip_code }} {{ c.city }}</td>
+                    <td>
+                        {% if c.street %}
+                            {{ c.street }} {{ c.house_number }}<br>
+                            <small style="color:#7f8c8d">{{ c.zip_code }} {{ c.city }}</small>
+                        {% else %}
+                            <span style="color:#ccc;">—</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <div class="actions">
                             <a href="{% url 'customers_page' %}?edit={{ c.id }}"
-                               class="btn btn-outline-primary">
-                                <i class="bi bi-pencil"></i> Bearbeiten
+                               class="btn-cm btn-cm-outline" style="min-width:auto; height:32px; font-size:13px;">
+                                <i class="bi bi-pencil"></i>
                             </a>
 
                             <form method="post"
                                   action="{% url 'customer_delete' c.id %}"
-                                  onsubmit="return confirm('Kunden wirklich löschen?');">
+                                  onsubmit="return confirm('Kunden wirklich löschen?');"
+                                  style="margin:0;">
                                 {% csrf_token %}
                                 <button type="submit"
-                                        class="btn btn-outline-danger">
-                                    <i class="bi bi-trash"></i> Löschen
+                                        class="btn-cm btn-cm-danger"
+                                        style="min-width:auto; height:32px; font-size:13px;">
+                                    <i class="bi bi-trash"></i>
                                 </button>
                             </form>
                         </div>
@@ -314,7 +271,8 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" style="color:var(--muted);">
+                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--cm-muted);">
+                        <i class="bi bi-people" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
                         Noch keine Kunden vorhanden.
                     </td>
                 </tr>
@@ -324,6 +282,4 @@
     </div>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

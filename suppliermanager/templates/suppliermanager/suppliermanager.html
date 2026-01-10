@@ -1,271 +1,182 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <title>Lieferanten | Inventar-Verwaltung</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
 
-    <style>
-        :root {
-            --bg-main: #ebedef;
-            --header-bg: #2c3e50;
-            --card-bg: #ffffff;
-            --text-main: #2f3640;
-            --accent-color: #3498db;
-            --danger-color: #e74c3c;
-            --shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+{% block title %}Lieferanten | Inventar-Verwaltung{% endblock %}
 
-        body {
-            background-color: var(--bg-main);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            color: var(--text-main);
-        }
+{% block extra_css %}
+<style>
+    /* Lokale Variablen für die Lieferanten-Seite */
+    :root {
+        --supp-bg-main: #ebedef;
+        --supp-card-bg: #ffffff;
+        --supp-text-main: #2f3640;
+        --supp-accent-color: #3498db;
+        --supp-danger-color: #e74c3c;
+        --supp-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
 
-        .app-header {
-            background-color: var(--header-bg);
-            color: white;
-            padding: 1.2rem 2.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
+    /* Container Anpassung */
+    .suppliers-container {
+        max-width: 1300px;
+        margin: 40px auto;
+        padding: 0 20px;
+        color: var(--supp-text-main);
+    }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
+    .page-title-section {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-        .header-title {
-            font-size: 1.4rem;
-            margin: 0;
-            font-weight: 500;
-        }
+    .page-title {
+        font-size: 1.8rem;
+        margin: 0;
+        font-weight: 700;
+        color: var(--text-dark); /* Variable aus base.html */
+    }
 
-        .nav-home {
-            text-decoration: none;
-            color: white;
-            font-size: 0.9rem;
-            padding: 5px 10px;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 4px;
-        }
+    .subtitle {
+        margin: 5px 0 0;
+        color: #7f8c8d;
+        font-size: 0.95rem;
+    }
 
-        .container {
-            max-width: 1300px;
-            margin: 2.5rem auto;
-            padding: 0 20px;
-        }
+    .btn-add {
+        background: var(--supp-accent-color);
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+    }
+    .btn-add:hover { background: #2980b9; }
 
-        .page-title-section {
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .data-card {
+        background: var(--supp-card-bg);
+        border-radius: 10px;
+        box-shadow: var(--supp-shadow);
+        overflow-x: auto;
+        border: 1px solid #e6e6e6;
+    }
 
-        .page-title {
-            font-size: 1.8rem;
-            margin: 0;
-            color: var(--header-bg);
-        }
+    /* Tabelle */
+    .custom-table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+    .custom-table th {
+        background: #f8f9fa;
+        text-align: left;
+        padding: 15px;
+        font-size: 0.75rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--supp-bg-main);
+    }
+    .custom-table td {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        font-size: 0.9rem;
+        vertical-align: top;
+    }
 
-        .btn-add {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-        }
+    /* Actions */
+    .actions button {
+        margin-right: 10px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: var(--supp-accent-color);
+        padding: 0;
+        font-weight: 600;
+    }
+    .actions button:hover { text-decoration: underline; }
+    .actions button.danger { color: var(--supp-danger-color); }
 
-        .data-card {
-            background: var(--card-bg);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            overflow-x: auto;
-        }
+    /* Empty State */
+    .empty-state { text-align: center; padding: 50px; color: #bdc3c7; }
+    .empty-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1100px;
-        }
+    /* Modal Styling */
+    .modal-backdrop {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 2000;
+        backdrop-filter: blur(2px);
+    }
 
-        th {
-            background: #f8f9fa;
-            padding: 15px;
-            font-size: 0.75rem;
-            color: #7f8c8d;
-            text-transform: uppercase;
-            border-bottom: 2px solid var(--bg-main);
-            text-align: left;
-        }
+    .modal {
+        background: white;
+        width: 100%;
+        max-width: 720px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
 
-        td {
-            padding: 15px;
-            border-bottom: 1px solid var(--bg-main);
-            font-size: 0.9rem;
-            vertical-align: top;
-        }
+    .modal-header {
+        padding: 16px 20px;
+        background: #fff;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: #2c3e50; }
 
-        .actions button {
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 0.85rem;
-            color: var(--accent-color);
-            margin-right: 10px;
-            padding: 0;
-        }
+    .modal-body {
+        padding: 20px;
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 1fr 1fr;
+    }
 
-        .actions .danger {
-            color: var(--danger-color);
-        }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    
+    .form-group label {
+        font-size: 0.75rem; font-weight: 700; color: #7f8c8d; text-transform: uppercase;
+    }
+    .form-group input {
+        padding: 10px; border: 1px solid #dcdde1; border-radius: 6px; font-size: 0.95rem;
+    }
 
-        .empty-state {
-            text-align: center;
-            padding: 50px;
-            color: #bdc3c7;
-        }
+    .modal-actions {
+        display: flex; gap: 10px; justify-content: flex-end;
+        padding: 16px 20px; border-top: 1px solid #eee; background: #fcfcfc;
+    }
 
-        .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            display: block;
-        }
+    /* Modal Buttons */
+    .btn-modal { border: none; border-radius: 6px; padding: 10px 16px; cursor: pointer; font-weight: 600; }
+    .btn-primary-modal { background: var(--supp-accent-color); color: white; }
+    .btn-secondary-modal { background: #e0e0e0; color: #2f3640; }
+    .btn-danger-modal { background: #e74c3c; color: white; }
 
-        .subtitle {
-            margin: 10px 0 0;
-            color: #7f8c8d;
-            font-size: 0.95rem;
-        }
+    @media (max-width: 700px) {
+        .modal-body { grid-template-columns: 1fr; }
+    }
 
-        /* --- Toast --- */
-        .toast {
-            margin: 0 0 16px 0;
-            padding: 12px 14px;
-            border-radius: 8px;
-            background: #ffffff;
-            box-shadow: var(--shadow);
-            display: none;
-        }
+    /* Toast */
+    .toast-msg {
+        position: fixed; bottom: 20px; right: 20px;
+        padding: 15px 20px; border-radius: 8px; background: #ffffff;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15); display: none; z-index: 3000;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
 
-        /* --- Modal --- */
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+{% block content %}
+<div class="suppliers-container">
 
-        .modal {
-            background: white;
-            width: 100%;
-            max-width: 720px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-
-        .modal-header {
-            padding: 16px 18px;
-            background: #f8f9fa;
-            border-bottom: 1px solid var(--bg-main);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-title {
-            margin: 0;
-            font-size: 1rem;
-            color: var(--header-bg);
-        }
-
-        .modal-body {
-            padding: 18px;
-            display: grid;
-            gap: 12px;
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-group label {
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: #7f8c8d;
-            text-transform: uppercase;
-        }
-
-        .form-group input {
-            padding: 10px;
-            border: 1px solid #dcdde1;
-            border-radius: 4px;
-            font-size: 0.95rem;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            padding: 16px 18px;
-            border-top: 1px solid var(--bg-main);
-        }
-
-        .btn {
-            border: none;
-            border-radius: 4px;
-            padding: 10px 14px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: #dcdde1;
-            color: #2f3640;
-        }
-
-        .btn-danger {
-            background: #e74c3c;
-            color: white;
-        }
-
-        @media (max-width: 700px) {
-            .modal-body { grid-template-columns: 1fr; }
-        }
-    </style>
-</head>
-<body>
-
-<header class="app-header">
-    <div class="header-left">
-        <a href="/" class="nav-home">🏠 Home</a>
-        <h1 class="header-title">Inventar-Lagerverwaltung</h1>
-    </div>
-    <div>Suppliermanager</div>
-</header>
-
-<div class="container">
-
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast-msg"></div>
 
     <div class="page-title-section">
         <div>
@@ -273,11 +184,13 @@
             <p class="subtitle">Übersicht aller Lieferanten</p>
         </div>
 
-        <button class="btn-add" onclick="openCreate()">➕ Neuer Lieferant</button>
+        <button class="btn-add" onclick="openCreate()">
+            <i class="bi bi-plus-lg"></i> Neuer Lieferant
+        </button>
     </div>
 
     <div class="data-card">
-        <table>
+        <table class="custom-table">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -314,9 +227,11 @@
                             '{{ supplier.city|escapejs }}',
                             '{{ supplier.street|escapejs }}',
                             '{{ supplier.house_number }}'
-                        )">✏️ Bearbeiten</button>
+                        )"><i class="bi bi-pencil"></i> Bearbeiten</button>
 
-                        <button class="danger" onclick="openDelete('{{ supplier.id }}', '{{ supplier.name|escapejs }}')">🗑 Löschen</button>
+                        <button class="danger" onclick="openDelete('{{ supplier.id }}', '{{ supplier.name|escapejs }}')">
+                            <i class="bi bi-trash"></i> Löschen
+                        </button>
                     </td>
                 </tr>
             {% empty %}
@@ -336,12 +251,13 @@
 
 </div>
 
-<!-- Modal -->
 <div id="modalBackdrop" class="modal-backdrop">
     <div class="modal">
         <div class="modal-header">
             <h3 id="modalTitle" class="modal-title">Lieferant</h3>
-            <button class="btn btn-secondary" onclick="closeModal()">✖</button>
+            <button class="btn-modal btn-secondary-modal" onclick="closeModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
 
         <div class="modal-body">
@@ -389,9 +305,12 @@
         <div class="modal-actions" id="modalActions"></div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-    // Relativ zu /suppliers/
+    // --- API Configuration ---
+    // Relativ zur UI-Route /suppliers/
     const API_LIST = "api/";
     const API_DETAIL = (id) => `api/${id}/`;
 
@@ -400,6 +319,7 @@
     const modalActions = document.getElementById("modalActions");
     const toast = document.getElementById("toast");
 
+    // Form Fields Mapping
     const f = {
         id: null,
         name: document.getElementById("s_name"),
@@ -412,15 +332,12 @@
         house_number: document.getElementById("s_house"),
     };
 
-    // --- CSRF helpers (für Django SessionAuth) ---
+    // --- CSRF + Fetch Wrapper ---
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
         if (parts.length === 2) return parts.pop().split(";").shift();
-    }
-
-    function getCsrfToken() {
-        return getCookie("csrftoken") || "";
+        return "";
     }
 
     async function apiFetch(url, options = {}) {
@@ -430,23 +347,17 @@
         const headers = new Headers(options.headers || {});
         if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
-        // JSON body -> Content-Type automatisch setzen
         if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
             headers.set("Content-Type", "application/json");
         }
 
         if (unsafe) {
-            const csrf = getCsrfToken();
+            const csrf = getCookie("csrftoken");
             if (csrf) headers.set("X-CSRFToken", csrf);
         }
 
-        const res = await fetch(url, {
-            ...options,
-            headers,
-            credentials: "same-origin", // Cookie (sessionid + csrftoken) mitsenden
-        });
+        const res = await fetch(url, { ...options, headers, credentials: "same-origin" });
 
-        // Bei 204 kommt kein JSON
         let data = null;
         const contentType = res.headers.get("content-type") || "";
         if (contentType.includes("application/json")) {
@@ -466,14 +377,28 @@
         setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
-    function openModal() {
-        backdrop.style.display = "flex";
+    function formatErrors(data) {
+        if (!data) return "";
+        if (typeof data === "string") return data;
+        if (typeof data !== "object") return "";
+        if (data.detail) return data.detail;
+
+        const parts = [];
+        for (const [k, v] of Object.entries(data)) {
+            if (Array.isArray(v) && v.length) parts.push(`${k}: ${v[0]}`);
+            else if (typeof v === "string") parts.push(`${k}: ${v}`);
+        }
+        return parts.join(" | ");
     }
+
+    // --- Modal Logic ---
+    function openModal() { backdrop.style.display = "flex"; }
 
     function closeModal() {
         backdrop.style.display = "none";
         modalActions.innerHTML = "";
         f.id = null;
+        // Reset inputs
         Object.values(f).forEach((v) => {
             if (v && typeof v === "object" && "value" in v) v.value = "";
         });
@@ -482,8 +407,8 @@
     function openCreate() {
         modalTitle.textContent = "Neuen Lieferanten anlegen";
         modalActions.innerHTML = `
-            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
-            <button class="btn btn-primary" onclick="createSupplier()">Anlegen</button>
+            <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
+            <button class="btn-modal btn-primary-modal" onclick="createSupplier()">Anlegen</button>
         `;
         openModal();
     }
@@ -502,8 +427,8 @@
         f.house_number.value = house_number || "";
 
         modalActions.innerHTML = `
-            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
-            <button class="btn btn-primary" onclick="updateSupplier('${id}')">Speichern</button>
+            <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
+            <button class="btn-modal btn-primary-modal" onclick="updateSupplier('${id}')">Speichern</button>
         `;
         openModal();
     }
@@ -511,12 +436,13 @@
     function openDelete(id, name) {
         modalTitle.textContent = "Lieferant löschen";
         modalActions.innerHTML = `
-            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
-            <button class="btn btn-danger" onclick="deleteSupplier('${id}', '${name}')">Löschen</button>
+            <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
+            <button class="btn-modal btn-danger-modal" onclick="deleteSupplier('${id}', '${name}')">Löschen</button>
         `;
         openModal();
     }
 
+    // --- Payload Builder ---
     function buildPayload() {
         const payload = {
             name: f.name.value.trim(),
@@ -538,6 +464,7 @@
         return { payload };
     }
 
+    // --- API Calls ---
     async function createSupplier() {
         const { payload, error } = buildPayload();
         if (error) { showToast(error, true); return; }
@@ -573,9 +500,7 @@
     }
 
     async function deleteSupplier(id, name) {
-        const { res, data } = await apiFetch(API_DETAIL(id), {
-            method: "DELETE",
-        });
+        const { res, data } = await apiFetch(API_DETAIL(id), { method: "DELETE" });
 
         if (res.ok) {
             showToast(`Lieferant "${name}" gelöscht.`);
@@ -585,31 +510,11 @@
         }
     }
 
-    function formatErrors(data) {
-        if (!data) return "";
-        if (typeof data === "string") return data;
-        if (typeof data !== "object") return "";
-
-        if (data.detail) return data.detail;
-
-        const parts = [];
-        for (const [k, v] of Object.entries(data)) {
-            if (Array.isArray(v) && v.length) parts.push(`${k}: ${v[0]}`);
-            else if (typeof v === "string") parts.push(`${k}: ${v}`);
-        }
-        return parts.join(" | ");
-    }
-
-    // Optional: Warnung, falls csrftoken nicht da ist (hilft beim Debuggen)
+    // Sanity Check
     (function csrfSanityCheck() {
-        const has = document.cookie.includes("csrftoken=");
-        if (!has) {
-            console.warn("Kein csrftoken Cookie gefunden. Stelle sicher, dass die UI-View @ensure_csrf_cookie hat und die Seite über Django gerendert wird.");
+        if (!document.cookie.includes("csrftoken=")) {
+            console.warn("Kein csrftoken Cookie gefunden.");
         }
     })();
 </script>
-
-</body>
-</html>
-
-
+{% endblock %}

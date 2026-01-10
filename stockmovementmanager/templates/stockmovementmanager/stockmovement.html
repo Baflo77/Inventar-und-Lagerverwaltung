@@ -1,11 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Warenbewegungen | Lagerverwaltung{% endblock %}
+{% block title %}Warenbewegungen | Historie{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* --- DEIN STYLE AUS DEM STOCK MANAGER --- */
     :root {
         --primary-dark: #2c3e50;
         --accent-blue: #3498db;
@@ -13,156 +12,79 @@
         --text-dark: #343a40;
         --text-muted: #6c757d;
         --danger-red: #e74c3c;
-        --warning-yellow: #f1c40f;
         --success-green: #27ae60;
     }
 
     .stock-manager-wrapper {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         background-color: var(--bg-light);
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        color: var(--text-dark);
+        padding: 2rem 0;
         min-height: 100vh;
     }
 
-    .lm-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 20px;
-    }
+    .lm-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 
     .page-header {
         margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         border-bottom: 1px solid #dee2e6;
         padding-bottom: 1rem;
+    }
+
+    .page-title { font-size: 1.75rem; font-weight: 700; color: var(--primary-dark); margin: 0; }
+
+    .data-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+
+    }
+
+    .card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #edf2f7;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
-    .page-title {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: var(--primary-dark);
-        margin: 0;
-    }
 
-    /* Grid Layout: Links Filter (350px), Rechts Tabelle */
-    .content-grid {
-        display: grid;
-        grid-template-columns: 350px 1fr;
-        gap: 2rem;
-        align-items: start;
-    }
-
-    .data-card {
-        background: white;
-        border-radius: 6px;
-        box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
-        border-top: 3px solid var(--accent-blue);
-        margin-bottom: 1rem;
-    }
-    
-    /* Filter Card bekommt die grüne Linie oben, wie im Beispiel */
-    .data-card.filter-card { border-top-color: var(--primary-dark); }
-
-    .card-header {
-        background-color: transparent;
-        border-bottom: 1px solid rgba(0,0,0,.125);
-        padding: 1rem 1.25rem;
-    }
-    .card-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin: 0;
-        color: var(--primary-dark);
-    }
-    .card-body { padding: 1.25rem; }
-    .card-body.p-0 { padding: 0; }
-
-    .form-group { margin-bottom: 1rem; }
-    .form-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 0.4rem;
-        display: block;
-    }
-    .form-control, .form-select {
-        display: block;
-        width: 100%;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.95rem;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        box-sizing: border-box;
-    }
-
-    .btn-submit {
-        display: block;
-        width: 100%;
-        font-weight: 600;
-        text-align: center;
-        background-color: var(--accent-blue); /* Blau zum Filtern */
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        font-size: 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        margin-top: 1rem;
-    }
-    .btn-submit:hover { background-color: #2980b9; }
-
-    .btn-reset {
-        display: block;
-        width: 100%;
-        text-align: center;
-        margin-top: 10px;
-        color: var(--text-muted);
-        text-decoration: none;
-        font-size: 0.9rem;
-    }
-    .btn-reset:hover { text-decoration: underline; color: var(--text-dark); }
-
-    /* Tabelle Styles */
-    .table-modern { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    .table-modern { width: 100%; border-collapse: collapse; }
     .table-modern thead th {
-        vertical-align: bottom;
-        border-bottom: 2px solid #dee2e6;
-        background-color: var(--primary-dark);
-        color: white;
+        background-color: #f8fafc;
+        color: var(--text-dark);
         text-transform: uppercase;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 12px 15px;
-        text-align: left;
-    }
-    .table-modern tbody tr { border-bottom: 1px solid #e9ecef; }
-    .table-modern tbody tr:nth-of-type(odd) { background-color: rgba(0,0,0,.02); }
-    .table-modern td { padding: 12px 15px; vertical-align: middle; font-size: 0.9rem; }
-
-    /* Badges angepasst für IN/OUT */
-    .status-badge {
         font-size: 0.75rem;
         font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 12px;
+        padding: 15px;
+        text-align: left;
+        border-bottom: 2px solid #edf2f7;
+    }
+
+    .table-modern td { padding: 15px; vertical-align: middle; border-bottom: 1px solid #edf2f7; font-size: 0.95rem; }
+
+    /* Badges für die Typen */
+    .badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 5px 10px;
+        border-radius: 20px;
         text-transform: uppercase;
-        display: inline-block;
     }
-    /* Grün für Eingang */
-    .status-in { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    /* Rot/Orange für Ausgang */
-    .status-out { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .badge-in { background-color: #def7ec; color: #03543f; }
+    .badge-out { background-color: #fde8e8; color: #9b1c1c; }
+    .badge-move { background-color: #e1effe; color: #1e429f; }
 
-    .quantity-bold { font-weight: 700; color: var(--primary-dark); }
-    .user-info { font-size: 0.85rem; color: var(--text-muted); }
-
-    @media (max-width: 992px) {
-        .content-grid { grid-template-columns: 1fr; }
+    .location-flow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-muted);
+        font-size: 0.85rem;
     }
+
+    .arrow { color: var(--accent-blue); font-weight: bold; }
 </style>
 {% endblock %}
 
@@ -173,115 +95,85 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title">Warenbewegungen</h1>
-                <p style="color: #6c757d; margin: 5px 0 0 0;">Historie aller Ein- und Ausgänge</p>
-            </div>
-            </div>
-
-        <div class="content-grid">
-
-            <div class="data-card filter-card">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="bi bi-funnel"></i> Filter</h3>
-                </div>
-                <div class="card-body">
-                    <form method="get">
-                        <div class="form-group">
-                            <label class="form-label">Suchbegriff</label>
-                            <input type="text" name="q" class="form-control" placeholder="Produktname..." value="{{ request.GET.q }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Zeitraum Von</label>
-                            <input type="date" name="date_from" class="form-control" value="{{ request.GET.date_from }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Zeitraum Bis</label>
-                            <input type="date" name="date_to" class="form-control" value="{{ request.GET.date_to }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Bewegungstyp</label>
-                            <select name="type" class="form-select">
-                                <option value="">Alle Typen</option>
-                                <option value="IN" {% if request.GET.type == 'IN' %}selected{% endif %}>Wareneingang</option>
-                                <option value="OUT" {% if request.GET.type == 'OUT' %}selected{% endif %}>Warenausgang</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="btn-submit">Filter anwenden</button>
-                        <a href="." class="btn-reset">Filter zurücksetzen</a>
-                    </form>
-                </div>
+                <p style="color: var(--text-muted); margin: 5px 0 0 0;">Vollständiges Logbuch aller Lageraktivitäten.</p>
             </div>
 
-            <div class="data-card">
-                <div class="card-header">
-                    <h3 class="card-title">Buchungshistorie</h3>
+        </div>
+
+        <div class="data-card">
+            <div class="card-header">
+                <h3 style="margin:0; font-size: 1.1rem;">Buchungshistorie</h3>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table-modern">
-                            <thead>
-                                <tr>
-                                    <th>Datum / Zeit</th>
-                                    <th>Produkt</th>
-                                    <th>Typ</th>
-                                    <th>Menge</th>
-                                    <th>Benutzer</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for movement in movements %}
-                                <tr>
-                                    <td>
-                                        <div style="font-weight: 600;">{{ movement.created_at|date:"d.m.Y" }}</div>
-                                        <small style="color: #999;">{{ movement.created_at|date:"H:i" }} Uhr</small>
-                                    </td>
-                                    
-                                    <td>
-                                        <strong style="color: var(--primary-dark);">{{ movement.product.name }}</strong>
-                                        {% if movement.product.sku %}
-                                            <br><small style="color: #999;">SKU: {{ movement.product.sku }}</small>
-                                        {% endif %}
-                                    </td>
 
-                                    <td>
-                                        {% if movement.movement_type == 'IN' %}
-                                            <span class="status-badge status-in">
-                                                <i class="bi bi-arrow-down-circle"></i> Eingang
-                                            </span>
-                                        {% else %}
-                                            <span class="status-badge status-out">
-                                                <i class="bi bi-arrow-up-circle"></i> Ausgang
-                                            </span>
-                                        {% endif %}
-                                    </td>
-
-                                    <td>
-                                        <span class="quantity-bold">{{ movement.quantity }}</span> Stk.
-                                    </td>
-
-                                    <td>
-                                        <span class="user-info">
-                                            <i class="bi bi-person"></i> {{ movement.user.username }}
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th>Zeitstempel</th>
+                                <th>Produkt</th>
+                                <th>Bewegungstyp</th>
+                                <th>Menge</th>
+                                <th>Route (Von → Nach)</th>
+                                <th>Bemerkung</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for move in movements %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 600;">{{ move.timestamp|date:"d.m.Y" }}</div>
+                                    <div style="font-size: 0.8rem; color: #94a3b8;">{{ move.timestamp|date:"H:i" }} Uhr</div>
+                                </td>
+                                <td>
+                                    <div style="font-weight: 700; color: var(--primary-dark);">{{ move.product.name }}</div>
+                                    <div style="font-size: 0.75rem; color: #94a3b8;">SKU: {{ move.product.sku|default:"-" }}</div>
+                                </td>
+                                <td>
+                                    {% if move.movement_type == 'IN' %}
+                                        <span class="badge badge-in">Wareneingang</span>
+                                    {% elif move.movement_type == 'OUT' %}
+                                        <span class="badge badge-out">Warenausgang</span>
+                                    {% else %}
+                                        <span class="badge badge-move">Umlagerung</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span style="font-weight: 800; font-size: 1.1rem;">{{ move.quantity }}</span>
+                                    <span style="font-size: 0.8rem; color: #64748b;">Stk.</span>
+                                </td>
+                                <td>
+                                    <div class="location-flow">
+                                        <span>{% if move.source_location %}{{ move.source_location.name }}{% else %}Extern{% endif %}</span>
+                                        <span class="arrow">→</span>
+                                        <span>
+                                            {% if move.destination_location %}
+                                                {{ move.destination_location.name }}
+                                            {% elif move.target_location %}
+                                                {{ move.target_location.name }}
+                                            {% else %}
+                                                Extern
+                                            {% endif %}
                                         </span>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" style="text-align: center; padding: 3rem; color: #adb5bd;">
-                                        <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                                        Keine Buchungen für diese Filterkriterien gefunden.
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small style="color: #64748b;">{{ move.note|default:"-" }}</small>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 4rem; color: #94a3b8;">
+                                    <i class="bi bi-journal-x" style="font-size: 2.5rem; display: block; margin-bottom: 1rem;"></i>
+                                    Keine Warenbewegungen in der Datenbank gefunden.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
-        </div> </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

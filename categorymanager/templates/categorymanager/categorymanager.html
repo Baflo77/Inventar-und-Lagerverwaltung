@@ -1,269 +1,179 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <title>Kategorien | Inventar-Verwaltung</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
 
-    <style>
-        :root {
-            --bg-main: #ebedef;
-            --header-bg: #2c3e50;
-            --card-bg: #ffffff;
-            --text-main: #2f3640;
-            --accent-color: #3498db;
-            --shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+{% block title %}Kategorien | Inventar-Verwaltung{% endblock %}
 
-        body {
-            background-color: var(--bg-main);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            color: var(--text-main);
-        }
+{% block extra_css %}
+<style>
+    /* Lokale Variablen für die Kategorie-Seite */
+    :root {
+        --cat-bg-main: #ebedef;
+        --cat-card-bg: #ffffff;
+        --cat-text-main: #2f3640;
+        --cat-accent-color: #3498db;
+        --cat-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
 
-        .app-header {
-            background-color: var(--header-bg);
-            color: white;
-            padding: 1.2rem 2.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
+    /* Container: Umbenannt um Bootstrap-Konflikte zu vermeiden */
+    .categories-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+        color: var(--cat-text-main);
+    }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
+    .page-title-section {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
 
-        .header-title {
-            font-size: 1.4rem;
-            margin: 0;
-            font-weight: 500;
-        }
+    .page-title {
+        font-size: 1.8rem;
+        margin: 0;
+        font-weight: 700;
+        color: var(--text-dark); /* Variable aus base.html */
+    }
 
-        .nav-home {
-            text-decoration: none;
-            color: white;
-            font-size: 0.9rem;
-            padding: 5px 10px;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 4px;
-        }
+    .btn-add {
+        background: var(--cat-accent-color);
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+    }
+    .btn-add:hover { background: #2980b9; }
 
-        .container {
-            max-width: 1200px;
-            margin: 2.5rem auto;
-            padding: 0 20px;
-        }
+    .data-card {
+        background: var(--cat-card-bg);
+        border-radius: 10px;
+        box-shadow: var(--cat-shadow);
+        overflow: hidden;
+        border: 1px solid #e6e6e6;
+    }
 
-        .page-title-section {
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    /* Tabelle */
+    .custom-table { width: 100%; border-collapse: collapse; }
+    .custom-table th {
+        background: #f8f9fa;
+        text-align: left;
+        padding: 15px;
+        font-size: 0.8rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--cat-bg-main);
+    }
+    .custom-table td {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        font-size: 0.95rem;
+        vertical-align: top;
+    }
 
-        .page-title {
-            font-size: 1.8rem;
-            margin: 0;
-            color: var(--header-bg);
-        }
+    .text-muted { color: #7f8c8d; font-size: 0.85rem; }
 
-        .btn-add {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-        }
+    /* Actions */
+    .actions button {
+        margin-right: 10px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: var(--cat-accent-color);
+        padding: 0;
+        font-weight: 600;
+    }
+    .actions button:hover { text-decoration: underline; }
+    .actions button.danger { color: #e74c3c; }
 
-        .data-card {
-            background: var(--card-bg);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
+    /* Empty State */
+    .empty-state { text-align: center; padding: 50px; color: #bdc3c7; }
+    .empty-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+    /* Modals */
+    .modal-backdrop {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 2000;
+        backdrop-filter: blur(2px);
+    }
 
-        th {
-            background: #f8f9fa;
-            text-align: left;
-            padding: 15px;
-            font-size: 0.8rem;
-            color: #7f8c8d;
-            text-transform: uppercase;
-            border-bottom: 2px solid var(--bg-main);
-        }
+    .modal {
+        background: white;
+        width: 100%;
+        max-width: 520px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
 
-        td {
-            padding: 15px;
-            border-bottom: 1px solid var(--bg-main);
-            font-size: 0.95rem;
-            vertical-align: top;
-        }
+    .modal-header {
+        padding: 16px 20px;
+        background: #fff;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: #2c3e50; }
 
-        .text-muted {
-            color: #7f8c8d;
-            font-size: 0.85rem;
-        }
+    .modal-body { padding: 20px; display: grid; gap: 16px; }
 
-        .actions button {
-            margin-right: 10px;
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 0.85rem;
-            color: var(--accent-color);
-            padding: 0;
-        }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    
+    .form-group label {
+        font-size: 0.75rem; font-weight: 700; color: #7f8c8d; text-transform: uppercase;
+    }
+    .form-group input {
+        padding: 10px; border: 1px solid #dcdde1; border-radius: 6px; font-size: 0.95rem;
+    }
 
-        .actions button.danger {
-            color: #e74c3c;
-        }
+    .modal-actions {
+        display: flex; gap: 10px; justify-content: flex-end;
+        padding: 16px 20px; border-top: 1px solid #eee; background: #fcfcfc;
+    }
 
-        .empty-state {
-            text-align: center;
-            padding: 50px;
-            color: #bdc3c7;
-        }
+    /* Buttons Modal */
+    .btn-modal { border: none; border-radius: 6px; padding: 10px 16px; cursor: pointer; font-weight: 600; }
+    .btn-primary-modal { background: var(--cat-accent-color); color: white; }
+    .btn-secondary-modal { background: #e0e0e0; color: #2f3640; }
+    .btn-danger-modal { background: #e74c3c; color: white; }
 
-        .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            display: block;
-        }
+    /* Toast */
+    .toast-msg {
+        position: fixed; bottom: 20px; right: 20px;
+        padding: 15px 20px; border-radius: 8px; background: #ffffff;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15); display: none; z-index: 3000;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
 
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+{% block content %}
+<div class="categories-container">
 
-        .modal {
-            background: white;
-            width: 100%;
-            max-width: 520px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-
-        .modal-header {
-            padding: 16px 18px;
-            background: #f8f9fa;
-            border-bottom: 1px solid var(--bg-main);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-title {
-            margin: 0;
-            font-size: 1rem;
-            color: var(--header-bg);
-        }
-
-        .modal-body {
-            padding: 18px;
-            display: grid;
-            gap: 12px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-group label {
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: #7f8c8d;
-            text-transform: uppercase;
-        }
-
-        .form-group input {
-            padding: 10px;
-            border: 1px solid #dcdde1;
-            border-radius: 4px;
-            font-size: 0.95rem;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            padding: 16px 18px;
-            border-top: 1px solid var(--bg-main);
-        }
-
-        .btn {
-            border: none;
-            border-radius: 4px;
-            padding: 10px 14px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: #dcdde1;
-            color: #2f3640;
-        }
-
-        .btn-danger {
-            background: #e74c3c;
-            color: white;
-        }
-
-        .toast {
-            margin: 0 0 16px 0;
-            padding: 12px 14px;
-            border-radius: 8px;
-            background: #ffffff;
-            box-shadow: var(--shadow);
-            display: none;
-        }
-    </style>
-</head>
-<body>
-
-<header class="app-header">
-    <div class="header-left">
-        <a href="/" class="nav-home">🏠 Home</a>
-        <h1 class="header-title">Inventar-Lagerverwaltung</h1>
-    </div>
-    <div>Categorymanager</div>
-</header>
-
-<div class="container">
-
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast-msg"></div>
 
     <div class="page-title-section">
         <h2 class="page-title">Kategorien</h2>
-        <button class="btn-add" onclick="openCreate()">➕ Neue Kategorie</button>
+        <button class="btn-add" onclick="openCreate()">
+            <i class="bi bi-plus-lg"></i> Neue Kategorie
+        </button>
     </div>
 
     <div class="data-card">
-        <table>
+        <table class="custom-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -275,11 +185,15 @@
 
             {% for category in categories %}
                 <tr>
-                    <td class="text-muted">{{ category.id }}</td>
+                    <td class="text-muted">#{{ category.id }}</td>
                     <td><strong>{{ category.name }}</strong></td>
                     <td class="actions">
-                        <button onclick="openEdit('{{ category.id }}', '{{ category.name|escapejs }}')">✏️ Bearbeiten</button>
-                        <button class="danger" onclick="openDelete('{{ category.id }}', '{{ category.name|escapejs }}')">🗑 Löschen</button>
+                        <button onclick="openEdit('{{ category.id }}', '{{ category.name|escapejs }}')">
+                            <i class="bi bi-pencil"></i> Bearbeiten
+                        </button>
+                        <button class="danger" onclick="openDelete('{{ category.id }}', '{{ category.name|escapejs }}')">
+                            <i class="bi bi-trash"></i> Löschen
+                        </button>
                     </td>
                 </tr>
             {% empty %}
@@ -303,7 +217,9 @@
     <div class="modal">
         <div class="modal-header">
             <h3 id="modalTitle" class="modal-title">Kategorie</h3>
-            <button class="btn btn-secondary" onclick="closeModal()">✖</button>
+            <button class="btn-modal btn-secondary-modal" onclick="closeModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
 
         <div class="modal-body">
@@ -316,19 +232,23 @@
         <div class="modal-actions" id="modalActions"></div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
+    // --- API Configuration ---
     // Relativ zur UI-Route /categories/
     const API_LIST = "api/";
     const API_DETAIL = (id) => `api/${id}/`;
 
+    // --- Elements ---
     const backdrop = document.getElementById("modalBackdrop");
     const modalTitle = document.getElementById("modalTitle");
     const modalActions = document.getElementById("modalActions");
     const categoryNameInput = document.getElementById("categoryName");
     const toast = document.getElementById("toast");
 
-    // --- CSRF + Fetch Wrapper (Django SessionAuth) ---
+    // --- CSRF + Fetch Wrapper ---
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -352,11 +272,7 @@
             if (csrf) headers.set("X-CSRFToken", csrf);
         }
 
-        const res = await fetch(url, {
-            ...options,
-            headers,
-            credentials: "same-origin",
-        });
+        const res = await fetch(url, { ...options, headers, credentials: "same-origin" });
 
         let data = null;
         const ct = res.headers.get("content-type") || "";
@@ -373,46 +289,6 @@
         setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
-    function openModal() {
-        backdrop.style.display = "flex";
-    }
-
-    function closeModal() {
-        backdrop.style.display = "none";
-        categoryNameInput.value = "";
-        modalActions.innerHTML = "";
-    }
-
-    function openCreate() {
-        modalTitle.textContent = "Neue Kategorie anlegen";
-        categoryNameInput.value = "";
-        modalActions.innerHTML = `
-            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
-            <button class="btn btn-primary" onclick="createCategory()">Anlegen</button>
-        `;
-        openModal();
-    }
-
-    function openEdit(id, name) {
-        modalTitle.textContent = "Kategorie bearbeiten";
-        categoryNameInput.value = name || "";
-        modalActions.innerHTML = `
-            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
-            <button class="btn btn-primary" onclick="updateCategory('${id}')">Speichern</button>
-        `;
-        openModal();
-    }
-
-    function openDelete(id, name) {
-        modalTitle.textContent = "Kategorie löschen";
-        categoryNameInput.value = name || "";
-        modalActions.innerHTML = `
-            <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
-            <button class="btn btn-danger" onclick="deleteCategory('${id}')">Löschen</button>
-        `;
-        openModal();
-    }
-
     function formatErrors(data) {
         if (!data) return "";
         if (typeof data === "string") return data;
@@ -427,12 +303,49 @@
         return parts.join(" | ");
     }
 
+    // --- Modal Logic ---
+    function openModal() { backdrop.style.display = "flex"; }
+
+    function closeModal() {
+        backdrop.style.display = "none";
+        categoryNameInput.value = "";
+        modalActions.innerHTML = "";
+    }
+
+    function openCreate() {
+        modalTitle.textContent = "Neue Kategorie anlegen";
+        categoryNameInput.value = "";
+        modalActions.innerHTML = `
+            <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
+            <button class="btn-modal btn-primary-modal" onclick="createCategory()">Anlegen</button>
+        `;
+        openModal();
+    }
+
+    function openEdit(id, name) {
+        modalTitle.textContent = "Kategorie bearbeiten";
+        categoryNameInput.value = name || "";
+        modalActions.innerHTML = `
+            <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
+            <button class="btn-modal btn-primary-modal" onclick="updateCategory('${id}')">Speichern</button>
+        `;
+        openModal();
+    }
+
+    function openDelete(id, name) {
+        modalTitle.textContent = "Kategorie löschen";
+        categoryNameInput.value = name || "";
+        modalActions.innerHTML = `
+            <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
+            <button class="btn-modal btn-danger-modal" onclick="deleteCategory('${id}')">Löschen</button>
+        `;
+        openModal();
+    }
+
+    // --- CRUD Operations ---
     async function createCategory() {
         const name = categoryNameInput.value.trim();
-        if (!name) {
-            showToast("Bitte einen Namen eingeben.", true);
-            return;
-        }
+        if (!name) return showToast("Bitte einen Namen eingeben.", true);
 
         const { res, data } = await apiFetch(API_LIST, {
             method: "POST",
@@ -449,10 +362,7 @@
 
     async function updateCategory(id) {
         const name = categoryNameInput.value.trim();
-        if (!name) {
-            showToast("Bitte einen Namen eingeben.", true);
-            return;
-        }
+        if (!name) return showToast("Bitte einen Namen eingeben.", true);
 
         const { res, data } = await apiFetch(API_DETAIL(id), {
             method: "PUT",
@@ -468,9 +378,7 @@
     }
 
     async function deleteCategory(id) {
-        const { res, data } = await apiFetch(API_DETAIL(id), {
-            method: "DELETE"
-        });
+        const { res, data } = await apiFetch(API_DETAIL(id), { method: "DELETE" });
 
         if (res.ok) {
             showToast("Kategorie gelöscht.");
@@ -479,15 +387,5 @@
             showToast(formatErrors(data) || `Fehler beim Löschen. (${res.status})`, true);
         }
     }
-
-    // Debug-Hinweis, falls csrftoken fehlt
-    (function csrfSanityCheck() {
-        if (!document.cookie.includes("csrftoken=")) {
-            console.warn("Kein csrftoken Cookie gefunden. Stelle sicher, dass die UI-View @ensure_csrf_cookie hat und die Seite über Django gerendert wird.");
-        }
-    })();
 </script>
-
-</body>
-</html>
-
+{% endblock %}
