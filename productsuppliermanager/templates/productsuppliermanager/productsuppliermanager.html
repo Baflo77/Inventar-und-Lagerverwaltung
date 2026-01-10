@@ -1,189 +1,121 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>ProductSupplier | Inventar-Verwaltung</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-{% block title %}ProductSupplier | Inventar-Verwaltung{% endblock %}
+  <style>
 
-{% block extra_css %}
-<style>
-    /* Lokale Variablen für ProductSupplier */
+    .ps-modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 2000;
+    backdrop-filter: blur(2px);
+  }
+
+  .ps-modal {
+    background: white;
+    width: 100%;
+    max-width: 720px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
     :root {
-        --ps-bg-main: #ebedef;
-        --ps-card-bg: #ffffff;
-        --ps-text-main: #2f3640;
-        --ps-accent-color: #3498db;
-        --ps-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      --bg-main: #ebedef;
+      --header-bg: #2c3e50;
+      --card-bg: #ffffff;
+      --text-main: #2f3640;
+      --accent-color: #3498db;
+      --shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
+    body { background-color: var(--bg-main); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; color: var(--text-main); }
+    .app-header { background-color: var(--header-bg); color: white; padding: 1.2rem 2.5rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .header-title { font-size: 1.4rem; margin: 0; font-weight: 500; }
+    .nav-home { text-decoration: none; color: white; font-size: 0.9rem; padding: 5px 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; }
 
-    /* Container Anpassung */
-    .ps-container {
-        max-width: 1200px;
-        margin: 40px auto;
-        padding: 0 20px;
-        color: var(--ps-text-main);
-    }
+    .container { max-width: 1200px; margin: 2.5rem auto; padding: 0 20px; }
+    .page-title-section { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .page-title { font-size: 1.8rem; margin: 0; color: var(--header-bg); }
+    .btn-add { background: var(--accent-color); color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-weight: 600; }
 
-    .page-title-section {
-        margin-bottom: 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .page-title {
-        font-size: 1.8rem;
-        margin: 0;
-        font-weight: 700;
-        color: var(--text-dark); /* Variable aus base.html */
-    }
-
-    .btn-add {
-        background: var(--ps-accent-color);
-        color: white;
-        border: none;
-        padding: 10px 18px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: background 0.2s;
-    }
-    .btn-add:hover { background: #2980b9; }
-
-    .data-card {
-        background: var(--ps-card-bg);
-        border-radius: 10px;
-        box-shadow: var(--ps-shadow);
-        overflow: hidden;
-        border: 1px solid #e6e6e6;
-    }
-
-    /* Tabelle */
-    .custom-table { width: 100%; border-collapse: collapse; }
-    .custom-table th {
-        background: #f8f9fa;
-        text-align: left;
-        padding: 15px;
-        font-size: 0.8rem;
-        color: #7f8c8d;
-        text-transform: uppercase;
-        border-bottom: 2px solid var(--ps-bg-main);
-    }
-    .custom-table td {
-        padding: 15px;
-        border-bottom: 1px solid #eee;
-        font-size: 0.95rem;
-        vertical-align: top;
-    }
-
+    .data-card { background: var(--card-bg); border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f8f9fa; text-align: left; padding: 15px; font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; border-bottom: 2px solid var(--bg-main); }
+    td { padding: 15px; border-bottom: 1px solid var(--bg-main); font-size: 0.95rem; vertical-align: top; }
     .text-muted { color: #7f8c8d; font-size: 0.85rem; }
 
-    /* Actions */
-    .actions button {
-        margin-right: 10px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        font-size: 0.85rem;
-        color: var(--ps-accent-color);
-        padding: 0;
-        font-weight: 600;
-    }
-    .actions button:hover { text-decoration: underline; }
+    .actions button { margin-right: 10px; border: none; background: none; cursor: pointer; font-size: 0.85rem; color: var(--accent-color); padding: 0; }
     .actions button.danger { color: #e74c3c; }
 
-    /* Empty State */
     .empty-state { text-align: center; padding: 50px; color: #bdc3c7; }
     .empty-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
 
-    /* Modals */
-    .modal-backdrop {
-        position: fixed; inset: 0;
-        background: rgba(0,0,0,0.5);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        z-index: 2000;
-        backdrop-filter: blur(2px);
-    }
-
-    .modal {
-        background: white;
-        width: 100%;
-        max-width: 720px;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        overflow: hidden;
-    }
-
-    .modal-header {
-        padding: 16px 20px;
-        background: #fff;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .modal-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: #2c3e50; }
-
-    .modal-body { padding: 20px; display: grid; gap: 16px; }
-
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal { background: white; width: 100%; max-width: 720px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
+    .modal-header { padding: 16px 18px; background: #f8f9fa; border-bottom: 1px solid var(--bg-main); display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { margin: 0; font-size: 1rem; color: var(--header-bg); }
+    .modal-body { padding: 18px; display: grid; gap: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group.full { grid-column: 1 / -1; }
+    .form-group label { font-size: 0.75rem; font-weight: bold; color: #7f8c8d; text-transform: uppercase; }
+    .form-group input, .form-group select { padding: 10px; border: 1px solid #dcdde1; border-radius: 4px; font-size: 0.95rem; font-family: inherit; }
+    .form-group select { padding: 10px; border: 1px solid #dcdde1; border-radius: 4px; font-size: 0.95rem; font-family: inherit; background: white;
+}
 
-    .form-group label {
-        font-size: 0.75rem; font-weight: 700; color: #7f8c8d; text-transform: uppercase;
-    }
-    .form-group input, .form-group select {
-        padding: 10px; border: 1px solid #dcdde1; border-radius: 6px; font-size: 0.95rem; font-family: inherit; background: white;
-    }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 18px; border-top: 1px solid var(--bg-main); }
+    .btn { border: none; border-radius: 4px; padding: 10px 14px; cursor: pointer; font-weight: 600; }
+    .btn-primary { background: var(--accent-color); color: white; }
+    .btn-secondary { background: #dcdde1; color: #2f3640; }
+    .btn-danger { background: #e74c3c; color: white; }
 
-    .modal-actions {
-        display: flex; gap: 10px; justify-content: flex-end;
-        padding: 16px 20px; border-top: 1px solid #eee; background: #fcfcfc;
-    }
-
-    /* Modal Buttons */
-    .btn-modal { border: none; border-radius: 6px; padding: 10px 16px; cursor: pointer; font-weight: 600; }
-    .btn-primary-modal { background: var(--ps-accent-color); color: white; }
-    .btn-secondary-modal { background: #e0e0e0; color: #2f3640; }
-    .btn-danger-modal { background: #e74c3c; color: white; }
-
-    /* Toast */
-    .toast-msg {
-        position: fixed; bottom: 20px; right: 20px;
-        padding: 15px 20px; border-radius: 8px; background: #ffffff;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.15); display: none; z-index: 3000;
-        font-weight: 500;
-    }
-
+    .toast { margin: 0 0 16px 0; padding: 12px 14px; border-radius: 8px; background: #ffffff; box-shadow: var(--shadow); display: none; }
     .hint { font-size: 0.85rem; color: #7f8c8d; margin: 0 0 10px 0; }
 
-    /* Badges */
     .badge {
-      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
-      border-radius: 999px; font-size: 0.78rem; font-weight: 700;
-      border: 1px solid rgba(0,0,0,0.08); margin-left: 10px; white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border: 1px solid rgba(0,0,0,0.08);
+      margin-left: 10px;
+      white-space: nowrap;
     }
-    .badge-best { background: rgba(52, 152, 219, 0.12); color: #2c3e50; border-color: rgba(52, 152, 219, 0.3); }
-    .badge-cheap { background: rgba(241, 196, 15, 0.18); color: #2c3e50; border-color: rgba(241, 196, 15, 0.3); }
-    .badge-fast { background: rgba(46, 204, 113, 0.15); color: #2c3e50; border-color: rgba(46, 204, 113, 0.3); }
-</style>
-{% endblock %}
 
-{% block content %}
-<div class="ps-container">
+    .badge-best { background: rgba(52, 152, 219, 0.12); color: #2c3e50; }
+    .badge-cheap { background: rgba(241, 196, 15, 0.18); color: #2c3e50; }
+    .badge-fast { background: rgba(46, 204, 113, 0.15); color: #2c3e50; }
 
-  <div id="toast" class="toast-msg"></div>
+  </style>
+</head>
+
+<body>
+<header class="app-header">
+  <div class="header-left">
+    <a href="/" class="nav-home">🏠 Home</a>
+    <h1 class="header-title">Inventar-Lagerverwaltung</h1>
+  </div>
+  <div>ProductSupplier</div>
+</header>
+
+<div class="container">
+
+  <div id="toast" class="toast"></div>
 
   <div class="page-title-section">
     <h2 class="page-title">ProductSupplier</h2>
-    <button class="btn-add" onclick="openCreate()">
-        <i class="bi bi-plus-lg"></i> Neue Zuordnung
-    </button>
+    <button class="btn-add" onclick="openCreate()">➕ Neue Zuordnung</button>
   </div>
 
   <p class="hint">
@@ -191,7 +123,7 @@
   </p>
 
   <div class="data-card">
-    <table class="custom-table">
+    <table>
       <thead>
       <tr>
         <th>Produkt</th>
@@ -223,14 +155,12 @@
               '{{ link.id }}',
               '{{ link.product_id }}',
               '{{ link.supplier_id }}',
-              '{{ link.purchase_price|default_if_none:'' }}',
-              '{{ link.delivery_time_days|default_if_none:'' }}',
-              '{{ link.min_order_quantity|default_if_none:'' }}'
-            )"><i class="bi bi-pencil"></i> Bearbeiten</button>
+              '{{ link.purchase_price|default_if_none:"" }}',
+              '{{ link.delivery_time_days|default_if_none:"" }}',
+              '{{ link.min_order_quantity|default_if_none:"" }}'
+            )">✏️ Bearbeiten</button>
 
-            <button class="danger" onclick="openDelete('{{ link.id }}')">
-                <i class="bi bi-trash"></i> Löschen
-            </button>
+            <button class="danger" onclick="openDelete('{{ link.id }}')">🗑 Löschen</button>
           </td>
         </tr>
       {% empty %}
@@ -249,13 +179,12 @@
   </div>
 </div>
 
-<div id="modalBackdrop" class="modal-backdrop">
-  <div class="modal">
+<!-- Modal -->
+<div id="modalBackdrop" class="ps-modal-backdrop">
+  <div class="ps-modal">
     <div class="modal-header">
       <h3 id="modalTitle" class="modal-title">Zuordnung</h3>
-      <button class="btn-modal btn-secondary-modal" onclick="closeModal()">
-          <i class="bi bi-x-lg"></i>
-      </button>
+      <button class="btn btn-secondary" onclick="closeModal()">✖</button>
     </div>
 
     <div class="modal-body">
@@ -306,16 +235,16 @@
     <div class="modal-actions" id="modalActions"></div>
   </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-  // --- API Configuration ---
-  // Relativ zur UI-Route. Falls du unter /productsupplier/ bist, passt "api/"
-  const API_LIST = "api/";
-  const API_DETAIL = (id) => `api/${id}/`;
 
-  // --- DOM Elements ---
+  function getCSRFToken() {
+  const el = document.querySelector('meta[name="csrf-token"]');
+  return el ? el.getAttribute("content") : "";
+}
+  const API_LIST = "productsupplier/";
+  const API_DETAIL = (id) => `productsupplier/${id}/`;
+
   const backdrop = document.getElementById("modalBackdrop");
   const modalTitle = document.getElementById("modalTitle");
   const modalActions = document.getElementById("modalActions");
@@ -327,7 +256,6 @@
   const days = document.getElementById("days");
   const moq = document.getElementById("moq");
 
-  // --- UI Helpers ---
   function showToast(msg, isError=false) {
     toast.style.display = "block";
     toast.textContent = msg;
@@ -335,41 +263,6 @@
     setTimeout(() => { toast.style.display = "none"; }, 3000);
   }
 
-  // --- CSRF + Fetch Wrapper ---
-  // Wir nutzen getCookie statt Meta-Tag, da base.html evtl. kein Meta-Tag hat.
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return "";
-  }
-
-  async function apiFetch(url, options = {}) {
-    const method = (options.method || "GET").toUpperCase();
-    const unsafe = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-
-    const headers = new Headers(options.headers || {});
-    if (!headers.has("Accept")) headers.set("Accept", "application/json");
-
-    if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json");
-    }
-
-    if (unsafe) {
-      const csrf = getCookie("csrftoken");
-      if (csrf) headers.set("X-CSRFToken", csrf);
-    }
-
-    const res = await fetch(url, { ...options, headers, credentials: "same-origin" });
-
-    let data = null;
-    const ct = res.headers.get("content-type") || "";
-    if (ct.includes("application/json")) data = await res.json().catch(() => null);
-    
-    return { res, data };
-  }
-
-  // --- Modal Logic ---
   function openModal() { backdrop.style.display = "flex"; }
 
   function closeModal() {
@@ -385,8 +278,8 @@
   function openCreate() {
     modalTitle.textContent = "Neue Zuordnung anlegen";
     modalActions.innerHTML = `
-      <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
-      <button class="btn-modal btn-primary-modal" onclick="createLink()">Anlegen</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="createLink()">Anlegen</button>
     `;
     openModal();
   }
@@ -400,8 +293,8 @@
     moq.value = minOrderQty || "";
 
     modalActions.innerHTML = `
-      <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
-      <button class="btn-modal btn-primary-modal" onclick="updateLink('${id}')">Speichern</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="updateLink('${id}')">Speichern</button>
     `;
     openModal();
   }
@@ -409,13 +302,12 @@
   function openDelete(id) {
     modalTitle.textContent = "Zuordnung löschen";
     modalActions.innerHTML = `
-      <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
-      <button class="btn-modal btn-danger-modal" onclick="deleteLink('${id}')">Löschen</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-danger" onclick="deleteLink('${id}')">Löschen</button>
     `;
     openModal();
   }
 
-  // --- CRUD Payload ---
   function buildPayload() {
     return {
       product: pId.value ? Number(pId.value) : null,
@@ -432,14 +324,18 @@
     return null;
   }
 
-  // --- API Calls ---
   async function createLink() {
     const payload = buildPayload();
     const err = validate(payload);
     if (err) return showToast(err, true);
 
-    const { res, data } = await apiFetch(API_LIST, {
+    const res = await fetch(API_LIST, {
       method: "POST",
+      credentials: "same-origin",
+      headers: {
+       "Content-Type": "application/json",
+       "X-CSRFToken": getCSRFToken()
+      },
       body: JSON.stringify(payload)
     });
 
@@ -447,8 +343,10 @@
       showToast("Zuordnung angelegt.");
       location.reload();
     } else {
-      showToast("Fehler beim Anlegen (evtl. doppelte Kombination).", true);
+      const data = await res.json().catch(() => ({}));
       console.log(data);
+
+      showToast("Fehler beim Anlegen (evtl. doppelte Kombination).", true);
     }
   }
 
@@ -457,8 +355,13 @@
     const err = validate(payload);
     if (err) return showToast(err, true);
 
-    const { res, data } = await apiFetch(API_DETAIL(id), {
-      method: "PATCH", 
+    const res = await fetch(API_DETAIL(id), {
+      method: "Patch", // Patch häufig besser, weil bei PUT meist alle Felder geändert werden müssen
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCSRFToken()
+      },
       body: JSON.stringify(payload)
     });
 
@@ -466,34 +369,41 @@
       showToast("Zuordnung gespeichert.");
       location.reload();
     } else {
-      showToast("Fehler beim Speichern.", true);
+      const data = await res.json().catch(() => ({}));
       console.log(data);
+      showToast("Fehler beim Speichern.", true);
     }
   }
 
   async function deleteLink(id) {
-    const { res, data } = await apiFetch(API_DETAIL(id), { method: "DELETE" });
+    const res = await fetch(API_DETAIL(id), {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCSRFToken()
+     }
+    });
 
     if (res.ok) {
       showToast("Zuordnung gelöscht.");
       location.reload();
     } else {
-      showToast("Fehler beim Löschen.", true);
+      const data = await res.json().catch(() => ({}));
       console.log(data);
+      showToast("Fehler beim Löschen.", true);
     }
   }
-
-  // --- Badge Logic (Best Choice etc.) ---
-  (function addDecisionBadges() {
+  //Bester Lieferant Badge
+    (function addDecisionBadges() {
     const tbody = document.querySelector("table tbody");
     if (!tbody) return;
 
     const rows = Array.from(tbody.querySelectorAll("tr"))
-      .filter(tr => tr.querySelector(".cell-product"));
+      .filter(tr => tr.querySelector(".cell-product")); // ignoriert Empty-State
 
     const byProduct = new Map();
 
-    // Sammeln
+    // Sammeln: pro Produkt alle Supplier-Zeilen
     for (const tr of rows) {
       const productCell = tr.querySelector(".cell-product");
       const priceCell = tr.querySelector(".cell-price");
@@ -513,6 +423,7 @@
     }
 
     function addBadge(productCell, text, className) {
+      // doppelte Badges vermeiden (falls Reload via HTMX etc.)
       const existing = Array.from(productCell.querySelectorAll(".badge"))
         .some(b => b.textContent.trim() === text.trim());
       if (existing) return;
@@ -523,38 +434,53 @@
       productCell.appendChild(badge);
     }
 
-    // Auswerten
+    // Pro Produkt Gewinner ermitteln
     for (const [productId, items] of byProduct.entries()) {
       if (!items.length) continue;
 
-      // 1. Günstigster
+      // günstigster Preis
       const withPrice = items.filter(x => Number.isFinite(x.price));
+      let cheapest = null;
       if (withPrice.length) {
-        const cheapest = withPrice.reduce((best, cur) => (cur.price < best.price ? cur : best));
+        cheapest = withPrice.reduce((best, cur) => (cur.price < best.price ? cur : best));
+      }
+
+      // schnellste Lieferzeit
+      const withDays = items.filter(x => Number.isFinite(x.days));
+      let fastest = null;
+      if (withDays.length) {
+        fastest = withDays.reduce((best, cur) => (cur.days < best.days ? cur : best));
+      }
+
+      // Beste Wahl (Score: Preis + Lieferzeit)
+      // Gewichtung: Preis stärker, Lieferzeit etwas schwächer
+
+      const scored = items.map(x => {
+        const p = Number.isFinite(x.price) ? x.price : 999999;
+        const d = Number.isFinite(x.days) ? x.days : 999999;
+        return { ...x, score: p * 1.0 + d * 0.6 };
+      });
+
+      const bestChoice = scored.reduce((best, cur) => (cur.score < best.score ? cur : best));
+
+      // Badges setzen
+      if (cheapest) {
         const cell = cheapest.tr.querySelector(".cell-product");
         if (cell) addBadge(cell, "🏆 Günstigster", "badge-cheap");
       }
 
-      // 2. Schnellster
-      const withDays = items.filter(x => Number.isFinite(x.days));
-      if (withDays.length) {
-        const fastest = withDays.reduce((best, cur) => (cur.days < best.days ? cur : best));
+      if (fastest) {
         const cell = fastest.tr.querySelector(".cell-product");
         if (cell) addBadge(cell, "🟢 Schnellster", "badge-fast");
       }
 
-      // 3. Best Choice (Score)
-      const scored = items.map(x => {
-        const p = Number.isFinite(x.price) ? x.price : 999999;
-        const d = Number.isFinite(x.days) ? x.days : 999999;
-        // Preis zählt 1.0, Tage zählen 0.6
-        return { ...x, score: p * 1.0 + d * 0.6 };
-      });
-      const bestChoice = scored.reduce((best, cur) => (cur.score < best.score ? cur : best));
+      if (bestChoice) {
+        const cell = bestChoice.tr.querySelector(".cell-product");
+        if (cell) addBadge(cell, "⭐ Beste Wahl", "badge-best");
+      }
+  }
+})();
 
-      const cell = bestChoice.tr.querySelector(".cell-product");
-      if (cell) addBadge(cell, "⭐ Best Choice", "badge-best");
-    }
-  })();
 </script>
-{% endblock %}
+</body>
+</html>
