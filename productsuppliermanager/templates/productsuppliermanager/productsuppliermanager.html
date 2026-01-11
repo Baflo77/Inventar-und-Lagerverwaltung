@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <meta name="csrf-token" content="{{ csrf_token }}">
-  <title>ProductSupplier | Inventar-Verwaltung</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends "base.html" %}
 
+{% block title %}ProductSupplier | Inventar-Verwaltung{% endblock %}
+
+
+{% block extra_css %}
   <style>
 
     .cell-product{
@@ -181,16 +179,11 @@
     .badge-fast { background: rgba(46, 204, 113, 0.15); color: #2c3e50; }
 
   </style>
+{% endblock %}
+{% block content %}
 </head>
 
 <body>
-<header class="app-header">
-  <div class="header-left">
-    <a href="/" class="nav-home">🏠 Home</a>
-    <h1 class="header-title">Inventar-Lagerverwaltung</h1>
-  </div>
-  <div>ProductSupplier</div>
-</header>
 
 <div class="container">
 
@@ -210,6 +203,17 @@
       </select>
     </div>
   </div>
+
+    <div class="filter-row">
+      <label for="supplierFilter" class="filter-label">Lieferant filtern:</label>
+      <select id="supplierFilter" class="filter-select">
+        <option value="">Alle Lieferanten</option>
+        {% for s in suppliers %}
+          <option value="{{ s.id }}">{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
     <button class="btn-add" onclick="openCreate()">➕ Neue Zuordnung</button>
   </div>
 
@@ -230,6 +234,7 @@
       <tbody>
       {% for link in links %}
         <tr>
+          <tr data-product="{{ link.product_id }}" data-supplier="{{ link.supplier_id }}">
           <td class="cell-product" data-product="{{ link.product_id }}">
             <div class="product-name">
               <strong>{{ link.product }}</strong>
@@ -338,7 +343,8 @@
     <div class="modal-actions" id="modalActions"></div>
   </div>
 </div>
-
+{% endblock %}
+{% block extra_js %}
 <script>
 
   function getCSRFToken() {
@@ -587,25 +593,33 @@
   }
 })();
 
-  (function setupProductFilter(){
-    const filter = document.getElementById("productFilter");
-    if(!filter) return;
+  (function setupFilters(){
+      const productFilter = document.getElementById("productFilter");
+      const supplierFilter = document.getElementById("supplierFilter");
+      if(!productFilter || !supplierFilter) return;
 
-    const rows = Array.from(document.querySelectorAll("tbody tr"))
-      .filter(tr => tr.querySelector(".cell-product")); // ignoriert empty-state
+  const rows = Array.from(document.querySelectorAll("tbody tr"))
+    .filter(tr => tr.dataset.product); // ignoriert empty-state
 
-    filter.addEventListener("change", () => {
-      const selected = filter.value; // "" = alle
+  function applyFilters() {
+    const selectedProduct = productFilter.value;   // "" = alle
+    const selectedSupplier = supplierFilter.value; // "" = alle
 
-      rows.forEach(tr => {
-        const productCell = tr.querySelector(".cell-product");
-        const pid = productCell?.dataset.product || "";
-        const show = !selected || pid === selected;
-        tr.style.display = show ? "" : "none";
-      });
+    rows.forEach(tr => {
+      const pid = tr.dataset.product || "";
+      const sid = tr.dataset.supplier || "";
+
+      const matchesProduct = !selectedProduct || pid === selectedProduct;
+      const matchesSupplier = !selectedSupplier || sid === selectedSupplier;
+
+      tr.style.display = (matchesProduct && matchesSupplier) ? "" : "none";
     });
+  }
+
+  productFilter.addEventListener("change", applyFilters);
+  supplierFilter.addEventListener("change", applyFilters);
+})();
   })();
 
 </script>
-</body>
-</html>
+{% endblock %}
