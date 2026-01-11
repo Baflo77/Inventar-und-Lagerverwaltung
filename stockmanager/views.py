@@ -7,22 +7,56 @@ from django.db import transaction
 from locationmanager.models import Location
 from productmanager.models import Product
 from .models import Stock
-
-# WICHTIG: Importiere StockMovement aus der App, die auch für die Anzeige genutzt wird!
-# Falls deine App 'stockmovementmanager' heißt:
 from stockmovementmanager.models import StockMovement
 
 
 def stock_manager_view(request):
-    # ... (Dieser Teil war okay und bleibt unverändert) ...
     if request.method == 'POST' and request.POST.get('action') == 'initialize':
-        # ... dein existierender Code ...
-        pass  # Platzhalter
+        try:
+            # Daten aus dem Formular holen
+            product_id = request.POST.get('product_id')
+            location_id = request.POST.get('location_id')
+            quantity = int(request.POST.get('quantity', 0))
+            threshold = int(request.POST.get('threshold', 10))
+
+            # 1. Validierung
+            if not product_id or not location_id:
+                messages.error(request, "Bitte Produkt und Lagerort auswählen.")
+                return redirect('stock_manager')  # <-- Stelle sicher, dass der URL-Name in urls.py stimmt!
+
+            # 2. Prüfen, ob Bestand schon existiert
+            if Stock.objects.filter(product_id=product_id, location_id=location_id).exists():
+                messages.warning(request, "Dieses Produkt existiert bereits an diesem Lagerort!")
+            else:
+                with transaction.atomic():
+                    # 3. Bestand anlegen
+                    Stock.objects.create(
+                        product_id=product_id,
+                        location_id=location_id,
+                        quantity=quantity,
+                        threshold=threshold
+                    )
+                messages.success(request, "Bestand wurde erfolgreich angelegt.")
+
+        except Exception as e:
+            messages.error(request, f"Fehler beim Anlegen: {str(e)}")
+        return redirect('stock_manager')
+
 
     stocks = Stock.objects.select_related('product', 'location__warehouse').all()
     all_locations = Location.objects.select_related('warehouse').all()
-    context = {'stocks': stocks, 'locations': all_locations}
+
+
+    all_products = Product.objects.all().order_by('name')
+
+    context = {
+        'stocks': stocks,
+        'locations': all_locations,
+        'products': all_products  #
+    }
     return render(request, 'stockmanager/stockmanager.html', context)
+
+
 
 
 @require_POST
@@ -103,10 +137,34 @@ def transfer_stock_api(request, stock_id):
                 destination_location=target_location,
                 quantity=amount,
                 movement_type='MOVE',
-                notes=f"Umlagerung von {source_stock.location.name}"  # Optional: Automatische Notiz
+                notes=f"Umlagerung von {source_stock.location.name}"
             )
 
         return JsonResponse({'success': True})
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_POST
+def delete_stock_api(request, stock_id):
+    # 1. Sicherheitscheck: Ist der User ein Admin?
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Keine Berechtigung. Nur Administratoren dürfen löschen.'}, status=403)
+
+    try:
+        stock = get_object_or_404(Stock, id=stock_id)
+
+        # 2. Logikcheck: Darf nur gelöscht werden, wenn leer?
+        if stock.quantity > 0:
+            return JsonResponse({'error': 'Position kann nicht gelöscht werden, da noch Bestand vorhanden ist.'},
+                                status=400)
+
+        # 3. Löschen
+        stock.delete()
+
+        return JsonResponse({'success': True})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+

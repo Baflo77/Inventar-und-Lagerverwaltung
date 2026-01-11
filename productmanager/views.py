@@ -29,7 +29,6 @@ def show_all_products(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([IsAuthenticated])
 def show_product_details(request, id):
     product = get_object_or_404(Product, pk=id)
 
