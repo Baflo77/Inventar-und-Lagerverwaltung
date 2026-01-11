@@ -8,6 +8,22 @@
 
   <style>
 
+    .cell-product{
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .product-name{
+      font-weight: 600;
+    }
+
+    .product-badges{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
     .filter-row{
       margin-top: 0;
       display: flex;
@@ -215,7 +231,10 @@
       {% for link in links %}
         <tr>
           <td class="cell-product" data-product="{{ link.product_id }}">
-            <strong>{{ link.product }}</strong>
+            <div class="product-name">
+              <strong>{{ link.product }}</strong>
+            </div>
+            <div class="product-badges"></div>
           </td>
           <td class="text-muted">{{ link.supplier.name }}</td>
           <td class="cell-price" data-price="{{ link.purchase_price|default_if_none:'' }}">
@@ -515,7 +534,10 @@
       const badge = document.createElement("span");
       badge.className = `badge ${className}`;
       badge.textContent = text;
-      productCell.appendChild(badge);
+      const badgeContainer = productCell.querySelector(".product-badges");
+      if (badgeContainer) {
+        badgeContainer.appendChild(badge);
+      }
     }
 
     // Pro Produkt Gewinner ermitteln
