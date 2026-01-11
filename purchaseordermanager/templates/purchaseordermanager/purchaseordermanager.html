@@ -4,6 +4,83 @@
 
 {% block content %}
 <style>
+
+    .actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  white-space: nowrap;
+}
+
+/* Link-Action (Bearbeiten/Löschen/Eingang) */
+.action-link {
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: background 0.15s ease;
+}
+
+.action-link:hover {
+  background: rgba(44, 62, 80, 0.06);
+  text-decoration: none;
+}
+
+.action-link .ico {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+/* Farben */
+.action-primary { color: #1e88e5; }
+.action-danger  { color: #e53935; }
+
+/* Eingang etwas größer */
+.action-entry {
+  font-size: 1.02rem;
+  padding: 10px 12px;
+}
+
+/* Details Pill Button wie Delivery */
+.details-pill {
+  border: 2px solid #1e88e5;
+  color: #1e88e5;
+  background: #fff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 1.0rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.details-pill:hover {
+  background: rgba(30, 136, 229, 0.06);
+}
+
+.details-pill:active {
+  transform: translateY(1px);
+}
+
+.details-pill .chev {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* Optional: wenn offen, leicht hinterlegt */
+.details-pill.is-open {
+  background: rgba(30, 136, 229, 0.08);
+}
     .icon-btn{
         width: 56px;
         height: 42px;
@@ -451,25 +528,41 @@
                             <span class="badge badge-{{ order.status|lower }}">{{ order.status }}</span>
                         </td>
                         <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
-                        <td class="actions" style="text-align: right;">
-                            <button type="button" onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'" title="Ware empfangen">
-                                📥 Eingang
-                            </button>
+                       <td class="actions" style="text-align: right;">
+                         <button type="button"
+                            class="action-link action-primary action-entry"
+                            onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'"
+                            title="Ware empfangen">
+                             <span class="ico">📥</span>
+                            Eingang
+                         </button>
 
-                            <button type="button" class="icon-btn icon-btn-edit" onclick="openEditModal({{ order.id }}, '{{ order.status }}')"
-                                    title="Bearbeiten">
-                                ✏️
-                            </button>
+                        <button type="button"
+                            class="action-link action-primary"
+                            onclick="openEditModal({{ order.id }}, '{{ order.status }}')"
+                            title="Bearbeiten">
+                            <span class="ico">✏️</span>
+                            Bearbeiten
+                        </button>
 
-                            <button type="button" class="icon-btn icon-btn-delete" onclick="cancelOrder({{ order.id }})"
-                                    title="Stornieren">
-                                🗑
-                            </button>
-                            <button type="button" class="btn-details"
-                                    onclick="toggleDetails({{ order.id }}, this)">
-                                ▾ Details
-                            </button>
-                        </td>
+                        <button type="button"
+                             class="action-link action-danger"
+                            onclick="cancelOrder({{ order.id }})"
+                            title="Stornieren">
+                            <span class="ico">🗑</span>
+                            Löschen
+                        </button>
+
+
+                         <button type="button"
+                            class="details-pill"
+                            onclick="toggleDetails({{ order.id }}, this)"
+                            title="Details anzeigen">
+                            <span class="chev">▾</span>
+                            Details
+                         </button>
+
+                       </td>
 
                     </tr>
 
