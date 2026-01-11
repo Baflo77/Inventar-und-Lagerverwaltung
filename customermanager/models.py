@@ -21,7 +21,6 @@ class Customer(models.Model):
         blank=True,
     )
 
-    # ✅ Frontend-Kompatibilität: Form sendet nur "name"
     @property
     def name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()

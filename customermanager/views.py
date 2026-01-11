@@ -65,14 +65,11 @@ def write_customer(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# =========================
 # HTML (Browser View)
-# =========================
 
 def customers_page(request):
     customers = Customer.objects.all()
 
-    # NEU: Template-States aus Query-Params
     create_mode = request.GET.get("create") == "1"
     edit_id = request.GET.get("edit")
 
@@ -100,7 +97,6 @@ def create_customer(request):
             return redirect("customers_page")
         messages.error(request, "Error creating customer.")
 
-    # NEU: create_mode setzen, damit Formular sichtbar ist
     customers = Customer.objects.all()
     return render(
         request,
@@ -139,5 +135,4 @@ def delete_customer(request, id):
         messages.success(request, "Customer deleted successfully.")
         return redirect("customers_page")
 
-    # Wenn du keinen extra Confirm-Screen hast, reicht Redirect:
     return redirect("customers_page")

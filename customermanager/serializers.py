@@ -5,24 +5,22 @@ from .models import Customer
 class CustomerSerializer(serializers.ModelSerializer):
     # Frontend/API sendet nur "name"
     name = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    # Optional: schöner Output für Swagger/Frontend
+    # Output für Swagger/Frontend
     full_name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Customer
-        fields = "__all__"  # behält alle echten Model-Felder (inkl. street/zip_code/...)
-        # first_name/last_name sollen nicht direkt beschrieben werden (weil wir name nutzen)
+        fields = "__all__"
         read_only_fields = ["first_name", "last_name"]
 
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip()
 
     def create(self, validated_data):
-        # name kommt nicht aus dem Model, daher extra behandeln
         name_value = validated_data.pop("name", "")
         customer = Customer(**validated_data)
         if name_value is not None:
-            customer.name = name_value  # nutzt deinen @name.setter -> first/last
+            customer.name = name_value
         customer.save()
         return customer
 
