@@ -297,6 +297,117 @@
         cursor: pointer;
         font-weight: 600;
     }
+    .btn-details{
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 2px solid #dfe6e9;
+        background: #fff;
+        cursor: pointer;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+
+    .details-row td{
+        background: #fafbfc;
+    }
+
+    .details-box{
+        border-left: 4px solid #1e88e5;
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .details-head{
+        display:flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .details-sub{
+        color:#7f8c8d;
+        font-size: 0.85rem;
+    }
+
+    .details-items-table{
+        width:100%;
+        border-collapse: collapse;
+        min-width: 600px;
+    }
+
+    .details-items-table th{
+        background: #f8f9fa;
+        padding: 10px;
+        font-size: 0.75rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        border-bottom: 2px solid #eee;
+        text-align: left;
+    }
+
+    .details-items-table td{
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        font-size: 0.9rem;
+    }
+
+    .btn-details{
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 2px solid #dfe6e9;
+        background: #fff;
+        cursor: pointer;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+
+    .details-row td{
+        background: #fafbfc;
+    }
+
+    .details-box{
+        border-left: 4px solid #1e88e5;
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .details-head{
+        display:flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .details-sub{
+        color:#7f8c8d;
+        font-size: 0.85rem;
+    }
+
+    .details-items-table{
+        width:100%;
+        border-collapse: collapse;
+        min-width: 600px;
+    }
+
+    .details-items-table th{
+        background: #f8f9fa;
+        padding: 10px;
+        font-size: 0.75rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        border-bottom: 2px solid #eee;
+        text-align: left;
+    }
+
+    .details-items-table td{
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        font-size: 0.9rem;
+    }
 </style>
 
 <div class="purchase-order-wrapper">
@@ -354,9 +465,27 @@
                                     title="Stornieren">
                                 🗑
                             </button>
+                            <button type="button" class="btn-details"
+                                    onclick="toggleDetails({{ order.id }}, this)">
+                                ▾ Details
+                            </button>
                         </td>
 
                     </tr>
+
+                <tr id="details-row-{{ order.id }}" class="details-row" style="display:none;">
+                    <td colspan="5">
+                        <div class="details-box">
+                            <div class="details-head">
+                                <strong>PurchaseOrder Items – PO #{{ order.id }}</strong>
+                                <span class="details-sub">wird geladen…</span>
+                            </div>
+
+                            <div id="details-content-{{ order.id }}" class="details-content">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
                 {% empty %}
                     <tr>
                         <td colspan="5">
@@ -1025,6 +1154,114 @@ window.removeCartItem = function (idx) {
         if (!confirm("Bestellung wirklich stornieren?")) return;
         await updateOrderStatus(orderId, "canceled");
     }
+
+    const detailsCache = new Map();
+
+    function escapeHtml(s) {
+        return String(s ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    async function toggleDetails(orderId, btnEl) {
+    const row = document.getElementById(`details-row-${orderId}`);
+    const content = document.getElementById(`details-content-${orderId}`);
+    const sub = row.querySelector(".details-sub");
+
+    const isOpen = row.style.display !== "none";
+
+
+    if (isOpen) {
+        row.style.display = "none";
+        if (btnEl) btnEl.textContent = "▾ Details";
+        return;
+    }
+
+
+    row.style.display = "";
+    if (btnEl) btnEl.textContent = "▴ Details";
+
+
+    if (detailsCache.has(orderId)) {
+        sub.textContent = "geladen";
+        renderDetailsTable(content, detailsCache.get(orderId));
+        return;
+    }
+
+
+    sub.textContent = "lade Items…";
+    content.innerHTML = `<div style="color:#7f8c8d; padding:10px 0;">Lade…</div>`;
+
+    try {
+        const res = await fetch(`${PURCHASEORDERITEMS_API}?purchase_order_id=${orderId}`, {
+            credentials: "same-origin"
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const items = await res.json();
+        detailsCache.set(orderId, items);
+
+        sub.textContent = items.length ? `${items.length} Position(en)` : "keine Positionen";
+        renderDetailsTable(content, items);
+
+    } catch (e) {
+       sub.textContent = "Fehler";
+        content.innerHTML = `
+        <div style="color:#c0392b; padding:10px 0;">
+            Konnte Items nicht laden: ${escapeHtml(e.message)}
+        </div>
+       `;
+    }
+}
+
+    function renderDetailsTable(container, items) {
+        if (!items || items.length === 0) {
+            container.innerHTML = `
+        <div style="padding:10px 0; color:#7f8c8d;">
+            Keine Positionen vorhanden.
+        </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="table-wrap" style="overflow-x:auto;">
+        <table class="details-items-table">
+            <thead>
+            <tr>
+             <th>ID</th>
+                <th>Produkt</th>
+                <th>Lieferant</th>
+                <th>Menge</th>
+                <th>Erhalten</th>
+                <th>Offen</th>
+            </tr>
+            </thead>
+            <tbody>
+                ${items.map(i => {
+                    const qty = Number(i.quantity ?? 0);
+                    const rec = Number(i.received_quantity ?? 0);
+                    const open = Math.max(0, qty - rec);
+
+                    return `
+                     <tr>
+                        <td><strong>#${escapeHtml(i.id)}</strong></td>
+                        <td>${escapeHtml(i.product_name)}</td>
+                        <td>${escapeHtml(i.supplier_name)}</td>
+                        <td style="text-align:right;"><strong>${escapeHtml(qty)}</strong></td>
+                        <td style="text-align:right;">${escapeHtml(rec)}</td>
+                        <td style="text-align:right;">${escapeHtml(open)}</td>
+                    </tr>
+                    `;
+                }).join("")}
+            </tbody>
+        </table>
+    </div>
+  `;
+}
 
 </script>
 {% endblock %}
