@@ -6,9 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from productmanager.models import Product
 from productmanager.serializers import ProductSerializer
-
-from suppliermanager.models import Supplier
-from categorymanager.models import Category #Kategorie für Dropdown im Fe
+from categorymanager.models import Category
 
 
 @api_view(["GET", "POST"])
@@ -31,7 +29,6 @@ def show_all_products(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([IsAuthenticated])
 def show_product_details(request, id):
     product = get_object_or_404(Product, pk=id)
 
@@ -58,16 +55,6 @@ def product_list_ui(request):
     else:
         products = Product.objects.all()
 
-
-
-
     categories = Category.objects.all().order_by("name")
 
-
-    return render(
-        request,
-        "productmanager/productmanager.html",
-        {
-            "products": products,
-            "categories": categories,
-        })
+    return render(request,"productmanager/productmanager.html",{"products": products,"categories": categories,})

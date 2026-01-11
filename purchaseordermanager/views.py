@@ -36,14 +36,34 @@ def purchaseorder_detail(request, id):
         return Response(PurchaseOrderSerializer(order).data)
 
     if request.method == "PUT":
+        if request.data.get("status") == "delivered":
+            return Response(
+                {"error": "Status 'delivered' kann nur über Wareneingang gesetzt werden."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if order.status in ["delivered", "canceled"]:
+            return Response(
+                {"error": "Abgeschlossene Bestellungen können nicht mehr geändert werden."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = PurchaseOrderSerializer(order, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    order.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+
+    if order.status == "delivered":
+        return Response(
+            {"error": "Gelieferte Bestellungen können nicht storniert werden."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    order.status = "canceled"
+    order.save()
+    return Response(PurchaseOrderSerializer(order).data, status=status.HTTP_200_OK)
 
 
 @ensure_csrf_cookie
@@ -162,4 +182,19 @@ def purchaseorder_receive_api(request, id):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def purchaseorder_cancel_api(request, id):
+    order = get_object_or_404(PurchaseOrder, id=id)
+
+    if order.status == "delivered":
+        return Response(
+            {"error": "Gelieferte Bestellungen können nicht storniert werden."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    order.status = "canceled"
+    order.save()
+
+    return Response(PurchaseOrderSerializer(order).data, status=status.HTTP_200_OK)
 

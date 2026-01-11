@@ -157,6 +157,10 @@
     .action-out { color: #6c757d; }
     .action-out:hover { color: var(--danger-red); }
 
+    /* NEU: Style für Löschen Button */
+    .action-delete { color: var(--danger-red); font-weight: 700; }
+    .action-delete:hover { background-color: #ffebeb; border-radius: 4px; }
+
     /* --- MODALS --- */
     .modal {
         display: none;
@@ -299,13 +303,27 @@
                                 <td><span style="color: #999;">{{ stock.threshold }}</span></td>
 
                                 <td style="text-align: right;">
-                                    <button class="btn-action action-move" onclick="openTransferModal('{{ stock.id }}', '{{ stock.product.name|escapejs }}', {{ stock.quantity }})">
-                                        <i class="bi bi-arrow-left-right"></i> Umlagern
-                                    </button>
-                                    <button class="btn-action action-out" onclick="openBookOutModal('{{ stock.id }}', '{{ stock.product.name|escapejs }}', {{ stock.quantity }})">
-                                        <i class="bi bi-box-arrow-right"></i> Ausbuchen
-                                    </button>
-                                </td>
+    {% if stock.quantity == 0 %}
+        {# WENN LEER: #}
+        {% if request.user.is_superuser %}
+            {# Admin sieht Löschen-Button #}
+            <button class="btn-action action-delete" onclick="deleteStock('{{ stock.id }}', '{{ stock.product.name|escapejs }}')">
+                <i class="bi bi-trash"></i> Löschen
+            </button>
+        {% else %}
+            {# Mitarbeiter sieht NICHTS (leere Zelle) #}
+            &nbsp;
+        {% endif %}
+    {% else %}
+        {# WENN NICHT LEER: Zeige normale Aktionen (Umlagern / Ausbuchen) #}
+        <button class="btn-action action-move" onclick="openTransferModal('{{ stock.id }}', '{{ stock.product.name|escapejs }}', {{ stock.quantity }})">
+            <i class="bi bi-arrow-left-right"></i> Umlagern
+        </button>
+        <button class="btn-action action-out" onclick="openBookOutModal('{{ stock.id }}', '{{ stock.product.name|escapejs }}', {{ stock.quantity }})">
+            <i class="bi bi-box-arrow-right"></i> Ausbuchen
+        </button>
+    {% endif %}
+</td>
                             </tr>
                             {% empty %}
                             <tr>
@@ -331,9 +349,16 @@
             {% csrf_token %}
             <input type="hidden" name="action" value="initialize">
             <div class="form-group">
-                <label class="form-label">Produkt ID / SKU</label>
-                <input type="text" name="product_id" class="form-control" required>
-            </div>
+    <label class="form-label">Produkt wählen</label>
+    <select name="product_id" class="form-select" required>
+        <option value="" selected disabled>Bitte Produkt auswählen...</option>
+        {% for p in products %}
+            <option value="{{ p.id }}">
+                {{ p.name }} {% if p.sku %}(SKU: {{ p.sku }}){% endif %}
+            </option>
+        {% endfor %}
+    </select>
+</div>
             <div class="form-group">
                 <label class="form-label">Lagerort</label>
                 <select name="location_id" class="form-select" required>
@@ -348,7 +373,7 @@
                     <input type="number" name="quantity" class="form-control" value="0" min="0" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Warn-Limit</label>
+                    <label class="form-label">Meldebestand</label>
                     <input type="number" name="threshold" class="form-control" value="10" min="0" required>
                 </div>
             </div>
@@ -429,7 +454,7 @@
                     note: noteField ? noteField.value : ""
                 };
 
-                // WICHTIG: Hier ist die korrigierte URL!
+                // Hier reicht POST (Standard)
                 await apiCall('/stockmovement/api/', body);
             });
         }
@@ -448,7 +473,7 @@
                     note: document.getElementById('bookOutNotes').value
                 };
 
-                // WICHTIG: Hier ist die korrigierte URL!
+                // Hier reicht POST (Standard)
                 await apiCall('/stockmovement/api/', body);
             });
         }
@@ -500,8 +525,20 @@
         openModal('bookOutModal');
     }
 
+    // LÖSCHEN FUNKTION
+    async function deleteStock(stockId, productName) {
+        if (!confirm(`Möchten Sie die Position "${productName}" wirklich endgültig aus der Datenbank löschen?`)) {
+            return;
+        }
+
+        // WICHTIG: Hier rufen wir apiCall mit 'DELETE' auf
+        // Da DELETE meist keinen Body braucht, senden wir ein leeres Objekt {}
+        await apiCall(`/stockmanager/api/delete/${stockId}/`, {}, 'DELETE');
+    }
+
     // FILTER & SORTIERUNG
     function populateFilters() {
+        // ... (Dieser Teil bleibt gleich wie in deinem Code) ...
         const rows = document.querySelectorAll('.stock-row');
         if (rows.length === 0) return;
 
@@ -525,6 +562,7 @@
     }
 
     window.filterTable = function() {
+        // ... (bleibt gleich) ...
         const selProduct = document.getElementById("filterProduct").value;
         const selLocation = document.getElementById("filterLocation").value;
         const selStatus = document.getElementById("filterStatus").value;
@@ -544,6 +582,7 @@
     }
 
     window.sortTable = function(n) {
+        // ... (bleibt gleich) ...
         const table = document.getElementById("stockTable");
         if (!table) return;
         let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
@@ -585,22 +624,40 @@
         return v ? v[2] : null;
     }
 
-    async function apiCall(url, data) {
+    // UPDATE: Neuer Parameter "method" mit Standardwert 'POST'
+    async function apiCall(url, data, method = 'POST') {
         const csrftoken = getCookie('csrftoken');
+
+        // Konfiguration für fetch
+        let config = {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            }
+        };
+
+        // Bei DELETE oder GET schicken wir normalerweise keinen Body mit (oder Django mag es manchmal nicht)
+        // Wenn Daten da sind und Methode nicht GET/HEAD ist, Body anhängen
+        if (method !== 'GET' && method !== 'HEAD') {
+            config.body = JSON.stringify(data);
+        }
+
         try {
-            let res = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify(data)
-            });
+            let res = await fetch(url, config);
 
             if(res.ok) {
+                // Erfolg: Seite neu laden
                 window.location.reload();
             } else {
-                let err = await res.json();
+                // Fehler auslesen
+                let err = {};
+                try {
+                     err = await res.json();
+                } catch(parseErr) {
+                    // Falls Server kein JSON zurückgibt (z.B. 500 HTML Seite)
+                    err = { error: res.statusText };
+                }
                 alert('Fehler: ' + (err.error || JSON.stringify(err)));
             }
         } catch(e) {

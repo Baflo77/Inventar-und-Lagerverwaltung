@@ -30,4 +30,7 @@ urlpatterns = [
 
     # 3. API für Umlagern
     path('api/<int:stock_id>/transfer/', views.transfer_stock_api, name='api_transfer_stock'),
+
+    # 4. API für Löschen
+    path('api/delete/<int:stock_id>/', views.delete_stock_api, name='delete_stock_api'),
 ]

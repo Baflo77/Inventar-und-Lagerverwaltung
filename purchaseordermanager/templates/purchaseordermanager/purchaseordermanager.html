@@ -4,7 +4,30 @@
 
 {% block content %}
 <style>
-    /* Lokale Styles für diese Seite */
+    .icon-btn{
+        width: 56px;
+        height: 42px;
+        border-radius: 10px;
+        font-size: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid transparent;
+        cursor: pointer;
+        background: #fff;
+        margin-right: 10px;
+    }
+
+    .icon-btn-edit{
+        border-color: #1e88e5;
+        color: #1e88e5;
+    }
+
+    .icon-btn-delete{
+        border-color: #e53935;
+        color: #e53935;
+    }
+
     :root {
         /* Falls Variablen in base.html fehlen, hier Fallback-Werte */
         --bg-main: #ebedef;
@@ -322,8 +345,15 @@
                                 📥 Eingang
                             </button>
 
-                            <button type="button">✏️</button>
-                            <button type="button" class="danger">🗑</button>
+                            <button type="button" class="icon-btn icon-btn-edit" onclick="openEditModal({{ order.id }}, '{{ order.status }}')"
+                                    title="Bearbeiten">
+                                ✏️
+                            </button>
+
+                            <button type="button" class="icon-btn icon-btn-delete" onclick="cancelOrder({{ order.id }})"
+                                    title="Stornieren">
+                                🗑
+                            </button>
                         </td>
 
                     </tr>
@@ -357,17 +387,25 @@
                     <option value="">Lade Produkte...</option>
                 </select>
 
-                <label for="supplierSelect">2. Welcher Lieferant?</label>
+                <label for="quantityInput">2. Bestellmenge</label>
+                <input id="quantityInput" type="number" min="1" value="1" disabled
+                    style="width:100%; padding:10px; border:1px solid #dfe6e9; border-radius:6px; font-size:0.95rem;" />
+
+                <div id="minQtyHint" style="margin-top:6px; font-size:0.85rem; color:#7f8c8d; display:none;"></div>
+
+
+                <label for="supplierSelect">3. Welcher Lieferant?</label>
                 <select id="supplierSelect" disabled>
-                    <option value="">Bitte zuerst Produkt wählen...</option>
+                    <option value="">Bitte zuerst Produkt & Menge auswählen...</option>
                 </select>
 
-                <label for="statusSelect">3. Status</label>
+                <div id="supplierDetails" style="margin-top:8px; font-size:0.9rem; color:#34495e; display:none;">
+                </div>
+
+                <label for="statusSelect">4. Status</label>
                 <select id="statusSelect">
-                    <option value="OPEN" selected>Offen (Entwurf)</option>
-                    <option value="ORDERED">Bestellt</option>
-                    <option value="DELIVERED">Geliefert</option>
-                    <option value="CANCELED">Storniert</option>
+                    <option value="ordered" selected>Bestellt</option>
+                    <option value="open" selected>Offen </option>
                 </select>
 
                 <div id="createMsg" class="modal-msg"></div>
@@ -377,6 +415,33 @@
                     <button class="btn-primary" id="createOrderBtn" type="button">Bestellung anlegen</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="editModalBackdrop">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+            <div class="modal-header">
+                <h3 id="editModalTitle" class="modal-title">Bestellung bearbeiten</h3>
+                <button class="modal-close" id="closeEditModalBtn" type="button" aria-label="Schließen">✕</button>
+            </div>
+
+        <div class="modal-body">
+            <div style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
+                PurchaseOrder: <strong id="editOrderIdLabel"></strong>
+            </div>
+
+            <label for="editStatusSelect">Status ändern</label>
+            <select id="editStatusSelect">
+                <option value="canceled">Stornieren</option>
+                <option value="delivered">Als geliefert markieren (über Wareneingang)</option>
+            </select>
+
+            <div id="editMsg" class="modal-msg"></div>
+
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancelEditBtn" type="button">Abbrechen</button>
+                <button class="btn-primary" id="saveEditBtn" type="button">Speichern</button>
+             </div>
         </div>
     </div>
 </div>
@@ -412,6 +477,8 @@
     const createBtn = document.getElementById("createOrderBtn");
 
     const productSelect = document.getElementById("productSelect");
+    const quantityInput = document.getElementById("quantityInput");
+    const minQtyHint = document.getElementById("minQtyHint");
     const supplierSelect = document.getElementById("supplierSelect");
     const statusSelect = document.getElementById("statusSelect");
     const msgBox = document.getElementById("createMsg");
@@ -479,45 +546,138 @@
         }
     }
 
-    async function loadSuppliers(prodId) {
+    async function updateMinQtyHint(prodId) {
+
+        minQtyHint.style.display = "none";
+        minQtyHint.textContent = "";
+        quantityInput.min = "1";
+
+        if (!prodId) return;
+
+        try {
+            const res = await fetch(`${PS_BY_PRODUCT_API}${prodId}`);
+            if (!res.ok) throw new Error("API Fehler");
+            const all = await res.json();
+
+            const mins = (all || [])
+                .map(x => parseInt(x.min_order_quantity, 10))
+                .filter(v => Number.isInteger(v) && v > 0);
+
+            if (!mins.length) {
+                minQtyHint.style.display = "block";
+                minQtyHint.textContent = "Keine Mindestbestellmenge gepflegt (je Lieferant).";
+                quantityInput.min = "1";
+                return;
+            }
+
+            const minNeeded = Math.min(...mins);
+
+
+            quantityInput.min = String(minNeeded);
+            if (parseInt(quantityInput.value || "0", 10) < minNeeded) {
+                quantityInput.value = String(minNeeded);
+            }
+
+            minQtyHint.style.display = "block";
+            minQtyHint.textContent = `Kleinste Mindestbestellmenge für dieses Produkt: ${minNeeded}`;
+          } catch (e) {
+
+            minQtyHint.style.display = "block";
+            minQtyHint.textContent = "Hinweis zur Mindestbestellmenge konnte nicht geladen werden.";
+            quantityInput.min = "1";
+          }
+        }
+
+    async function loadSuppliers(prodId, qty) {
         supplierSelect.innerHTML = '<option value="">Lade Lieferanten...</option>';
         supplierSelect.disabled = true;
+        setMsg("");
 
         if(!prodId) {
             supplierSelect.innerHTML = '<option value="">Bitte zuerst Produkt wählen...</option>';
             return;
         }
+        const q = parseInt(qty, 10);
+        if (!Number.isInteger(q) || q <= 0) {
+            supplierSelect.innerHTML = '<option value="">Bitte Menge > 0 eingeben...</option>';
+            return;
+        }
 
         try {
-            const res = await fetch(PS_BY_PRODUCT_API + prodId);
+            const res = await fetch(`${PS_BY_PRODUCT_API}${prodId}&quantity=${q}`);
+            if (!res.ok) throw new Error("API Fehler");
             const data = await res.json();
+            data.sort((a, b) => {
+                const pa = (a.purchase_price === null || a.purchase_price === "" || a.purchase_price === undefined) ? Number.POSITIVE_INFINITY : parseFloat(a.purchase_price);
+                const pb = (b.purchase_price === null || b.purchase_price === "" || b.purchase_price === undefined) ? Number.POSITIVE_INFINITY : parseFloat(b.purchase_price);
+                return pa - pb;
+            });
 
-            // data ist Array von { id, product, supplier, supplier_name, ... }
             if (!data || data.length === 0) {
-                supplierSelect.innerHTML = '<option value="">Kein Lieferant für dieses Produkt</option>';
+                const res2 = await fetch(`${PS_BY_PRODUCT_API}${prodId}`);
+                const all = await res2.json().catch(() => []);
+
+                const mins = (all || [])
+                    .map(x => parseInt(x.min_order_quantity, 10))
+                    .filter(v => Number.isInteger(v) && v > 0);
+
+                const minNeeded = mins.length ? Math.min(...mins) : null;
+
+                supplierSelect.innerHTML = '<option value="">Kein Lieferant erfüllt die Mindestmenge</option>';
+
+                if (minNeeded !== null) {
+                    setMsg(`Kein Lieferant passt für Menge ${q}. Kleinste Mindestmenge ist ${minNeeded}.`, "error");
+                } else {
+                    setMsg(`Kein Lieferant passt für Menge ${q}.`, "error");
+                }
                 return;
             }
 
             supplierSelect.disabled = false;
             supplierSelect.innerHTML = '<option value="">-- Lieferant wählen --</option>';
 
-            // Einfache Dubletten-Prüfung falls nötig, hier nehmen wir an API liefert sauber
             data.forEach(item => {
                 const opt = document.createElement("option");
-                opt.value = item.supplier; // Wir brauchen die Supplier ID für die Order
-                opt.textContent = item.supplier_name || ("Lieferant #" + item.supplier);
+                opt.value = item.supplier;
+
+                const supplierName = item.supplier_name || ("Lieferant #" + item.supplier);
+
+                const priceTxt = (item.purchase_price !== null && item.purchase_price !== undefined && item.purchase_price !== "")
+                    ? ` · Preis: ${item.purchase_price} €`
+                    : "";
+                const ltTxt = (item.delivery_time_days !== null && item.delivery_time_days !== undefined)
+                    ? ` · LT: ${item.delivery_time_days} Tage`
+                    : "";
+                const minTxt = (item.min_order_quantity !== null && item.min_order_quantity !== undefined)
+                    ? ` · Min: ${item.min_order_quantity}`
+                    : "";
+                opt.textContent = `${supplierName}${priceTxt}${ltTxt}${minTxt}`;
+                opt.dataset.price = item.purchase_price ?? "";
+                opt.dataset.lt = item.delivery_time_days ?? "";
+                opt.dataset.min = item.min_order_quantity ?? "";
+                opt.dataset.supplierName = supplierName;
                 supplierSelect.appendChild(opt);
             });
-
         } catch (e) {
             supplierSelect.innerHTML = '<option value="">Fehler</option>';
             setMsg("Konnte Lieferanten nicht laden.", "error");
         }
     }
 
+
     async function submitOrder() {
         const supplierId = supplierSelect.value;
         const statusVal = statusSelect.value;
+        const q = parseInt(quantityInput.value || "0", 10);
+
+        if (!productSelect.value) {
+            setMsg("Bitte wähle ein Produkt aus.", "error");
+            return;
+        }
+        if (!Number.isInteger(q) || q <= 0) {
+            setMsg("Bitte eine Bestellmenge größer 0 eingeben.", "error");
+            return;
+        }
 
         if (!supplierId) {
             setMsg("Bitte wähle einen Lieferanten aus.", "error");
@@ -553,8 +713,13 @@
     openBtn.onclick = () => {
         openModal();
         loadProducts();
-        supplierSelect.innerHTML = '<option value="">Zuerst Produkt wählen</option>';
+
+        supplierSelect.innerHTML = '<option value="">Zuerst Produkt & Menge auswählen</option>';
         supplierSelect.disabled = true;
+
+        quantityInput.value = "1";
+        quantityInput.disabled = true;
+
     };
     closeBtn.onclick = closeModal;
     cancelBtn.onclick = closeModal;
@@ -562,11 +727,159 @@
         if(e.target === backdrop) closeModal();
     };
 
-    productSelect.onchange = () => {
-        loadSuppliers(productSelect.value);
+    productSelect.onchange = async () => {
+        const prodId = productSelect.value;
+
+        supplierSelect.innerHTML = '<option value="">Bitte Menge eingeben...</option>';
+        supplierSelect.disabled = true;
+        setMsg("");
+
+        quantityInput.disabled = !prodId;
+
+        if (!prodId) {
+            quantityInput.value = "1";
+            quantityInput.min = "1";
+            quantityInput.disabled = true;
+            minQtyHint.style.display = "none";
+            minQtyHint.textContent = "";
+            return;
+        }
+
+
+        await updateMinQtyHint(prodId);
+
+
+        loadSuppliers(prodId, quantityInput.value);
     };
 
+
     createBtn.onclick = submitOrder;
+
+    const supplierDetails = document.getElementById("supplierDetails");
+
+    supplierSelect.onchange = () => {
+        const opt = supplierSelect.options[supplierSelect.selectedIndex];
+        if (!opt || !opt.value) {
+            supplierDetails.style.display = "none";
+            supplierDetails.textContent = "";
+            return;
+        }
+
+        const name = opt.dataset.supplierName || opt.textContent;
+        const price = opt.dataset.price;
+        const lt = opt.dataset.lt;
+        const min = opt.dataset.min;
+
+        const parts = [];
+        if (price) parts.push(`Preis: ${price} €`);
+        if (lt) parts.push(`Lieferzeit: ${lt} Tage`);
+        if (min) parts.push(`Mindestmenge: ${min}`);
+
+        supplierDetails.style.display = "block";
+        supplierDetails.innerHTML = `<strong>${name}</strong><br>${parts.join(" · ")}`;
+    };
+
+    const EDIT_API_BASE = "/purchaseorders/api/"; // nutzt dein purchaseorder_detail: /api/<id>/
+    const editBackdrop = document.getElementById("editModalBackdrop");
+    const closeEditBtn = document.getElementById("closeEditModalBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const saveEditBtn = document.getElementById("saveEditBtn");
+    const editStatusSelect = document.getElementById("editStatusSelect");
+    const editOrderIdLabel = document.getElementById("editOrderIdLabel");
+    const editMsg = document.getElementById("editMsg");
+
+    let currentEditOrderId = null;
+
+    function setEditMsg(text, type="") {
+        editMsg.textContent = text || "";
+        editMsg.style.display = text ? "block" : "none";
+        if(type === "error") {
+            editMsg.style.background = "#fee";
+            editMsg.style.color = "#c0392b";
+            editMsg.style.border = "1px solid #fab";
+        } else if (type === "success") {
+            editMsg.style.background = "#eafaf1";
+            editMsg.style.color = "#27ae60";
+            editMsg.style.border = "1px solid #abebc6";
+        } else {
+            editMsg.style.background = "#f1f1f1";
+            editMsg.style.color = "#333";
+            editMsg.style.border = "none";
+        }
+    }
+
+    function openEditModal(orderId, currentStatus) {
+        currentEditOrderId = orderId;
+        editOrderIdLabel.textContent = "#" + orderId;
+        setEditMsg("");
+
+
+        if (currentStatus === "delivered" || currentStatus === "canceled") {
+            setEditMsg("Diese Bestellung ist bereits abgeschlossen und kann nicht mehr geändert werden.", "error");
+            saveEditBtn.disabled = true;
+        } else {
+            saveEditBtn.disabled = false;
+        }
+
+        editBackdrop.style.display = "flex";
+        setTimeout(() => editBackdrop.classList.add("show"), 10);
+        }
+
+    function closeEditModal() {
+        editBackdrop.classList.remove("show");
+        setTimeout(() => editBackdrop.style.display = "none", 200);
+        setEditMsg("");
+        currentEditOrderId = null;
+    }
+
+    closeEditBtn.onclick = closeEditModal;
+    cancelEditBtn.onclick = closeEditModal;
+    editBackdrop.onclick = (e) => { if (e.target === editBackdrop) closeEditModal(); };
+
+    saveEditBtn.onclick = async () => {
+        if (!currentEditOrderId) return;
+
+        const newStatus = editStatusSelect.value;
+
+        if (newStatus === "delivered") {
+            window.location.href = `/purchaseorders/${currentEditOrderId}/receive/`;
+            return;
+        }
+
+        await updateOrderStatus(currentEditOrderId, "canceled");
+    };
+
+    async function updateOrderStatus(orderId, status) {
+        const csrftoken = getCookie('csrftoken');
+        try {
+            const res = await fetch(`${EDIT_API_BASE}${orderId}/`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken
+            },
+            credentials: "same-origin",
+            body: JSON.stringify({ status })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            setEditMsg("Fehler: " + JSON.stringify(data), "error");
+            return;
+        }
+
+        setEditMsg("Status aktualisiert. Lade neu...", "success");
+        setTimeout(() => location.reload(), 400);
+       }catch (e) {
+        setEditMsg("Verbindungsfehler.", "error");
+        }
+    }
+
+
+    async function cancelOrder(orderId) {
+        if (!confirm("Bestellung wirklich stornieren?")) return;
+        await updateOrderStatus(orderId, "canceled");
+    }
 
 </script>
 {% endblock %}
