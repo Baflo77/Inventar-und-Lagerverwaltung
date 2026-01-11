@@ -22,7 +22,7 @@ def stock_manager_view(request):
             # 1. Validierung
             if not product_id or not location_id:
                 messages.error(request, "Bitte Produkt und Lagerort auswählen.")
-                return redirect('stock_manager')  # <-- Stelle sicher, dass der URL-Name in urls.py stimmt!
+                return redirect('stock_manager')
 
             # 2. Prüfen, ob Bestand schon existiert
             if Stock.objects.filter(product_id=product_id, location_id=location_id).exists():
