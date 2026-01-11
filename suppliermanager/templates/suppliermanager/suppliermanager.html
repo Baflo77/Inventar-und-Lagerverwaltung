@@ -4,8 +4,6 @@
 
 {% block extra_css %}
 <style>
-    /* Lokale Variablen für die Lieferanten-Seite */
-
     :root {
         --supp-bg-main: #ebedef;
         --supp-card-bg: #ffffff;
@@ -15,7 +13,6 @@
         --supp-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
-    /* Container Anpassung */
     .suppliers-container {
         max-width: 1300px;
         margin: 40px auto;
@@ -66,7 +63,6 @@
         border: 1px solid #e6e6e6;
     }
 
-    /* Tabelle */
     .custom-table { width: 100%; border-collapse: collapse; min-width: 1100px; }
     .custom-table th {
         background: #f8f9fa;
@@ -84,7 +80,6 @@
         vertical-align: top;
     }
 
-    /* Actions */
     .actions button {
         margin-right: 10px;
         border: none;
@@ -98,11 +93,9 @@
     .actions button:hover { text-decoration: underline; }
     .actions button.danger { color: var(--supp-danger-color); }
 
-    /* Empty State */
     .empty-state { text-align: center; padding: 50px; color: #bdc3c7; }
     .empty-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
 
-    /* Modal Styling */
     .modal-backdrop {
         position: fixed; inset: 0;
         background: rgba(0,0,0,0.5);
@@ -141,7 +134,7 @@
     }
 
     .form-group { display: flex; flex-direction: column; gap: 6px; }
-    
+
     .form-group label {
         font-size: 0.75rem; font-weight: 700; color: #7f8c8d; text-transform: uppercase;
     }
@@ -154,7 +147,6 @@
         padding: 16px 20px; border-top: 1px solid #eee; background: #fcfcfc;
     }
 
-    /* Modal Buttons */
     .btn-modal { border: none; border-radius: 6px; padding: 10px 16px; cursor: pointer; font-weight: 600; }
     .btn-primary-modal { background: var(--supp-accent-color); color: white; }
     .btn-secondary-modal { background: #e0e0e0; color: #2f3640; }
@@ -164,7 +156,6 @@
         .modal-body { grid-template-columns: 1fr; }
     }
 
-    /* Toast */
     .toast-msg {
         position: fixed; bottom: 20px; right: 20px;
         padding: 15px 20px; border-radius: 8px; background: #ffffff;
@@ -230,7 +221,7 @@
                             '{{ supplier.house_number }}'
                         )"><i class="bi bi-pencil"></i> Bearbeiten</button>
 
-                        <button class="danger" onclick="openDelete('{{ supplier.id }}', '{{ supplier.name|escapejs }}')">
+                        <button class="danger" onclick="confirmDelete('{{ supplier.id }}', '{{ supplier.name|escapejs }}')">
                             <i class="bi bi-trash"></i> Löschen
                         </button>
                     </td>
@@ -310,8 +301,6 @@
 
 {% block extra_js %}
 <script>
-    // --- API Configuration ---
-    // Relativ zur UI-Route /suppliers/
     const API_LIST = "api/";
     const API_DETAIL = (id) => `api/${id}/`;
 
@@ -320,7 +309,6 @@
     const modalActions = document.getElementById("modalActions");
     const toast = document.getElementById("toast");
 
-    // Form Fields Mapping
     const f = {
         id: null,
         name: document.getElementById("s_name"),
@@ -333,7 +321,6 @@
         house_number: document.getElementById("s_house"),
     };
 
-    // --- CSRF + Fetch Wrapper ---
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -370,7 +357,6 @@
         return { res, data };
     }
 
-    // --- UI helpers ---
     function showToast(msg, isError = false) {
         toast.style.display = "block";
         toast.textContent = msg;
@@ -392,7 +378,6 @@
         return parts.join(" | ");
     }
 
-    // --- Modal Logic ---
     function openModal() { backdrop.style.display = "flex"; }
 
     function closeModal() {
@@ -434,16 +419,6 @@
         openModal();
     }
 
-    function openDelete(id, name) {
-        modalTitle.textContent = "Lieferant löschen";
-        modalActions.innerHTML = `
-            <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
-            <button class="btn-modal btn-danger-modal" onclick="deleteSupplier('${id}', '${name}')">Löschen</button>
-        `;
-        openModal();
-    }
-
-    // --- Payload Builder ---
     function buildPayload() {
         const payload = {
             name: f.name.value.trim(),
@@ -465,7 +440,6 @@
         return { payload };
     }
 
-    // --- API Calls ---
     async function createSupplier() {
         const { payload, error } = buildPayload();
         if (error) { showToast(error, true); return; }
@@ -500,10 +474,16 @@
         }
     }
 
+    function confirmDelete(id, name) {
+        const ok = confirm(`Lieferant "${name}" wirklich löschen?`);
+        if (!ok) return;
+        deleteSupplier(id, name);
+    }
+
     async function deleteSupplier(id, name) {
         const { res, data } = await apiFetch(API_DETAIL(id), { method: "DELETE" });
 
-        if (res.ok) {
+        if (res.ok || res.status === 204) {
             showToast(`Lieferant "${name}" gelöscht.`);
             location.reload();
         } else {
@@ -511,7 +491,6 @@
         }
     }
 
-    // Sanity Check
     (function csrfSanityCheck() {
         if (!document.cookie.includes("csrftoken=")) {
             console.warn("Kein csrftoken Cookie gefunden.");

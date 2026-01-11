@@ -6,9 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from productmanager.models import Product
 from productmanager.serializers import ProductSerializer
-
-from suppliermanager.models import Supplier
-from categorymanager.models import Category #Kategorie für Dropdown im Fe
+from categorymanager.models import Category
 
 
 @api_view(["GET", "POST"])
@@ -58,16 +56,6 @@ def product_list_ui(request):
     else:
         products = Product.objects.all()
 
-
-
-
     categories = Category.objects.all().order_by("name")
 
-
-    return render(
-        request,
-        "productmanager/productmanager.html",
-        {
-            "products": products,
-            "categories": categories,
-        })
+    return render(request,"productmanager/productmanager.html",{"products": products,"categories": categories,})

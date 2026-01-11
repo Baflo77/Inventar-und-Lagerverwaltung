@@ -16,7 +16,6 @@ def show_all_categories(request):
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
 
-    # POST
     serializer = CategorySerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
@@ -37,7 +36,6 @@ def show_category_details(request, id):
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # PUT
     serializer = CategorySerializer(instance=category, data=request.data)
     if serializer.is_valid():
         serializer.save()
