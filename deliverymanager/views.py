@@ -11,9 +11,7 @@ from .models import Delivery
 from .serializers import DeliverySerializer
 
 
-# -----------------------
 # API (JSON)
-# -----------------------
 @api_view(["GET", "POST"])
 @permission_classes([AllowAny])
 def show_deliveries(request):
@@ -50,34 +48,27 @@ def show_delivery_details(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# -----------------------
 # HTML PAGE (Create + List + Items in ONE page)
-# -----------------------
 def deliveries_page(request):
-    # CREATE (via the form inside deliveries.html)
     if request.method == "POST":
         order_id = request.POST.get("order")
         delivery_date = request.POST.get("delivery_date")
 
-        # ✅ Neuer 3-stufiger Status (open/shipped/delivered)
         status_value = (request.POST.get("status") or Delivery.STATUS_OPEN).strip().lower()
         allowed = {Delivery.STATUS_OPEN, Delivery.STATUS_SHIPPED, Delivery.STATUS_DELIVERED}
         if status_value not in allowed:
             status_value = Delivery.STATUS_OPEN
 
-        # Create Delivery
         delivery = Delivery.objects.create(
             order_id=order_id,
             delivery_date=delivery_date,
             status=status_value,
         )
 
-        # Create up to 3 DeliveryItems (ignore empty rows)
         for i in range(1, 4):
             desc = (request.POST.get(f"description_{i}") or "").strip()
             qty_raw = (request.POST.get(f"quantity_{i}") or "").strip()
 
-            # ✅ Wenn Beschreibung da ist, aber Menge leer -> default 1
             if not desc:
                 continue
 
@@ -97,7 +88,6 @@ def deliveries_page(request):
 
         return redirect("deliveries_page")
 
-    # READ (render list + items)
     deliveries = (
         Delivery.objects
         .select_related("order")
