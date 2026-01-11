@@ -11,7 +11,7 @@ class PurchaseOrder(models.Model):
     ]
 
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="open")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="ordered")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

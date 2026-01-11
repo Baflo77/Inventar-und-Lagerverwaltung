@@ -4,7 +4,30 @@
 
 {% block content %}
 <style>
-    /* Lokale Styles für diese Seite */
+    .icon-btn{
+        width: 56px;
+        height: 42px;
+        border-radius: 10px;
+        font-size: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid transparent;
+        cursor: pointer;
+        background: #fff;
+        margin-right: 10px;
+    }
+
+    .icon-btn-edit{
+        border-color: #1e88e5;
+        color: #1e88e5;
+    }
+
+    .icon-btn-delete{
+        border-color: #e53935;
+        color: #e53935;
+    }
+
     :root {
         /* Falls Variablen in base.html fehlen, hier Fallback-Werte */
         --bg-main: #ebedef;
@@ -322,8 +345,15 @@
                                 📥 Eingang
                             </button>
 
-                            <button type="button">✏️</button>
-                            <button type="button" class="danger">🗑</button>
+                            <button type="button" class="icon-btn icon-btn-edit" onclick="openEditModal({{ order.id }}, '{{ order.status }}')"
+                                    title="Bearbeiten">
+                                ✏️
+                            </button>
+
+                            <button type="button" class="icon-btn icon-btn-delete" onclick="cancelOrder({{ order.id }})"
+                                    title="Stornieren">
+                                🗑
+                            </button>
                         </td>
 
                     </tr>
@@ -374,10 +404,8 @@
 
                 <label for="statusSelect">4. Status</label>
                 <select id="statusSelect">
-                    <option value="open" selected>Offen (Entwurf)</option>
-                    <option value="ordered">Bestellt</option>
-                    <option value="delivered">Geliefert</option>
-                    <option value="canceled">Storniert</option>
+                    <option value="ordered" selected>Bestellt</option>
+                    <option value="open" selected>Offen </option>
                 </select>
 
                 <div id="createMsg" class="modal-msg"></div>
@@ -387,6 +415,33 @@
                     <button class="btn-primary" id="createOrderBtn" type="button">Bestellung anlegen</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="editModalBackdrop">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+            <div class="modal-header">
+                <h3 id="editModalTitle" class="modal-title">Bestellung bearbeiten</h3>
+                <button class="modal-close" id="closeEditModalBtn" type="button" aria-label="Schließen">✕</button>
+            </div>
+
+        <div class="modal-body">
+            <div style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
+                PurchaseOrder: <strong id="editOrderIdLabel"></strong>
+            </div>
+
+            <label for="editStatusSelect">Status ändern</label>
+            <select id="editStatusSelect">
+                <option value="canceled">Stornieren</option>
+                <option value="delivered">Als geliefert markieren (über Wareneingang)</option>
+            </select>
+
+            <div id="editMsg" class="modal-msg"></div>
+
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancelEditBtn" type="button">Abbrechen</button>
+                <button class="btn-primary" id="saveEditBtn" type="button">Speichern</button>
+             </div>
         </div>
     </div>
 </div>
@@ -723,6 +778,108 @@
         supplierDetails.style.display = "block";
         supplierDetails.innerHTML = `<strong>${name}</strong><br>${parts.join(" · ")}`;
     };
+
+    const EDIT_API_BASE = "/purchaseorders/api/"; // nutzt dein purchaseorder_detail: /api/<id>/
+    const editBackdrop = document.getElementById("editModalBackdrop");
+    const closeEditBtn = document.getElementById("closeEditModalBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const saveEditBtn = document.getElementById("saveEditBtn");
+    const editStatusSelect = document.getElementById("editStatusSelect");
+    const editOrderIdLabel = document.getElementById("editOrderIdLabel");
+    const editMsg = document.getElementById("editMsg");
+
+    let currentEditOrderId = null;
+
+    function setEditMsg(text, type="") {
+        editMsg.textContent = text || "";
+        editMsg.style.display = text ? "block" : "none";
+        if(type === "error") {
+            editMsg.style.background = "#fee";
+            editMsg.style.color = "#c0392b";
+            editMsg.style.border = "1px solid #fab";
+        } else if (type === "success") {
+            editMsg.style.background = "#eafaf1";
+            editMsg.style.color = "#27ae60";
+            editMsg.style.border = "1px solid #abebc6";
+        } else {
+            editMsg.style.background = "#f1f1f1";
+            editMsg.style.color = "#333";
+            editMsg.style.border = "none";
+        }
+    }
+
+    function openEditModal(orderId, currentStatus) {
+        currentEditOrderId = orderId;
+        editOrderIdLabel.textContent = "#" + orderId;
+        setEditMsg("");
+
+
+        if (currentStatus === "delivered" || currentStatus === "canceled") {
+            setEditMsg("Diese Bestellung ist bereits abgeschlossen und kann nicht mehr geändert werden.", "error");
+            saveEditBtn.disabled = true;
+        } else {
+            saveEditBtn.disabled = false;
+        }
+
+        editBackdrop.style.display = "flex";
+        setTimeout(() => editBackdrop.classList.add("show"), 10);
+        }
+
+    function closeEditModal() {
+        editBackdrop.classList.remove("show");
+        setTimeout(() => editBackdrop.style.display = "none", 200);
+        setEditMsg("");
+        currentEditOrderId = null;
+    }
+
+    closeEditBtn.onclick = closeEditModal;
+    cancelEditBtn.onclick = closeEditModal;
+    editBackdrop.onclick = (e) => { if (e.target === editBackdrop) closeEditModal(); };
+
+    saveEditBtn.onclick = async () => {
+        if (!currentEditOrderId) return;
+
+        const newStatus = editStatusSelect.value;
+
+        if (newStatus === "delivered") {
+            window.location.href = `/purchaseorders/${currentEditOrderId}/receive/`;
+            return;
+        }
+
+        await updateOrderStatus(currentEditOrderId, "canceled");
+    };
+
+    async function updateOrderStatus(orderId, status) {
+        const csrftoken = getCookie('csrftoken');
+        try {
+            const res = await fetch(`${EDIT_API_BASE}${orderId}/`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken
+            },
+            credentials: "same-origin",
+            body: JSON.stringify({ status })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            setEditMsg("Fehler: " + JSON.stringify(data), "error");
+            return;
+        }
+
+        setEditMsg("Status aktualisiert. Lade neu...", "success");
+        setTimeout(() => location.reload(), 400);
+       }catch (e) {
+        setEditMsg("Verbindungsfehler.", "error");
+        }
+    }
+
+
+    async function cancelOrder(orderId) {
+        if (!confirm("Bestellung wirklich stornieren?")) return;
+        await updateOrderStatus(orderId, "canceled");
+    }
 
 </script>
 {% endblock %}
