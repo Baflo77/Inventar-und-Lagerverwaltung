@@ -357,17 +357,25 @@
                     <option value="">Lade Produkte...</option>
                 </select>
 
-                <label for="supplierSelect">2. Welcher Lieferant?</label>
+                <label for="quantityInput">2. Bestellmenge</label>
+                <input id="quantityInput" type="number" min="1" value="1" disabled
+                    style="width:100%; padding:10px; border:1px solid #dfe6e9; border-radius:6px; font-size:0.95rem;" />
+
+
+                <label for="supplierSelect">3. Welcher Lieferant?</label>
                 <select id="supplierSelect" disabled>
-                    <option value="">Bitte zuerst Produkt wählen...</option>
+                    <option value="">Bitte zuerst Produkt & Menge auswählen...</option>
                 </select>
 
-                <label for="statusSelect">3. Status</label>
+                <div id="supplierDetails" style="margin-top:8px; font-size:0.9rem; color:#34495e; display:none;">
+                </div>
+
+                <label for="statusSelect">4. Status</label>
                 <select id="statusSelect">
-                    <option value="OPEN" selected>Offen (Entwurf)</option>
-                    <option value="ORDERED">Bestellt</option>
-                    <option value="DELIVERED">Geliefert</option>
-                    <option value="CANCELED">Storniert</option>
+                    <option value="open" selected>Offen (Entwurf)</option>
+                    <option value="ordered">Bestellt</option>
+                    <option value="delivered">Geliefert</option>
+                    <option value="canceled">Storniert</option>
                 </select>
 
                 <div id="createMsg" class="modal-msg"></div>
@@ -412,6 +420,7 @@
     const createBtn = document.getElementById("createOrderBtn");
 
     const productSelect = document.getElementById("productSelect");
+    const quantityInput = document.getElementById("quantityInput");
     const supplierSelect = document.getElementById("supplierSelect");
     const statusSelect = document.getElementById("statusSelect");
     const msgBox = document.getElementById("createMsg");
@@ -479,45 +488,96 @@
         }
     }
 
-    async function loadSuppliers(prodId) {
+    async function loadSuppliers(prodId, qty) {
         supplierSelect.innerHTML = '<option value="">Lade Lieferanten...</option>';
         supplierSelect.disabled = true;
+        setMsg("");
 
         if(!prodId) {
             supplierSelect.innerHTML = '<option value="">Bitte zuerst Produkt wählen...</option>';
             return;
         }
+        const q = parseInt(qty, 10);
+        if (!Number.isInteger(q) || q <= 0) {
+            supplierSelect.innerHTML = '<option value="">Bitte Menge > 0 eingeben...</option>';
+            return;
+        }
 
         try {
-            const res = await fetch(PS_BY_PRODUCT_API + prodId);
+            const res = await fetch(`${PS_BY_PRODUCT_API}${prodId}&quantity=${q}`);
+            if (!res.ok) throw new Error("API Fehler");
             const data = await res.json();
+            data.sort((a, b) => {
+                const pa = (a.purchase_price === null || a.purchase_price === "" || a.purchase_price === undefined) ? Number.POSITIVE_INFINITY : parseFloat(a.purchase_price);
+                const pb = (b.purchase_price === null || b.purchase_price === "" || b.purchase_price === undefined) ? Number.POSITIVE_INFINITY : parseFloat(b.purchase_price);
+                return pa - pb;
+            });
 
-            // data ist Array von { id, product, supplier, supplier_name, ... }
             if (!data || data.length === 0) {
-                supplierSelect.innerHTML = '<option value="">Kein Lieferant für dieses Produkt</option>';
+                const res2 = await fetch(`${PS_BY_PRODUCT_API}${prodId}`);
+                const all = await res2.json().catch(() => []);
+
+                const mins = (all || [])
+                    .map(x => parseInt(x.min_order_quantity, 10))
+                    .filter(v => Number.isInteger(v) && v > 0);
+
+                const minNeeded = mins.length ? Math.min(...mins) : null;
+
+                supplierSelect.innerHTML = '<option value="">Kein Lieferant erfüllt die Mindestmenge</option>';
+
+                if (minNeeded !== null) {
+                    setMsg(`Kein Lieferant passt für Menge ${q}. Kleinste Mindestmenge ist ${minNeeded}.`, "error");
+                } else {
+                    setMsg(`Kein Lieferant passt für Menge ${q}.`, "error");
+                }
                 return;
             }
 
             supplierSelect.disabled = false;
             supplierSelect.innerHTML = '<option value="">-- Lieferant wählen --</option>';
 
-            // Einfache Dubletten-Prüfung falls nötig, hier nehmen wir an API liefert sauber
             data.forEach(item => {
                 const opt = document.createElement("option");
-                opt.value = item.supplier; // Wir brauchen die Supplier ID für die Order
-                opt.textContent = item.supplier_name || ("Lieferant #" + item.supplier);
+                opt.value = item.supplier;
+
+                const supplierName = item.supplier_name || ("Lieferant #" + item.supplier);
+
+                const priceTxt = (item.purchase_price !== null && item.purchase_price !== undefined && item.purchase_price !== "")
+                    ? ` · Preis: ${item.purchase_price} €`
+                    : "";
+                const ltTxt = (item.delivery_time_days !== null && item.delivery_time_days !== undefined)
+                    ? ` · LT: ${item.delivery_time_days} Tage`
+                    : "";
+                const minTxt = (item.min_order_quantity !== null && item.min_order_quantity !== undefined)
+                    ? ` · Min: ${item.min_order_quantity}`
+                    : "";
+                opt.textContent = `${supplierName}${priceTxt}${ltTxt}${minTxt}`;
+                opt.dataset.price = item.purchase_price ?? "";
+                opt.dataset.lt = item.delivery_time_days ?? "";
+                opt.dataset.min = item.min_order_quantity ?? "";
+                opt.dataset.supplierName = supplierName;
                 supplierSelect.appendChild(opt);
             });
-
         } catch (e) {
             supplierSelect.innerHTML = '<option value="">Fehler</option>';
             setMsg("Konnte Lieferanten nicht laden.", "error");
         }
     }
 
+
     async function submitOrder() {
         const supplierId = supplierSelect.value;
         const statusVal = statusSelect.value;
+        const q = parseInt(quantityInput.value || "0", 10);
+
+        if (!productSelect.value) {
+            setMsg("Bitte wähle ein Produkt aus.", "error");
+            return;
+        }
+        if (!Number.isInteger(q) || q <= 0) {
+            setMsg("Bitte eine Bestellmenge größer 0 eingeben.", "error");
+            return;
+        }
 
         if (!supplierId) {
             setMsg("Bitte wähle einen Lieferanten aus.", "error");
@@ -553,8 +613,13 @@
     openBtn.onclick = () => {
         openModal();
         loadProducts();
-        supplierSelect.innerHTML = '<option value="">Zuerst Produkt wählen</option>';
+
+        supplierSelect.innerHTML = '<option value="">Zuerst Produkt & Menge auswählen</option>';
         supplierSelect.disabled = true;
+
+        quantityInput.value = "1";
+        quantityInput.disabled = true;
+
     };
     closeBtn.onclick = closeModal;
     cancelBtn.onclick = closeModal;
@@ -563,10 +628,52 @@
     };
 
     productSelect.onchange = () => {
-        loadSuppliers(productSelect.value);
+        const prodId = productSelect.value;
+
+        supplierSelect.innerHTML = '<option value="">Bitte Menge eingeben...</option>';
+        supplierSelect.disabled = true;
+        setMsg("");
+
+        quantityInput.disabled = !prodId;
+        if (!prodId) {
+            quantityInput.value = "1";
+            quantityInput.disabled = true;
+            return;
+        }
+        loadSuppliers(prodId, quantityInput.value);
+    };
+    quantityInput.oninput = () => {
+        const prodId = productSelect.value;
+        if (!prodId) return;
+        loadSuppliers(prodId, quantityInput.value);
     };
 
+
     createBtn.onclick = submitOrder;
+
+    const supplierDetails = document.getElementById("supplierDetails");
+
+    supplierSelect.onchange = () => {
+        const opt = supplierSelect.options[supplierSelect.selectedIndex];
+        if (!opt || !opt.value) {
+            supplierDetails.style.display = "none";
+            supplierDetails.textContent = "";
+            return;
+        }
+
+        const name = opt.dataset.supplierName || opt.textContent;
+        const price = opt.dataset.price;
+        const lt = opt.dataset.lt;
+        const min = opt.dataset.min;
+
+        const parts = [];
+        if (price) parts.push(`Preis: ${price} €`);
+        if (lt) parts.push(`Lieferzeit: ${lt} Tage`);
+        if (min) parts.push(`Mindestmenge: ${min}`);
+
+        supplierDetails.style.display = "block";
+        supplierDetails.innerHTML = `<strong>${name}</strong><br>${parts.join(" · ")}`;
+    };
 
 </script>
 {% endblock %}
