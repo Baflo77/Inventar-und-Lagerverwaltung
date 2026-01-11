@@ -4,8 +4,15 @@
 
 
 {% block extra_css %}
+<meta name="csrf-token" content="{{ csrf_token }}">
   <style>
 
+    .filter-wrap{
+      display:flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
     .cell-product{
       display: flex;
       flex-direction: column;
@@ -40,7 +47,7 @@
       border: 1px solid #dcdde1;
       border-radius: 8px;
       background: #fff;
-      min-width: 320px;
+      min-width: 260px;
       font-size: 0.95rem;
     }
 
@@ -77,7 +84,7 @@
     .header-title { font-size: 1.4rem; margin: 0; font-weight: 500; }
     .nav-home { text-decoration: none; color: white; font-size: 0.9rem; padding: 5px 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; }
 
-    .container { max-width: 1200px; margin: 2.5rem auto; padding: 0 20px; }
+    .container { margin: 2.5rem auto; padding: 0; max-width: none; }
     .page-title-section { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
     .page-title { font-size: 1.8rem; margin: 0; color: var(--header-bg); }
     .btn-add { background: var(--accent-color); color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-weight: 600; margin-top: 6px; }
@@ -178,6 +185,12 @@
     .badge-cheap { background: rgba(241, 196, 15, 0.18); color: #2c3e50; }
     .badge-fast { background: rgba(46, 204, 113, 0.15); color: #2c3e50; }
 
+    .ps-container{
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
   </style>
 {% endblock %}
 {% block content %}
@@ -185,37 +198,37 @@
 
 <body>
 
-<div class="container">
+  <div class="container">
+      <div class="ps-container">
 
-  <div id="toast" class="toast"></div>
+        <div id="toast" class="toast"></div>
 
   <div class="page-title-section">
-    <div class="title-block">
     <h2 class="page-title">ProductSupplier</h2>
-
-    <div class="filter-row">
-      <label for="productFilter" class="filter-label">Produkt filtern:</label>
-      <select id="productFilter" class="filter-select">
-        <option value="">Alle Produkte</option>
-        {% for p in products %}
-          <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
-        {% endfor %}
-      </select>
-    </div>
-  </div>
-
-    <div class="filter-row">
-      <label for="supplierFilter" class="filter-label">Lieferant filtern:</label>
-      <select id="supplierFilter" class="filter-select">
-        <option value="">Alle Lieferanten</option>
-        {% for s in suppliers %}
-          <option value="{{ s.id }}">{{ s.name }}</option>
-        {% endfor %}
-      </select>
+      <button class="btn-add" onclick="openCreate()">➕ Neue Zuordnung</button>
     </div>
 
-    <button class="btn-add" onclick="openCreate()">➕ Neue Zuordnung</button>
-  </div>
+    <div class="filter-wrap" style="margin-bottom: 16px;">
+      <div class="filter-row">
+        <label for="productFilter" class="filter-label">Produkt filtern:</label>
+        <select id="productFilter" class="filter-select">
+          <option value="">Alle Produkte</option>
+          {% for p in products %}
+            <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-row">
+        <label for="supplierFilter" class="filter-label">Lieferant filtern:</label>
+        <select id="supplierFilter" class="filter-select">
+          <option value="">Alle Lieferanten</option>
+          {% for s in suppliers %}
+            <option value="{{ s.id }}">{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
 
 
   <div class="data-card">
@@ -233,21 +246,24 @@
 
       <tbody>
       {% for link in links %}
-        <tr>
-          <tr data-product="{{ link.product_id }}" data-supplier="{{ link.supplier_id }}">
+        <tr data-product="{{ link.product_id }}" data-supplier="{{ link.supplier_id }}">
           <td class="cell-product" data-product="{{ link.product_id }}">
             <div class="product-name">
               <strong>{{ link.product }}</strong>
             </div>
             <div class="product-badges"></div>
           </td>
+
           <td class="text-muted">{{ link.supplier.name }}</td>
+
           <td class="cell-price" data-price="{{ link.purchase_price|default_if_none:'' }}">
             {{ link.purchase_price|default:"—" }}€
           </td>
+
           <td class="cell-days" data-days="{{ link.delivery_time_days|default_if_none:'' }}">
             {{ link.delivery_time_days|default:"—" }}
           </td>
+
           <td>{{ link.min_order_quantity|default:"—" }}</td>
 
           <td class="actions">
@@ -261,13 +277,13 @@
                       '{{ link.delivery_time_days|default_if_none:"" }}',
                       '{{ link.min_order_quantity|default_if_none:"" }}'
                     )">
-            ✏️
+              ✏️
             </button>
 
             <button class="icon-btn icon-btn-delete"
                     title="Löschen"
                     onclick="openDelete('{{ link.id }}')">
-            🗑
+              🗑
             </button>
           </td>
         </tr>
@@ -281,9 +297,10 @@
           </td>
         </tr>
       {% endfor %}
-      </tbody>
+    </tbody>
 
     </table>
+    </div>
   </div>
 </div>
 
@@ -465,7 +482,7 @@
     if (err) return showToast(err, true);
 
     const res = await fetch(API_DETAIL(id), {
-      method: "Patch", // Patch häufig besser, weil bei PUT meist alle Felder geändert werden müssen
+      method: "PATCH",
       credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",
@@ -593,33 +610,34 @@
   }
 })();
 
-  (function setupFilters(){
+ document.addEventListener("DOMContentLoaded", () => {
       const productFilter = document.getElementById("productFilter");
       const supplierFilter = document.getElementById("supplierFilter");
-      if(!productFilter || !supplierFilter) return;
+      if (!productFilter || !supplierFilter) return;
 
-  const rows = Array.from(document.querySelectorAll("tbody tr"))
-    .filter(tr => tr.dataset.product); // ignoriert empty-state
+      const rows = Array.from(document.querySelectorAll("tbody tr"))
+        .filter(tr => tr.dataset.product && tr.dataset.supplier); // nur echte Datenzeilen
 
-  function applyFilters() {
-    const selectedProduct = productFilter.value;   // "" = alle
-    const selectedSupplier = supplierFilter.value; // "" = alle
+      function applyFilters() {
+        const selectedProduct = productFilter.value;   // "" = alle
+        const selectedSupplier = supplierFilter.value; // "" = alle
 
-    rows.forEach(tr => {
-      const pid = tr.dataset.product || "";
-      const sid = tr.dataset.supplier || "";
+        rows.forEach(tr => {
+          const pid = tr.dataset.product;
+          const sid = tr.dataset.supplier;
 
-      const matchesProduct = !selectedProduct || pid === selectedProduct;
-      const matchesSupplier = !selectedSupplier || sid === selectedSupplier;
+          const matchesProduct = !selectedProduct || pid === selectedProduct;
+          const matchesSupplier = !selectedSupplier || sid === selectedSupplier;
 
-      tr.style.display = (matchesProduct && matchesSupplier) ? "" : "none";
-    });
-  }
+          tr.style.display = (matchesProduct && matchesSupplier) ? "" : "none";
+        });
+      }
 
-  productFilter.addEventListener("change", applyFilters);
-  supplierFilter.addEventListener("change", applyFilters);
-})();
-  })();
+      productFilter.addEventListener("change", applyFilters);
+      supplierFilter.addEventListener("change", applyFilters);
+
+      applyFilters(); // initial anwenden
+ });
 
 </script>
 {% endblock %}
