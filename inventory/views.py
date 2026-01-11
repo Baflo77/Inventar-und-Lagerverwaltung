@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import F, Q
+from django.db.models import Sum, F
 from locationmanager.models import Location
 from productmanager.models import Product
 from stockmovementmanager.models import  StockMovement
@@ -12,16 +13,27 @@ def dashboard(request):
     open_orders_count = Order.objects.filter(status='PENDING').count()
     critical_stock_count = Stock.objects.filter(quantity__lte=F('threshold')).count()
 
-    # C. Lagerauslastung
-    try:
-        total_locations = Location.objects.count()
-        occupied_locations = 0
+    utilization_rate = 0  # Standardwert
 
+    try:
+        # Summe aller Kapazitäten der Lagerplätze
+        loc_agg = Location.objects.aggregate(total=Sum('capacity'))
+        total_locations = loc_agg['total'] or 0  # 'or 0' fängt None ab, falls DB leer ist
+
+        # Summe aller aktuellen Bestände
+        stock_agg = Stock.objects.aggregate(total=Sum('quantity'))
+        total_stock = stock_agg['total'] or 0
+
+        # Berechnung: (Aktueller Bestand / Gesamtkapazität) * 100
         if total_locations > 0:
-            utilization_rate = int((occupied_locations / total_locations) * 100)
+            # Ich habe 'occupied_locations' durch 'total_stock' ersetzt,
+            # da du das oben berechnet hast.
+            utilization_rate = int((total_stock / total_locations) * 100)
         else:
             utilization_rate = 0
-    except Exception:
+
+    except Exception as e:
+        print(f"Fehler bei der Auslastungsberechnung: {e}")
         utilization_rate = 0
 
     # D. Letzte Aktivitäten

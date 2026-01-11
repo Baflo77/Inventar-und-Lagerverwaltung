@@ -1,4 +1,6 @@
 from django.db import transaction
+from django.db.models import Sum
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -99,6 +101,7 @@ def purchaseorder_receive_api(request, id):
         with transaction.atomic():
             order = PurchaseOrder.objects.select_for_update().get(id=id)
             destination = Location.objects.get(id=int(destination_location_id))
+            destination_capacity = getattr(destination, "capacity", 0) or 0
 
             any_posted_qty = False
 
@@ -140,6 +143,27 @@ def purchaseorder_receive_api(request, id):
                     location=destination,
                     defaults={"quantity": 0, "threshold": 0}
                 )
+
+                if destination_capacity > 0: #Prüfung der capacity
+                    current_total = (
+                        Stock.objects
+                        .select_for_update()
+                        .filter(location=destination)
+                        .aggregate(total=Coalesce(Sum("quantity"), 0))
+                        ["total"]
+                    )
+                    if current_total + qty > destination_capacity:
+                        return Response(
+                            {
+                                "error": (
+                                    f"Kapazität überschritten für Lagerort '{destination.name}'. "
+                                    f"Max: {destination_capacity} Stk., aktuell: {current_total} Stk., "
+                                    f"mit Einbuchung wären es: {current_total + qty} Stk."
+                                )
+                            },
+                            status=status.HTTP_400_BAD_REQUEST
+                        ) #Prüfung der capacity
+
                 stock.quantity += qty
 
                 if hasattr(stock, "quantity_on_order"):
