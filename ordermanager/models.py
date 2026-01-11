@@ -2,6 +2,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from customermanager.models import Customer
 from productmanager.models import Product
+from django.apps import apps
+from django.db import transaction
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -34,6 +36,40 @@ class Order(models.Model):
             raise ValidationError(f"Order {self.id} kann nicht versendet werden (Status: {self.status})")
         self.status = "SHIPPED"
         self.save()
+
+    @transaction.atomic
+    def create_delivery_from_orderitems(self, delivery_date, status="open"):
+        """
+        Erstellt eine Delivery zu dieser Order und kopiert OrderItems -> DeliveryItems.
+        Nutzt apps.get_model, um keine Circular Imports zu bauen.
+        """
+        Delivery = apps.get_model("deliverymanager", "Delivery")
+        DeliveryItem = apps.get_model("deliveryitem", "DeliveryItem")
+
+        delivery = Delivery.objects.create(
+            order=self,
+            delivery_date=delivery_date,
+            status=status,
+        )
+
+        for oi in self.items.select_related("product").all():
+            # Variante A (BEST): DeliveryItem hat ein product-FK
+            if hasattr(DeliveryItem, "product_id"):
+                DeliveryItem.objects.create(
+                    delivery=delivery,
+                    product=oi.product,
+                    quantity=oi.quantity,
+                    description=oi.product.name if hasattr(DeliveryItem, "description") else None,
+                )
+            else:
+                # Variante B: DeliveryItem hat nur description + quantity
+                DeliveryItem.objects.create(
+                    delivery=delivery,
+                    description=oi.product.name,
+                    quantity=oi.quantity,
+                )
+
+        return delivery
 
     def clean(self):
         super().clean()

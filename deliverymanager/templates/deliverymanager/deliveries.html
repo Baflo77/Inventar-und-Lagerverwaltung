@@ -1,408 +1,662 @@
 {% extends 'base.html' %}
 
-{% block title %}Delivery Manager{% endblock %}
+{% block title %}Lieferungen | Inventar-Verwaltung{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Wir nutzen hier lokale Variablen, um dein Design beizubehalten, 
-       ohne die base.html zu zerstören.
-    */
-    :root {
-      --dm-primary: #2d89c8;
-      --dm-danger: #e25555;
-      --dm-card: #ffffff;
-      --dm-text: #2f3640;
-      --dm-muted: #7f8c8d;
-      --dm-border: #e6e6e6;
-      --dm-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      --dm-radius: 10px;
+    :root{
+        --dm-bg:#f4f7f9;
+        --dm-dark:#2c3e50;
+        --dm-accent:#3498db;
+        --dm-muted:#8e9aaf;
+        --dm-border:#e1e8ed;
+        --dm-shadow:0 4px 15px rgba(0,0,0,0.03);
+        --dm-danger:#e74c3c;
+        --dm-warn:#f39c12;
+        --dm-ok:#27ae60;
     }
 
-    /* Container Anpassung für die Base-Struktur */
-    .delivery-container { 
-        max-width: 1200px; 
-        margin: 40px auto; 
-        padding: 0 20px; 
-        color: var(--dm-text);
+    .dm-wrapper{
+        background: var(--dm-bg);
+        padding: 2rem 0;
+        min-height: 100vh;
+        color: #2d3436;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    .dm-container{
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
     }
 
-    .page-title { font-size: 1.8rem; margin-bottom: 4px; font-weight: 700; color: var(--text-dark); }
-    .page-subtitle { color: var(--dm-muted); margin-bottom: 22px; }
-
-    /* Cards */
-    .custom-card {
-      background: var(--dm-card);
-      border-radius: var(--dm-radius);
-      box-shadow: var(--dm-shadow);
-      border: 1px solid var(--dm-border);
-      margin-bottom: 22px;
-      overflow: hidden;
+    /* Header */
+    .page-header{
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 1rem;
+        display:flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .page-title{
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--dm-dark);
+        margin:0;
+    }
+    .page-subtitle{
+        color:#6c757d;
+        margin: 5px 0 0 0;
     }
 
-    /* Toolbar */
-    .toolbar {
-      padding: 16px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
+    .btn-create{
+        background-color: var(--dm-dark);
+        color: white !important;
+        padding: 10px 18px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 800;
+        border: none;
+        cursor: pointer;
+        display:inline-flex;
+        align-items:center;
+        gap: 8px;
+        transition: background 0.2s;
+        white-space: nowrap;
     }
-    .search-input {
-      flex: 1;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
-    }
+    .btn-create:hover{ background-color:#1a252f; }
 
-    /* Buttons (Custom Styles überschreiben Bootstrap teilweise hier lokal) */
-    .btn-custom {
-      height: 40px;
-      min-width: 140px;
-      padding: 0 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-decoration: none;
-      border: 2px solid transparent;
-      font-size: 14px;
-      white-space: nowrap;
-      transition: all 0.2s;
+    /* Card */
+    .data-card{
+        background: #fff;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        margin-bottom: 2rem;
+        width: 100%;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,.06);
     }
-    .btn-custom-primary { background: var(--dm-primary); color: #fff; border: none; }
-    .btn-custom-primary:hover { background: #2475a8; color: #fff; }
-    
-    .btn-custom-outline { color: var(--dm-primary); border-color: var(--dm-primary); background: #fff; }
-    .btn-custom-outline:hover { background: #f0f8ff; }
-
-    .btn-custom-sm {
-      height: 36px;
-      min-width: 120px;
-      padding: 0 14px;
-      border-radius: 8px;
-      font-size: 13px;
+    .card-header{
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(0,0,0,.06);
+        display:flex;
+        justify-content: space-between;
+        align-items:center;
+        flex-wrap: wrap;
+        gap: 12px;
+        background: #fff;
+    }
+    .card-title{
+        font-size: 1.05rem;
+        font-weight: 800;
+        margin:0;
+        color: var(--dm-dark);
     }
 
-    /* Formular */
-    .form-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px;
-      border-bottom: 1px solid var(--dm-border);
-      background: #fff;
+    /* Buttons */
+    .btn-secondary{
+        padding: 10px 14px;
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        background: #fff;
+        cursor: pointer;
+        font-weight: 800;
+        color: #6c757d;
+        text-decoration: none;
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
     }
-    .form-body { padding: 16px; }
+    .btn-secondary:hover{
+        border-color: var(--dm-accent);
+        color: var(--dm-accent);
+        background:#f8f9fa;
+    }
+    .btn-primary{
+        padding: 10px 16px;
+        border-radius: 6px;
+        border: none;
+        background: var(--dm-dark);
+        color: #fff;
+        cursor: pointer;
+        font-weight: 900;
+        display:inline-flex;
+        align-items:center;
+        gap: 8px;
+    }
+    .btn-primary:hover{ background:#1a252f; }
 
-    .grid-layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
+    /* Form */
+    .form-grid{
+        display:grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
     }
-    .field label {
-      display: block;
-      font-weight: 700;
-      margin-bottom: 6px;
-      font-size: 13px;
-      color: var(--dm-muted);
+    .form-grid input, .form-grid select{
+        width: 100%;
+        padding: 0.65rem;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 1rem;
+        background: #fff;
+        box-sizing: border-box;
     }
-    .field input, .field select {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
-      background: #fff;
+    .form-grid input:focus, .form-grid select:focus{
+        border-color: var(--dm-accent);
+        outline:none;
+        box-shadow: 0 0 0 3px rgba(52,152,219,0.12);
     }
-
-    .meta {
-      color: var(--dm-muted);
-      font-size: 13px;
-      margin: 14px 0 10px;
-    }
-
-    .items-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 10px;
-      align-items: end;
-    }
-
-    .form-actions {
-      margin-top: 14px;
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-
-    /* Tabelle */
-    .custom-table { width: 100%; border-collapse: collapse; }
-    .custom-table th {
-      background: #f8f9fa;
-      text-align: left;
-      padding: 14px;
-      font-size: 13px;
-      color: var(--dm-muted);
-      border-bottom: 1px solid var(--dm-border);
-    }
-    .custom-table td { padding: 14px; border-top: 1px solid #eee; vertical-align: top; }
-
-    .actions { display: flex; gap: 10px; align-items: center; }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      background: #eef2f7;
-      color: #34495e;
-      font-weight: 700;
-      border: 1px solid var(--dm-border);
+    .form-actions{
+        display:flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 14px;
+        flex-wrap: wrap;
     }
 
-    /* Details Box */
-    .details-row { display: none; background: #fbfbfc; }
-    .details-box {
-      padding: 14px;
-      border-left: 4px solid var(--dm-primary);
-      border-radius: 10px;
-      background: #fff;
-      box-shadow: var(--dm-shadow);
+    .meta{
+        color:#6c757d;
+        font-size: 0.9rem;
+        margin: 14px 0 10px;
+        font-weight: 700;
     }
-    .details-title { font-weight: 800; margin-bottom: 8px; }
-    .details-meta { color: var(--dm-muted); font-size: 13px; margin-bottom: 12px; }
 
-    .items-table { width: 100%; border-collapse: collapse; }
-    .items-table th { padding: 10px; text-align: left; color: var(--dm-muted); font-size: 0.85rem;}
-    .items-table td { padding: 10px; border-top: 1px solid #eee; }
+    .items-grid{
+        display:grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 10px;
+        align-items: end;
+    }
 
-    .empty-state { text-align: center; padding: 60px; color: #bdc3c7; }
-    .muted { color: var(--dm-muted); }
+    /* Table */
+    .table-modern{
+        width:100%;
+        border-collapse: collapse;
+    }
 
-    @media(max-width:900px){
-      .toolbar { flex-direction: column; align-items: stretch; }
-      .grid-layout { grid-template-columns: 1fr; }
-      .items-grid { grid-template-columns: 1fr; }
-      .btn-custom { width: 100%; }
+    .table-modern thead th{
+        text-align:left;
+        padding: 15px;
+        background: #f8f9fa;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        border-bottom: 2px solid #dee2e6;
+        color:#6c757d;
+        font-weight: 800;
+        letter-spacing: .5px;
+        user-select: none;
+
+        /* Sort UI */
+        cursor: pointer;
+    }
+    .table-modern thead th:hover{
+        background-color: #e2e6ea;
+        color: var(--dm-dark);
+    }
+
+    .sort-icon{
+        margin-left: 6px;
+        font-size: 0.8em;
+        opacity: 0.3;
+    }
+    .sort-asc .sort-icon::after{ content: "▲"; }
+    .sort-desc .sort-icon::after{ content: "▼"; }
+    .active-sort .sort-icon{ opacity: 1; color: var(--dm-accent); }
+
+    .table-modern td{
+        padding: 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 0.95rem;
+    }
+
+    /* Actions */
+    .btn-action{
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #6c757d;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+    .btn-action:hover{ background:#f1f3f5; color: var(--dm-dark); }
+    .btn-edit{ color: var(--dm-accent); }
+    .btn-edit:hover{ background:#e7f1ff; }
+    .btn-delete{ color: var(--dm-danger); }
+    .btn-delete:hover{ background:#ffebeb; }
+
+    /* =========================
+       STATUS DROPDOWN (CLEAN + FARBE)
+       ========================= */
+    .status-select{
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: .2px;
+
+        border: 1px solid #dee2e6;
+        background-image: none !important;
+        cursor: pointer;
+        outline: none;
+
+        transition: box-shadow .18s ease, border-color .18s ease;
+        min-width: 150px;
+        line-height: 1;
+        white-space: nowrap;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .status-select:hover{
+        border-color: rgba(52,152,219,0.35);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+    }
+    .status-select:focus{
+        border-color: rgba(52,152,219,0.55);
+        box-shadow: 0 0 0 4px rgba(52,152,219,0.12), 0 10px 18px rgba(0,0,0,0.08);
+    }
+
+    .status-open{
+        background-color: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+    .status-shipped{
+        background-color: #fff3cd;
+        color: #856404;
+        border-color: #ffeeba;
+    }
+    .status-delivered{
+        background-color: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+    }
+
+    .status-hint{
+        font-size: 12px;
+        font-weight: 800;
+        color: #94a3b8;
+        display:none;
+        user-select:none;
+    }
+    .status-hint.show{ display:inline-block; }
+
+    /* Details */
+    .details-row{ display:none; background:#fbfbfc; }
+    .details-box{
+        padding: 14px;
+        border-left: 4px solid var(--dm-accent);
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: var(--dm-shadow);
+    }
+    .details-title{ font-weight: 900; margin-bottom: 8px; color: var(--dm-dark); }
+    .details-meta{ color:#6c757d; font-size: 0.9rem; margin-bottom: 12px; }
+
+    .items-table{ width:100%; border-collapse: collapse; }
+    .items-table th{ padding: 10px; text-align:left; color:#6c757d; font-size: .85rem; font-weight: 900; }
+    .items-table td{ padding: 10px; border-top: 1px solid #eee; }
+
+    .empty-state{ text-align:center; padding: 60px; color:#bdc3c7; }
+
+    @media(max-width: 900px){
+        .form-grid{ grid-template-columns: 1fr; }
+        .items-grid{ grid-template-columns: 1fr; }
+        .status-select{ min-width: 100%; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="delivery-container">
-  <div class="page-title">Lieferungen</div>
-  <div class="page-subtitle">Anlegen, anzeigen und verwalten (inkl. Positionen)</div>
+<div class="dm-wrapper">
+  <div class="dm-container">
 
-  <div class="custom-card">
-    <div class="toolbar">
-      <input class="search-input" type="text" placeholder="Suche … (später)" disabled>
-      <button class="btn-custom btn-custom-primary" type="button" onclick="toggleCreate()">
-        <i class="bi bi-plus-lg"></i> Lieferung anlegen
-      </button>
-    </div>
-  </div>
+    {% if messages %}
+      {% for message in messages %}
+        {% if "deliveries" in message.tags or message.tags == "deliveries" %}
+          <div style="padding: 12px 20px; margin-bottom: 20px; border-radius: 6px;
+               background: {% if message.tags == 'error' %}#f8d7da{% else %}#d4edda{% endif %};
+               color: {% if message.tags == 'error' %}#721c24{% else %}#155724{% endif %};
+               border: 1px solid {% if message.tags == 'error' %}#f5c6cb{% else %}#c3e6cb{% endif %};">
+            {{ message }}
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
 
-  <div class="custom-card" id="create-box" style="display:none;">
-    <div class="form-header">
+    <div class="page-header">
       <div>
-        <strong>Neue Lieferung</strong>
-        <div class="details-meta" style="margin:4px 0 0;">Optional: gleich Positionen mit anlegen</div>
+        <h1 class="page-title">Lieferungen</h1>
+        <p class="page-subtitle">Anlegen, bearbeiten und verwalten (inkl. Positionen).</p>
       </div>
-      <button class="btn-custom btn-custom-outline" type="button" onclick="toggleCreate()">
-        <i class="bi bi-x-lg"></i> Schließen
-      </button>
+
+      <a href="{% url 'deliveries_page' %}?create=1" class="btn-create">
+        <i class="bi bi-plus-lg"></i> Lieferung anlegen
+      </a>
     </div>
 
-    <div class="form-body">
-      <form method="post">
-        {% csrf_token %}
+    {% if create_mode or edit_delivery %}
+    <div class="data-card">
+      <div class="card-header">
+        <h3 class="card-title">{% if edit_delivery %}Lieferung bearbeiten{% else %}Lieferung anlegen{% endif %}</h3>
+        <a href="{% url 'deliveries_page' %}" class="btn-secondary">
+          <i class="bi bi-x-lg"></i> Abbrechen
+        </a>
+      </div>
 
-        <div class="grid-layout">
-          <div class="field">
-            <label>Order</label>
+      <div style="padding: 1.25rem;">
+        <form method="post"
+              action="{% if edit_delivery %}{% url 'delivery_edit' edit_delivery.id %}{% else %}{% url 'delivery_create' %}{% endif %}">
+          {% csrf_token %}
+
+          <div class="form-grid">
             <select name="order" required>
+              <option value="" disabled {% if not edit_delivery %}selected{% endif %}>Order auswählen…</option>
               {% for o in orders %}
-                <option value="{{ o.id }}">Order #{{ o.id }}</option>
+                <option value="{{ o.id }}" {% if edit_delivery and edit_delivery.order_id == o.id %}selected{% endif %}>
+                  Order #{{ o.id }}
+                </option>
               {% endfor %}
             </select>
-          </div>
 
-          <div class="field">
-            <label>Lieferdatum</label>
-            <input type="date" name="delivery_date" required>
-          </div>
+            <input type="date" name="delivery_date" required value="{{ edit_delivery.delivery_date|date:'Y-m-d'|default:'' }}">
 
-          <div class="field">
-            <label>Status</label>
             <select name="status" required>
-              <option value="open">Open</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
+              <option value="open" {% if not edit_delivery or edit_delivery.status == "open" %}selected{% endif %}>Offen</option>
+              <option value="shipped" {% if edit_delivery and edit_delivery.status == "shipped" %}selected{% endif %}>Versendet</option>
+              <option value="delivered" {% if edit_delivery and edit_delivery.status == "delivered" %}selected{% endif %}>Zugestellt</option>
             </select>
           </div>
-        </div>
 
-        <div class="meta">
-          Delivery Items (Positionen) – bis zu 3 Stück (leere Zeilen werden ignoriert)
-        </div>
+          {% if not edit_delivery %}
+            <div style="margin-top:12px; display:flex; align-items:center; gap:10px;">
+              <input
+                type="checkbox"
+                id="from_orderitems"
+                style="width:18px; height:18px;"
+                onclick="toggleManualItems(this)"
+              >
+              <label for="from_orderitems" style="margin:0; font-weight:800; color: var(--dm-dark); cursor:pointer;">
+                OrderItems automatisch übernehmen (OrderItems → DeliveryItems)
+              </label>
 
-        <div class="items-grid">
-          <div class="field">
-            <label>Beschreibung 1</label>
-            <input type="text" name="description_1" placeholder="z.B. Paket / Schrauben / Ware XY">
-          </div>
-          <div class="field">
-            <label>Menge 1</label>
-            <input type="number" name="quantity_1" min="1" placeholder="1">
+              {# Dieses hidden Feld ist das, was deine View liest #}
+              <input type="hidden" name="from_orderitems" id="from_orderitems_value" value="0">
+            </div>
+
+            <div style="margin-top:6px; color:#6c757d; font-size:0.9rem; font-weight:700;">
+              Wenn aktiv: deine manuell eingegebenen Positionen werden ignoriert und alle OrderItems werden kopiert.
+            </div>
+          {% endif %}
+
+          <div class="meta">Delivery Items – bis zu 3 Positionen (leere Zeilen werden ignoriert)</div>
+
+          <div class="items-grid">
+            <div><input type="text" name="description_1" placeholder="Beschreibung 1 (z.B. Ware XY)"></div>
+            <div><input type="number" name="quantity_1" min="1" placeholder="Menge 1"></div>
+
+            <div><input type="text" name="description_2" placeholder="Beschreibung 2"></div>
+            <div><input type="number" name="quantity_2" min="1" placeholder="Menge 2"></div>
+
+            <div><input type="text" name="description_3" placeholder="Beschreibung 3"></div>
+            <div><input type="number" name="quantity_3" min="1" placeholder="Menge 3"></div>
           </div>
 
-          <div class="field">
-            <label>Beschreibung 2</label>
-            <input type="text" name="description_2">
+          <div class="form-actions">
+            <a href="{% url 'deliveries_page' %}" class="btn-secondary">
+              <i class="bi bi-x-lg"></i> Abbrechen
+            </a>
+            <button type="submit" class="btn-primary">
+              <i class="bi bi-check2"></i>
+              {% if edit_delivery %}Speichern{% else %}Anlegen{% endif %}
+            </button>
           </div>
-          <div class="field">
-            <label>Menge 2</label>
-            <input type="number" name="quantity_2" min="1">
-          </div>
-
-          <div class="field">
-            <label>Beschreibung 3</label>
-            <input type="text" name="description_3">
-          </div>
-          <div class="field">
-            <label>Menge 3</label>
-            <input type="number" name="quantity_3" min="1">
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button class="btn-custom btn-custom-outline" type="button" onclick="toggleCreate()">Abbrechen</button>
-          <button class="btn-custom btn-custom-primary" type="submit">
-            <i class="bi bi-check2"></i> Speichern
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
-  </div>
+    {% endif %}
 
-  <div class="custom-card">
-    {% if deliveries %}
-    <table class="custom-table">
-      <thead>
-        <tr>
-          <th>Liefernummer</th>
-          <th>Datum</th>
-          <th>Status</th>
-          <th>Order</th>
-          <th>Aktionen</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for d in deliveries %}
-          <tr>
-            <td><strong>Delivery #{{ d.id }}</strong></td>
-            <td>{{ d.delivery_date }}</td>
-            <td>
-              {% if d.status == "delivered" %}
-                <span class="status-badge"><i class="bi bi-check-circle"></i> Delivered</span>
-              {% elif d.status == "shipped" %}
-                <span class="status-badge"><i class="bi bi-truck"></i> Shipped</span>
-              {% else %}
-                <span class="status-badge"><i class="bi bi-hourglass-split"></i> Open</span>
-              {% endif %}
-            </td>
-            <td>Order #{{ d.order_id }}</td>
-            <td>
-              <div class="actions">
-                <button class="btn-custom btn-custom-outline btn-custom-sm" type="button" onclick="toggleDetails('{{ d.id }}')">
+    <div class="data-card">
+      {% if deliveries %}
+      <div style="overflow-x:auto;">
+        <table class="table-modern" id="deliveriesTable">
+          <thead>
+            <tr>
+              <th onclick="sortDeliveriesTable(0)">Liefernummer <span class="sort-icon"></span></th>
+              <th onclick="sortDeliveriesTable(1)">Datum <span class="sort-icon"></span></th>
+              <th onclick="sortDeliveriesTable(2)">Status <span class="sort-icon"></span></th>
+              <th onclick="sortDeliveriesTable(3)">Order <span class="sort-icon"></span></th>
+              <th style="text-align:right; cursor:default;">Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in deliveries %}
+            <tr class="delivery-row"
+                data-id="{{ d.id }}"
+                data-date="{{ d.delivery_date|date:'Y-m-d' }}"
+                data-status="{{ d.status }}"
+                data-order="{{ d.order_id }}">
+
+              <td data-sort="{{ d.id }}"><strong style="color:var(--dm-dark);">Delivery #{{ d.id }}</strong></td>
+              <td data-sort="{{ d.delivery_date|date:'Y-m-d' }}">{{ d.delivery_date }}</td>
+
+              <td data-sort="{% if d.status == 'open' %}1{% elif d.status == 'shipped' %}2{% else %}3{% endif %}">
+                <form method="post" action="{% url 'delivery_status' d.id %}" style="margin:0; display:inline-flex; align-items:center; gap:10px;">
+                  {% csrf_token %}
+                  <select name="status"
+                          class="status-select {% if d.status == 'open' %}status-open{% elif d.status == 'shipped' %}status-shipped{% else %}status-delivered{% endif %}"
+                          onchange="prettyStatusSubmit(this)">
+                    <option value="open" {% if d.status == "open" %}selected{% endif %}>Offen</option>
+                    <option value="shipped" {% if d.status == "shipped" %}selected{% endif %}>Versendet</option>
+                    <option value="delivered" {% if d.status == "delivered" %}selected{% endif %}>Zugestellt</option>
+                  </select>
+                  <span class="status-hint">speichert…</span>
+                </form>
+              </td>
+
+              <td data-sort="{{ d.order_id }}">Order #{{ d.order_id }}</td>
+
+              <td style="text-align:right; white-space:nowrap;">
+                <a class="btn-action btn-edit" href="{% url 'deliveries_page' %}?edit={{ d.id }}">
+                  <i class="bi bi-pencil"></i> Bearbeiten
+                </a>
+
+                {% if request.user.is_staff %}
+                <form method="post"
+                      action="{% url 'delivery_delete' d.id %}"
+                      style="display:inline-block; margin:0;"
+                      onsubmit="return confirm('Lieferung wirklich löschen?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-action btn-delete">
+                    <i class="bi bi-trash"></i> Löschen
+                  </button>
+                </form>
+                {% endif %}
+
+                <button class="btn-action" type="button" onclick="toggleDetails('{{ d.id }}')">
                   <i class="bi bi-chevron-down" id="icon-{{ d.id }}"></i> Details
                 </button>
-              </div>
-            </td>
-          </tr>
+              </td>
+            </tr>
 
-          <tr class="details-row" id="details-{{ d.id }}">
-            <td colspan="5">
-              <div class="details-box">
-                <div class="details-title">Delivery Items – Delivery #{{ d.id }}</div>
-                <div class="details-meta">
-                  Order #{{ d.order_id }} • Datum: {{ d.delivery_date }} • Status:
-                  {% if d.status == "delivered" %}Delivered
-                  {% elif d.status == "shipped" %}Shipped
-                  {% else %}Open{% endif %}
-                </div>
+            <tr class="details-row" id="details-{{ d.id }}">
+              <td colspan="5">
+                <div class="details-box">
+                  <div class="details-title">Delivery Items – Delivery #{{ d.id }}</div>
+                  <div class="details-meta">
+                    Order #{{ d.order_id }} • Datum: {{ d.delivery_date }} • Status:
+                    {% if d.status == "open" %}Offen{% elif d.status == "shipped" %}Versendet{% else %}Zugestellt{% endif %}
+                  </div>
 
-                {% if d.items.all %}
-                  <table class="items-table">
-                    <thead>
-                      <tr>
-                        <th>Beschreibung</th>
-                        <th style="width:120px;">Menge</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for item in d.items.all %}
+                  {% if d.items.all %}
+                    <table class="items-table">
+                      <thead>
+                        <tr>
+                          <th>Beschreibung</th>
+                          <th style="width:140px;">Menge</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for item in d.items.all %}
                         <tr>
                           <td>{{ item.description }}</td>
                           <td>{{ item.quantity }}</td>
                         </tr>
-                      {% empty %}
-                        <tr><td colspan="2" class="muted">Keine Positionen vorhanden.</td></tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                {% else %}
-                  <div class="muted">Keine Positionen vorhanden.</div>
-                {% endif %}
-              </div>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
+                        {% empty %}
+                        <tr><td colspan="2" style="color:#6c757d;">Keine Positionen vorhanden.</td></tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  {% else %}
+                    <div style="color:#6c757d;">Keine Positionen vorhanden.</div>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
       <div class="empty-state">
         <i class="bi bi-truck" style="font-size:42px;"></i>
         <p>Keine Lieferungen vorhanden.</p>
       </div>
-    {% endif %}
+      {% endif %}
+    </div>
+
   </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    function toggleCreate() {
-      const box = document.getElementById("create-box");
-      if(box){
-          box.style.display = (box.style.display === "block") ? "none" : "block";
-          if (box.style.display === "block") {
-            box.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
+  function toggleDetails(id){
+    const row = document.getElementById("details-" + id);
+    const icon = document.getElementById("icon-" + id);
+
+    if(row && icon){
+      const isOpen = row.style.display === "table-row";
+      row.style.display = isOpen ? "none" : "table-row";
+
+      if(isOpen){
+        icon.classList.remove("bi-chevron-up");
+        icon.classList.add("bi-chevron-down");
+      } else {
+        icon.classList.remove("bi-chevron-down");
+        icon.classList.add("bi-chevron-up");
       }
+    }
+  }
+
+  function prettyStatusSubmit(selectEl){
+    selectEl.classList.remove("status-open", "status-shipped", "status-delivered");
+    const value = selectEl.value;
+    if(value === "open") selectEl.classList.add("status-open");
+    else if(value === "shipped") selectEl.classList.add("status-shipped");
+    else selectEl.classList.add("status-delivered");
+
+    const hint = selectEl.parentElement.querySelector(".status-hint");
+    if(hint){
+      hint.classList.add("show");
+      setTimeout(() => hint.classList.remove("show"), 1200);
+    }
+    selectEl.form.submit();
+  }
+
+  // =========================
+  // NEU: Checkbox -> Hidden Value + manuelle Felder disable
+  // =========================
+  function toggleManualItems(checkbox){
+    const hidden = document.getElementById("from_orderitems_value");
+    if(hidden) hidden.value = checkbox.checked ? "1" : "0";
+
+    const names = [
+      "description_1","quantity_1",
+      "description_2","quantity_2",
+      "description_3","quantity_3"
+    ];
+
+    names.forEach(n => {
+      const el = document.querySelector(`[name="${n}"]`);
+      if(el){
+        el.disabled = checkbox.checked;
+        el.style.opacity = checkbox.checked ? "0.5" : "1";
+      }
+    });
+  }
+
+  // =========================
+  // SORTING (Stockmanager-Like)
+  // =========================
+  function sortDeliveriesTable(colIndex){
+    const table = document.getElementById("deliveriesTable");
+    if(!table) return;
+
+    const headers = table.querySelectorAll("thead th");
+    headers.forEach(h => h.classList.remove("active-sort", "sort-asc", "sort-desc"));
+
+    let dir = table.getAttribute("data-sort-dir") || "asc";
+    let lastCol = table.getAttribute("data-sort-col");
+
+    if(lastCol !== null && parseInt(lastCol, 10) === colIndex){
+      dir = (dir === "asc") ? "desc" : "asc";
+    } else {
+      dir = "asc";
     }
 
-    function toggleDetails(id){
-      const row = document.getElementById("details-" + id);
-      const icon = document.getElementById("icon-" + id);
-      
-      if(row && icon){
-          const isOpen = row.style.display === "table-row";
-          row.style.display = isOpen ? "none" : "table-row";
-          
-          if(isOpen){
-            icon.classList.remove("bi-chevron-up");
-            icon.classList.add("bi-chevron-down");
-          } else {
-            icon.classList.remove("bi-chevron-down");
-            icon.classList.add("bi-chevron-up");
-          }
+    table.setAttribute("data-sort-dir", dir);
+    table.setAttribute("data-sort-col", String(colIndex));
+
+    const tbody = table.querySelector("tbody");
+    const rows = Array.from(tbody.querySelectorAll("tr")).filter(tr => tr.classList.contains("delivery-row"));
+
+    const pairList = rows.map(r => {
+      const id = r.getAttribute("data-id");
+      const details = document.getElementById("details-" + id);
+      return { main: r, details: details };
+    });
+
+    pairList.sort((a, b) => {
+      const aCell = a.main.children[colIndex];
+      const bCell = b.main.children[colIndex];
+      const aVal = (aCell && aCell.getAttribute("data-sort")) ? aCell.getAttribute("data-sort") : aCell.innerText;
+      const bVal = (bCell && bCell.getAttribute("data-sort")) ? bCell.getAttribute("data-sort") : bCell.innerText;
+
+      const aNum = parseFloat(aVal);
+      const bNum = parseFloat(bVal);
+      const bothNum = !isNaN(aNum) && !isNaN(bNum);
+
+      let cmp;
+      if(bothNum){
+        cmp = aNum - bNum;
+      } else {
+        cmp = String(aVal).localeCompare(String(bVal), "de", { numeric:true, sensitivity:"base" });
       }
+      return (dir === "asc") ? cmp : -cmp;
+    });
+
+    pairList.forEach(pair => {
+      tbody.appendChild(pair.main);
+      if(pair.details) tbody.appendChild(pair.details);
+    });
+
+    if(headers[colIndex]){
+      headers[colIndex].classList.add("active-sort", dir === "asc" ? "sort-asc" : "sort-desc");
     }
+  }
 </script>
 {% endblock %}

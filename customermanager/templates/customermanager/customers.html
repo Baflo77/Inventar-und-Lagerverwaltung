@@ -4,282 +4,544 @@
 
 {% block extra_css %}
 <style>
-    /* Wir nutzen lokale Variablen mit Prefix "cm-", um Konflikte zu vermeiden */
-    :root {
-        --cm-bg-main: #f4f6f8;
-        --cm-primary: #2d89c8;
-        --cm-danger: #e25555;
-        --cm-card-bg: #ffffff;
-        --cm-text: #2f3640;
-        --cm-muted: #7f8c8d;
-        --cm-border: #e6e6e6;
-        --cm-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        --cm-radius: 10px;
+    :root{
+        --cm-bg:#f4f7f9;
+        --cm-dark:#2c3e50;
+        --cm-accent:#3498db;
+        --cm-muted:#8e9aaf;
+        --cm-border:#e1e8ed;
+        --cm-shadow:0 4px 15px rgba(0,0,0,0.03);
     }
 
-    /* Container */
-    .cm-container {
-        max-width: 1200px;
-        margin: 40px auto;
+    .cm-wrapper{
+        background: var(--cm-bg);
+        padding: 2rem 0;
+        min-height: 100vh;
+        color: #2d3436;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    .cm-container{
+        max-width: 1400px;
+        margin: 0 auto;
         padding: 0 20px;
-        color: var(--cm-text);
-        font-family: Arial, Helvetica, sans-serif;
     }
 
-    .page-title {
-        font-size: 1.8rem;
-        margin-bottom: 4px;
-        font-weight: 700;
-        color: var(--text-dark); /* Variable aus base.html */
-    }
-
-    .page-subtitle {
-        color: var(--cm-muted);
-        margin-bottom: 22px;
-    }
-
-    /* Cards */
-    .cm-card {
-        background: var(--cm-card-bg);
-        border-radius: var(--cm-radius);
-        box-shadow: var(--cm-shadow);
-        border: 1px solid var(--cm-border);
-        margin-bottom: 22px;
-        overflow: hidden; /* Wichtig für rounded corners */
-    }
-
-    .cm-card-header {
-        padding: 16px;
-        border-bottom: 1px solid var(--cm-border);
-        display: flex;
+    /* Header */
+    .page-header{
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 1rem;
+        display:flex;
         justify-content: space-between;
         align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .page-title{
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--cm-dark);
+        margin:0;
+    }
+
+    .page-subtitle{
+        color:#6c757d;
+        margin: 5px 0 0 0;
+    }
+
+    .btn-create{
+        background-color: var(--cm-dark);
+        color: white !important;
+        padding: 10px 18px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        display:inline-flex;
+        align-items:center;
+        gap: 8px;
+        transition: background 0.2s;
+        white-space: nowrap;
+    }
+    .btn-create:hover{ background-color:#1a252f; }
+
+    /* Card */
+    .data-card{
+        background: #fff;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        margin-bottom: 2rem;
+        width: 100%;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,.06);
+    }
+
+    .card-header{
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(0,0,0,.06);
+        display:flex;
+        justify-content: space-between;
+        align-items:center;
+        flex-wrap: wrap;
+        gap: 12px;
         background: #fff;
     }
 
-    .cm-card-body {
-        padding: 16px;
+    .card-title{
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin:0;
+        color: var(--cm-dark);
     }
 
-    /* Toolbar */
-    .toolbar {
-        padding: 16px;
-        display: flex;
-        gap: 12px;
-        align-items: center;
+    /* Filter Bar */
+    .filter-group{
+        display:flex;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
-    .search-input {
-        flex: 1;
-        padding: 12px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        font-size: 14px;
+    .filter-select{
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        min-width: 180px;
+        background-color: #fff;
+        cursor: pointer;
+        color: #2d3436;
+        font-weight: 500;
     }
 
-    /* Custom Buttons (damit Bootstrap sie nicht überschreibt) */
-    .btn-cm {
-        height: 40px;
-        min-width: 120px;
-        padding: 0 16px;
-        border-radius: 8px;
+    .filter-select:focus{
+        border-color: var(--cm-accent);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(52,152,219,0.12);
+    }
+
+    .btn-reset{
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        background: #fff;
         cursor: pointer;
         font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        text-decoration: none;
-        border: 2px solid transparent;
-        background: #fff;
-        font-size: 14px;
+        color: #6c757d;
         transition: all 0.2s;
     }
-
-    .btn-cm-primary {
-        background: var(--cm-primary);
-        color: #fff;
-        border: none;
-    }
-    .btn-cm-primary:hover { background: #2475a8; color: white; }
-
-    .btn-cm-outline {
-        color: var(--cm-primary);
-        border-color: var(--cm-primary);
-    }
-    .btn-cm-outline:hover { background: #f0f8ff; }
-
-    .btn-cm-danger {
-        color: var(--cm-danger);
-        border-color: var(--cm-danger);
-    }
-    .btn-cm-danger:hover { background: #fff0f0; }
-
-    /* Forms */
-    .grid-layout {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
-
-    .grid-layout input, .grid-layout select {
-        padding: 12px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        font-size: 14px;
-        width: 100%;
-        background: white;
+    .btn-reset:hover{
+        border-color: var(--cm-accent);
+        color: var(--cm-accent);
+        background: #f8f9fa;
     }
 
     /* Table */
-    .cm-table {
-        width: 100%;
+    .table-modern{
+        width:100%;
         border-collapse: collapse;
     }
 
-    .cm-table th {
+    .table-modern thead th{
+        text-align:left;
+        padding: 15px;
         background: #f8f9fa;
-        text-align: left;
-        padding: 14px;
-        font-size: 13px;
-        color: var(--cm-muted);
-        border-bottom: 1px solid var(--cm-border);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        border-bottom: 2px solid #dee2e6;
+        color:#6c757d;
+        font-weight: 800;
+        letter-spacing: .5px;
+        cursor: pointer;
+        user-select: none;
     }
 
-    .cm-table td {
-        padding: 14px;
-        border-top: 1px solid #eee;
+    .table-modern thead th.no-sort{
+        cursor: default;
+    }
+
+    .table-modern td{
+        padding: 15px;
         vertical-align: middle;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 0.95rem;
     }
 
-    .actions {
-        display: flex;
+    .sort-icon{
+        margin-left: 6px;
+        font-size: 0.8em;
+        opacity: 0.25;
+    }
+    .active-sort .sort-icon{ opacity: 1; color: var(--cm-accent); }
+    .sort-asc .sort-icon::after { content: "▲"; }
+    .sort-desc .sort-icon::after { content: "▼"; }
+
+    /* Actions */
+    .btn-action{
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #6c757d;
+        transition: all 0.15s;
+    }
+    .btn-action:hover{
+        background:#f1f3f5;
+        color: var(--cm-dark);
+    }
+    .btn-edit{ color: var(--cm-accent); }
+    .btn-edit:hover{ background:#e7f1ff; }
+    .btn-delete{ color: #e74c3c; }
+    .btn-delete:hover{ background:#ffebeb; }
+
+    /* Create/Edit Form */
+    .form-grid{
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .form-grid input, .form-grid select{
+        width: 100%;
+        padding: 0.65rem;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 1rem;
+        background: #fff;
+        box-sizing: border-box;
+    }
+    .form-grid input:focus, .form-grid select:focus{
+        border-color: var(--cm-accent);
+        outline:none;
+        box-shadow: 0 0 0 3px rgba(52,152,219,0.12);
+    }
+
+    .form-actions{
+        display:flex;
+        justify-content: flex-end;
         gap: 10px;
+        margin-top: 14px;
     }
 
-    @media(max-width:900px){
-        .grid-layout { grid-template-columns: 1fr; }
-        .toolbar { flex-direction: column; align-items: stretch; }
-        .btn-cm { width: 100%; }
+    .btn-secondary{
+        padding: 10px 14px;
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        background: #fff;
+        cursor: pointer;
+        font-weight: 800;
+        color: #6c757d;
+        text-decoration: none;
+    }
+    .btn-secondary:hover{
+        border-color: var(--cm-accent);
+        color: var(--cm-accent);
+        background:#f8f9fa;
+    }
+
+    .btn-primary{
+        padding: 10px 16px;
+        border-radius: 6px;
+        border: none;
+        background: var(--cm-dark);
+        color: #fff;
+        cursor: pointer;
+        font-weight: 900;
+        display:inline-flex;
+        align-items:center;
+        gap: 8px;
+    }
+    .btn-primary:hover{ background:#1a252f; }
+
+    @media(max-width: 900px){
+        .form-grid{ grid-template-columns: 1fr; }
+        .filter-select{ min-width: 160px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="cm-container">
+<div class="cm-wrapper">
+    <div class="cm-container">
 
-    <div class="page-title">Kunden</div>
-    <div class="page-subtitle">Anlegen, bearbeiten und verwalten</div>
+        {# ✅ Customers-only Messages (optional) #}
+        {% if messages %}
+            {% for message in messages %}
+                {% if "customers" in message.tags or message.tags == "customers" %}
+                    <div style="padding: 12px 20px; margin-bottom: 20px; border-radius: 6px;
+                        background: {% if message.tags == 'error' %}#f8d7da{% else %}#d4edda{% endif %};
+                        color: {% if message.tags == 'error' %}#721c24{% else %}#155724{% endif %};
+                        border: 1px solid {% if message.tags == 'error' %}#f5c6cb{% else %}#c3e6cb{% endif %};">
+                        {{ message }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
 
-    <div class="cm-card">
-        <div class="toolbar">
-            <input class="search-input" type="text" placeholder="Suche nach Name, E-Mail, Stadt …">
-            <a href="{% url 'customers_page' %}?create=1" class="btn-cm btn-cm-primary">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Kunden</h1>
+                <p class="page-subtitle">Anlegen, bearbeiten und verwalten.</p>
+            </div>
+
+            <a href="{% url 'customers_page' %}?create=1" class="btn-create">
                 <i class="bi bi-plus-lg"></i> Kunde anlegen
             </a>
         </div>
-    </div>
 
-    {% if create_mode or edit_customer %}
-    <div class="cm-card">
-        <div class="cm-card-header">
-            <strong>{% if edit_customer %}Kunde bearbeiten{% else %}Kunde anlegen{% endif %}</strong>
-            <a href="{% url 'customers_page' %}" class="btn-cm btn-cm-outline" style="min-width: auto;">
-                Abbrechen
-            </a>
+        {# ---------- CREATE / EDIT FORM CARD ---------- #}
+        {% if create_mode or edit_customer %}
+        <div class="data-card">
+            <div class="card-header">
+                <h3 class="card-title">{% if edit_customer %}Kunde bearbeiten{% else %}Kunde anlegen{% endif %}</h3>
+                <a href="{% url 'customers_page' %}" class="btn-secondary">Abbrechen</a>
+            </div>
+
+            <div style="padding: 1.25rem;">
+                <form method="post"
+                      action="{% if edit_customer %}{% url 'customer_edit' edit_customer.id %}{% else %}{% url 'customer_create' %}{% endif %}">
+                    {% csrf_token %}
+
+                    <div class="form-grid">
+                        <select name="salutation" required>
+                            <option value="Herr" {% if not edit_customer or edit_customer.salutation == "Herr" %}selected{% endif %}>Herr</option>
+                            <option value="Frau" {% if edit_customer and edit_customer.salutation == "Frau" %}selected{% endif %}>Frau</option>
+                            <option value="Divers" {% if edit_customer and edit_customer.salutation == "Divers" %}selected{% endif %}>Divers</option>
+                        </select>
+
+                        <input name="name" placeholder="Name" value="{{ edit_customer.name|default:'' }}" required>
+                        <input name="email" placeholder="E-Mail" value="{{ edit_customer.email|default:'' }}" required>
+                        <input name="phone" placeholder="Telefon" value="{{ edit_customer.phone|default:'' }}" required>
+                        <input name="street" placeholder="Straße" value="{{ edit_customer.street|default:'' }}">
+                        <input name="house_number" placeholder="Hausnummer" value="{{ edit_customer.house_number|default:'' }}">
+                        <input name="zip_code" placeholder="PLZ" value="{{ edit_customer.zip_code|default:'' }}">
+                        <input name="city" placeholder="Stadt" value="{{ edit_customer.city|default:'' }}">
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="{% url 'customers_page' %}" class="btn-secondary">Abbrechen</a>
+                        <button type="submit" class="btn-primary">
+                            <i class="bi bi-check2"></i>
+                            {% if edit_customer %}Speichern{% else %}Anlegen{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
+        {% endif %}
 
-        <div class="cm-card-body">
-            <form method="post"
-                  action="{% if edit_customer %}{% url 'customer_edit' edit_customer.id %}{% else %}{% url 'customer_create' %}{% endif %}">
-                {% csrf_token %}
+        {# ---------- FILTER & TABLE CARD ---------- #}
+        <div class="data-card">
+            <div class="card-header">
+                <h3 class="card-title">Filter & Sortierung</h3>
 
-                <div class="grid-layout">
-                    <select name="salutation" required>
-                        <option value="Herr" {% if not edit_customer or edit_customer.salutation == "Herr" %}selected{% endif %}>Herr</option>
-                        <option value="Frau" {% if edit_customer and edit_customer.salutation == "Frau" %}selected{% endif %}>Frau</option>
-                        <option value="Divers" {% if edit_customer and edit_customer.salutation == "Divers" %}selected{% endif %}>Divers</option>
+                <div class="filter-group">
+                    <select id="filterSalutation" onchange="filterCustomers()" class="filter-select">
+                        <option value="">Alle Anreden</option>
                     </select>
 
-                    <input name="name" placeholder="Name" value="{{ edit_customer.name|default:'' }}" required>
-                    <input name="email" placeholder="E-Mail" value="{{ edit_customer.email|default:'' }}" required>
-                    <input name="phone" placeholder="Telefon" value="{{ edit_customer.phone|default:'' }}" required>
-                    <input name="street" placeholder="Straße" value="{{ edit_customer.street|default:'' }}">
-                    <input name="house_number" placeholder="Hausnummer" value="{{ edit_customer.house_number|default:'' }}">
-                    <input name="zip_code" placeholder="PLZ" value="{{ edit_customer.zip_code|default:'' }}">
-                    <input name="city" placeholder="Stadt" value="{{ edit_customer.city|default:'' }}">
-                </div>
+                    <select id="filterZip" onchange="filterCustomers()" class="filter-select">
+                        <option value="">Alle PLZ</option>
+                    </select>
 
-                <div style="margin-top:14px; text-align:right;">
-                    <button type="submit" class="btn-cm btn-cm-primary">
-                        <i class="bi bi-check2"></i>
-                        {% if edit_customer %}Speichern{% else %}Anlegen{% endif %}
+                    <select id="filterCity" onchange="filterCustomers()" class="filter-select">
+                        <option value="">Alle Städte</option>
+                    </select>
+
+                    <button type="button" class="btn-reset" onclick="resetCustomerFilters()">
+                        Filter zurücksetzen
                     </button>
                 </div>
-            </form>
+            </div>
+
+            <div style="padding:0;">
+                <div style="overflow-x:auto;">
+                    <table class="table-modern" id="customersTable">
+                        <thead>
+                            <tr>
+                                <th onclick="sortCustomers(0)">Name <span class="sort-icon"></span></th>
+                                <th onclick="sortCustomers(1)">E-Mail <span class="sort-icon"></span></th>
+                                <th onclick="sortCustomers(2)">Telefon <span class="sort-icon"></span></th>
+                                <th onclick="sortCustomers(3)">Anrede <span class="sort-icon"></span></th>
+                                <th onclick="sortCustomers(4)">PLZ <span class="sort-icon"></span></th>
+                                <th onclick="sortCustomers(5)">Stadt <span class="sort-icon"></span></th>
+                                <th class="no-sort" style="text-align:right;">Aktionen</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for c in customers %}
+                            <tr class="customer-row"
+                                data-salutation="{{ c.salutation|default_if_none:'' }}"
+                                data-zip="{{ c.zip_code|default_if_none:'' }}"
+                                data-city="{{ c.city|default_if_none:'' }}">
+
+                                <td data-sort="{{ c.name|lower }}">
+                                    <strong style="color: var(--cm-dark);">{{ c.name }}</strong>
+                                </td>
+
+                                <td data-sort="{{ c.email|lower }}">
+                                    {{ c.email }}
+                                </td>
+
+                                <td data-sort="{{ c.phone }}">
+                                    {{ c.phone }}
+                                </td>
+
+                                <td data-sort="{{ c.salutation|lower }}">
+                                    {{ c.salutation }}
+                                </td>
+
+                                <td data-sort="{{ c.zip_code }}">
+                                    {{ c.zip_code|default:"-" }}
+                                </td>
+
+                                <td data-sort="{{ c.city|lower }}">
+                                    {{ c.city|default:"-" }}
+                                </td>
+
+                                <td style="text-align:right; white-space:nowrap;">
+                                    <a class="btn-action btn-edit" href="{% url 'customers_page' %}?edit={{ c.id }}">
+                                        <i class="bi bi-pencil"></i> Bearbeiten
+                                    </a>
+
+                                    {# Delete: nur Admin (stell um auf is_superuser wenn du willst) #}
+                                    {% if request.user.is_staff %}
+                                    <form method="post"
+                                          action="{% url 'customer_delete' c.id %}"
+                                          onsubmit="return confirm('Kunden wirklich löschen?');"
+                                          style="display:inline-block; margin:0;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-action btn-delete">
+                                            <i class="bi bi-trash"></i> Löschen
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" style="text-align:center; padding: 4rem; color:#adb5bd;">
+                                    <i class="bi bi-people" style="font-size:2rem; display:block; margin-bottom:10px;"></i>
+                                    Noch keine Kunden vorhanden.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
+
     </div>
-    {% endif %}
-
-    <div class="cm-card">
-        <table class="cm-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>E-Mail</th>
-                    <th>Telefon</th>
-                    <th>Adresse</th>
-                    <th>Aktionen</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in customers %}
-                <tr>
-                    <td>
-                        <div style="font-weight: bold;">{{ c.salutation }} {{ c.name }}</div>
-                    </td>
-                    <td>{{ c.email }}</td>
-                    <td>{{ c.phone }}</td>
-                    <td>
-                        {% if c.street %}
-                            {{ c.street }} {{ c.house_number }}<br>
-                            <small style="color:#7f8c8d">{{ c.zip_code }} {{ c.city }}</small>
-                        {% else %}
-                            <span style="color:#ccc;">—</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="actions">
-                            <a href="{% url 'customers_page' %}?edit={{ c.id }}"
-                               class="btn-cm btn-cm-outline" style="min-width:auto; height:32px; font-size:13px;">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-
-                            <form method="post"
-                                  action="{% url 'customer_delete' c.id %}"
-                                  onsubmit="return confirm('Kunden wirklich löschen?');"
-                                  style="margin:0;">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        class="btn-cm btn-cm-danger"
-                                        style="min-width:auto; height:32px; font-size:13px;">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--cm-muted);">
-                        <i class="bi bi-people" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                        Noch keine Kunden vorhanden.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+    populateCustomerFilters();
+});
+
+function populateCustomerFilters(){
+    const rows = document.querySelectorAll(".customer-row");
+    const salutations = new Set();
+    const zips = new Set();
+    const cities = new Set();
+
+    rows.forEach(r => {
+        const sal = (r.getAttribute("data-salutation") || "").trim();
+        const zip = (r.getAttribute("data-zip") || "").trim();
+        const city = (r.getAttribute("data-city") || "").trim();
+
+        if (sal) salutations.add(sal);
+        if (zip) zips.add(zip);
+        if (city) cities.add(city);
+    });
+
+    fillSelect("filterSalutation", Array.from(salutations).sort());
+    fillSelect("filterZip", Array.from(zips).sort());
+    fillSelect("filterCity", Array.from(cities).sort());
+}
+
+function fillSelect(id, values){
+    const sel = document.getElementById(id);
+    if(!sel) return;
+
+    // nicht doppelt befüllen
+    if(sel.options.length > 1) return;
+
+    values.forEach(v => sel.add(new Option(v, v)));
+}
+
+function filterCustomers(){
+    const sal = document.getElementById("filterSalutation").value;
+    const zip = document.getElementById("filterZip").value;
+    const city = document.getElementById("filterCity").value;
+
+    document.querySelectorAll(".customer-row").forEach(r => {
+        const rSal = r.getAttribute("data-salutation");
+        const rZip = r.getAttribute("data-zip");
+        const rCity = r.getAttribute("data-city");
+
+        const matchSal = (sal === "" || rSal === sal);
+        const matchZip = (zip === "" || rZip === zip);
+        const matchCity = (city === "" || rCity === city);
+
+        r.style.display = (matchSal && matchZip && matchCity) ? "" : "none";
+    });
+}
+
+function resetCustomerFilters(){
+    document.getElementById("filterSalutation").value = "";
+    document.getElementById("filterZip").value = "";
+    document.getElementById("filterCity").value = "";
+    filterCustomers();
+}
+
+let customerSortState = {}; // pro Spalte merken
+
+function sortCustomers(colIndex){
+    const table = document.getElementById("customersTable");
+    const tbody = table.querySelector("tbody");
+    const rows = Array.from(tbody.querySelectorAll("tr.customer-row"));
+
+    // Richtung togglen
+    const current = customerSortState[colIndex] || "asc";
+    const dir = (current === "asc") ? "desc" : "asc";
+    customerSortState[colIndex] = dir;
+
+    // header classes updaten (Pfeile)
+    const ths = table.querySelectorAll("thead th");
+    ths.forEach(th => th.classList.remove("active-sort", "sort-asc", "sort-desc"));
+    if(ths[colIndex]) ths[colIndex].classList.add("active-sort", dir === "asc" ? "sort-asc" : "sort-desc");
+
+    rows.sort((a,b) => {
+        const aVal = (a.children[colIndex].getAttribute("data-sort") || "").toLowerCase();
+        const bVal = (b.children[colIndex].getAttribute("data-sort") || "").toLowerCase();
+
+        const aNum = parseFloat(aVal);
+        const bNum = parseFloat(bVal);
+        const isNum = !isNaN(aNum) && !isNaN(bNum);
+
+        if(isNum){
+            return dir === "asc" ? (aNum - bNum) : (bNum - aNum);
+        } else {
+            if(aVal < bVal) return dir === "asc" ? -1 : 1;
+            if(aVal > bVal) return dir === "asc" ? 1 : -1;
+            return 0;
+        }
+    });
+
+    rows.forEach(r => tbody.appendChild(r));
+}
+</script>
 {% endblock %}
