@@ -468,7 +468,12 @@
         tr.innerHTML = `
           <td><strong>#${i.id}</strong></td>
           <td><span class="badge">PO #${i.purchase_order}</span></td>
-          <td>${i.product}</td>
+          <td>
+            <strong>${i.product_name}</strong><br>
+            <span style="color:#7f8c8d;font-size:0.8rem;">
+              ${i.supplier_name}
+            </span>
+          </td>
           <td><strong>${i.quantity}</strong></td>
           <td class="actions">
             <button class="danger" data-del="${i.id}" type="button">🗑 Löschen</button>
