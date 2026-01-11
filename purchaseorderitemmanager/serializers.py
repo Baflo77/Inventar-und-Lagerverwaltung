@@ -8,6 +8,10 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product_supplier.product.name", read_only=True)
     supplier_name = serializers.CharField(source="product_supplier.supplier.name", read_only=True)
 
+    purchase_order_id = serializers.IntegerField(source="purchase_order.id", read_only=True)
+    purchase_order_status = serializers.CharField(source="purchase_order.status", read_only=True)
+    purchase_order_supplier_name = serializers.CharField(source="purchase_order.supplier.name", read_only=True)
+
     class Meta:
         model = PurchaseOrderItem
         fields = "__all__"

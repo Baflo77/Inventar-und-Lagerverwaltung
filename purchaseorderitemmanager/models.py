@@ -2,7 +2,7 @@ from django.db import models
 from productmanager.models import Product
 from purchaseordermanager.models import PurchaseOrder
 from productsuppliermanager.models import ProductSupplier
-
+from django.core.exceptions import ValidationError
 
 
 class PurchaseOrderItem(models.Model):
@@ -24,5 +24,9 @@ class PurchaseOrderItem(models.Model):
         self.full_clean()
         return super().save(*args, **kwargs)
 
+    @property
+    def product(self):
+        return self.product_supplier.product
+
     def __str__(self):
-        return f"{self.product.name} {self.quantity}"
+        return f"{self.product_supplier.product.name} x{self.quantity}"

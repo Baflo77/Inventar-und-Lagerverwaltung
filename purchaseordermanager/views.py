@@ -118,12 +118,15 @@ def purchaseorder_receive_api(request, id):
 
                 any_posted_qty = True
 
-                poi = PurchaseOrderItem.objects.select_for_update().get(
+                poi = PurchaseOrderItem.objects.select_for_update().select_related(
+                    "product_supplier",
+                    "product_supplier__product"
+                ).get(
                     id=po_item_id,
                     purchase_order=order
                 )
 
-                product = poi.product
+                product = poi.product_supplier.product
 
                 remaining = poi.quantity - poi.received_quantity
                 if qty > remaining:

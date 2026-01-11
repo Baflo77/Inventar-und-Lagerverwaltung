@@ -399,6 +399,28 @@
                     <option value="">Bitte zuerst Produkt & Menge auswählen...</option>
                 </select>
 
+                <button type="button" class="btn-secondary" id="addItemBtn" style="margin-top:12px; width:100%;">
+                    ➕ Position hinzufügen
+                </button>
+
+                <div style="margin-top:14px;">
+                    <div style="font-weight:700; margin-bottom:6px;">Warenkorb (Positionen)</div>
+
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:#f8f9fa;">
+                                <th style="padding:8px; font-size:0.8rem;">Produkt</th>
+                                <th style="padding:8px; font-size:0.8rem;">Lieferant</th>
+                                <th style="padding:8px; font-size:0.8rem; text-align:right;">Menge</th>
+                                <th style="padding:8px; font-size:0.8rem; text-align:right;">Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartBody">
+                            <tr><td colspan="4" style="padding:10px; color:#7f8c8d;">Noch keine Positionen.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <div id="supplierDetails" style="margin-top:8px; font-size:0.9rem; color:#34495e; display:none;">
                 </div>
 
@@ -468,6 +490,8 @@
     const PURCHASEORDERS_API = "/purchaseorders/api/";
     const PRODUCTS_API = "/products/api/";
     const PS_BY_PRODUCT_API = "/productsuppliers/api/by-product/?product_id=";
+    const PURCHASEORDERITEMS_API = "/purchaseorderitems/api/";
+
 
     // Elements
     const backdrop = document.getElementById("createModalBackdrop");
@@ -482,6 +506,10 @@
     const supplierSelect = document.getElementById("supplierSelect");
     const statusSelect = document.getElementById("statusSelect");
     const msgBox = document.getElementById("createMsg");
+    const addItemBtn = document.getElementById("addItemBtn");
+    const cartBody = document.getElementById("cartBody");
+
+    let cart = [];
 
     function setMsg(text, type="") {
         msgBox.textContent = text || "";
@@ -500,6 +528,34 @@
             msgBox.style.border = "none";
         }
     }
+
+    function renderCart() {
+        if (!cart.length) {
+            cartBody.innerHTML = `<tr><td colspan="4" style="padding:10px; color:#7f8c8d;">Noch keine Positionen.</td></tr>`;
+            return;
+        }
+
+        cartBody.innerHTML = cart.map((row, idx) => `
+            <tr>
+                <td style="padding:8px;">${row.productName}</td>
+                <td style="padding:8px;">${row.supplierName}</td>
+                <td style="padding:8px; text-align:right;">${row.quantity}</td>
+                <td style="padding:8px; text-align:right;">
+                    <button type="button" class="icon-btn icon-btn-delete" onclick="removeCartItem(${idx})">🗑</button>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    window.removeCartItem = function (idx) {
+        cart.splice(idx, 1);
+        renderCart();
+    };
+
+window.removeCartItem = function (idx) {
+  cart.splice(idx, 1);
+  renderCart();
+};
 
     function openModal() {
         backdrop.style.display = "flex";
@@ -638,7 +694,8 @@
 
             data.forEach(item => {
                 const opt = document.createElement("option");
-                opt.value = item.supplier;
+                opt.value = item.id;
+                opt.dataset.supplierId = item.supplier;
 
                 const supplierName = item.supplier_name || ("Lieferant #" + item.supplier);
 
@@ -666,45 +723,75 @@
 
 
     async function submitOrder() {
-        const supplierId = supplierSelect.value;
+        setMsg("");
+
         const statusVal = statusSelect.value;
-        const q = parseInt(quantityInput.value || "0", 10);
 
-        if (!productSelect.value) {
-            setMsg("Bitte wähle ein Produkt aus.", "error");
-            return;
-        }
-        if (!Number.isInteger(q) || q <= 0) {
-            setMsg("Bitte eine Bestellmenge größer 0 eingeben.", "error");
+        if (!cart.length) {
+            setMsg("Bitte füge mindestens eine Position hinzu (➕ Position hinzufügen).", "error");
             return;
         }
 
-        if (!supplierId) {
-            setMsg("Bitte wähle einen Lieferanten aus.", "error");
-            return;
-        }
+
+        const supplierId = cart[0].supplierId;
 
         try {
-            const res = await fetch(PURCHASEORDERS_API, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": csrftoken
-                },
-                body: JSON.stringify({
-                    supplier: parseInt(supplierId),
-                    status: statusVal
-                })
+
+            const resOrder = await fetch(PURCHASEORDERS_API, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken
+            },
+            credentials: "same-origin",
+            body: JSON.stringify({
+                supplier: supplierId,
+                status: statusVal
+              })
             });
 
-            if(res.ok) {
-                setMsg("Erfolgreich! Lade neu...", "success");
-                setTimeout(() => location.reload(), 500);
-            } else {
-                const errData = await res.json();
-                setMsg("Fehler: " + JSON.stringify(errData), "error");
+            const orderData = await resOrder.json().catch(() => ({}));
+            if (!resOrder.ok) {
+            setMsg(
+                "Fehler beim Anlegen der Bestellung: " + JSON.stringify(orderData),
+                "error"
+            );
+            return;
             }
-        } catch(e) {
+
+            const orderId = orderData.id;
+
+
+            const itemsPayload = cart.map(row => ({
+            purchase_order: orderId,
+            product_supplier: row.productSupplierId,
+            quantity: row.quantity
+            }));
+
+            const resItems = await fetch(PURCHASEORDERITEMS_API, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken
+            },
+            credentials: "same-origin",
+            body: JSON.stringify(itemsPayload)
+            });
+
+            const itemsData = await resItems.json().catch(() => ({}));
+            if (!resItems.ok) {
+            setMsg(
+                "Bestellung angelegt, aber Positionen konnten nicht gespeichert werden: "
+                + JSON.stringify(itemsData),
+                "error"
+            );
+            return;
+            }
+
+            setMsg("Erfolgreich! Bestellung & Positionen angelegt. Lade neu...", "success");
+            setTimeout(() => location.reload(), 600);
+
+        } catch (e) {
             setMsg("Verbindungsfehler.", "error");
         }
     }
@@ -713,6 +800,8 @@
     openBtn.onclick = () => {
         openModal();
         loadProducts();
+        cart = [];
+        renderCart();
 
         supplierSelect.innerHTML = '<option value="">Zuerst Produkt & Menge auswählen</option>';
         supplierSelect.disabled = true;
@@ -752,10 +841,66 @@
         loadSuppliers(prodId, quantityInput.value);
     };
 
+    quantityInput.addEventListener("input", () => {
+        const prodId = productSelect.value;
+        if (!prodId) return;
+        loadSuppliers(prodId, quantityInput.value);
+    });
+
 
     createBtn.onclick = submitOrder;
 
     const supplierDetails = document.getElementById("supplierDetails");
+
+    addItemBtn.onclick = () => {
+        setMsg("");
+        const prodId = parseInt(productSelect.value, 10);
+        const q = parseInt(quantityInput.value || "0", 10);
+
+        const psOpt = supplierSelect.options[supplierSelect.selectedIndex];
+        const productSupplierId = parseInt(supplierSelect.value, 10);
+
+        if (!Number.isInteger(prodId) || prodId < 1) {
+            setMsg("Bitte zuerst ein Produkt wählen.", "error");
+            return;
+        }
+        if (!Number.isInteger(q) || q <= 0) {
+            setMsg("Bitte eine gültige Menge eingeben.", "error");
+            return;
+        }
+        if (!Number.isInteger(productSupplierId) || productSupplierId < 1) {
+            setMsg("Bitte einen Lieferanten auswählen.", "error");
+            return;
+        }
+
+        const supplierId = parseInt(psOpt.dataset.supplierId, 10);
+        const supplierName = psOpt.dataset.supplierName || psOpt.textContent;
+        const productName = productSelect.options[productSelect.selectedIndex].textContent;
+
+
+        if (cart.length && cart[0].supplierId !== supplierId) {
+            setMsg("Eine PurchaseOrder kann nur EINEN Lieferanten haben. Bitte Warenkorb leeren oder gleichen Lieferanten wählen.", "error");
+            return;
+         }
+
+
+        const existing = cart.find(x => x.productSupplierId === productSupplierId);
+        if (existing) {
+            existing.quantity += q;
+        } else {
+         cart.push({
+              productId: prodId,
+              productName,
+              productSupplierId,
+              supplierId,
+              supplierName,
+              quantity: q
+            });
+        }
+
+        renderCart();
+        setMsg("Position hinzugefügt.", "success");
+        };
 
     supplierSelect.onchange = () => {
         const opt = supplierSelect.options[supplierSelect.selectedIndex];
