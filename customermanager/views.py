@@ -89,19 +89,59 @@ def customers_page(request):
 
 
 def create_customer(request):
+    # POST = wirklich anlegen
     if request.method == "POST":
-        serializer = CustomerSerializer(data=request.POST)
-        if serializer.is_valid():
-            serializer.save()
-            messages.success(request, "Customer created successfully.")
-            return redirect("customers_page")
-        messages.error(request, "Error creating customer.")
+        # Feldnamen müssen zu deinem customers.html passen
+        salutation = request.POST.get("salutation", "").strip()
+        name = request.POST.get("name", "").strip()
+        email = request.POST.get("email", "").strip()
+        phone = request.POST.get("phone", "").strip()
+        street = request.POST.get("street", "").strip()
+        house_number = request.POST.get("house_number", "").strip()
+        zip_code = request.POST.get("zip_code", "").strip()
+        city = request.POST.get("city", "").strip()
 
+        # Pflichtfelder (wie im HTML "required")
+        if not (salutation and name and email and phone):
+            messages.error(request, "Bitte Pflichtfelder ausfüllen (Anrede, Name, E-Mail, Telefon).")
+            customers = Customer.objects.all()
+            return render(
+                request,
+                "customermanager/customers.html",
+                {"customers": customers, "create_mode": True},
+            )
+
+        # Optional: doppelte Email verhindern
+        if Customer.objects.filter(email=email).exists():
+            messages.error(request, "Diese E-Mail existiert bereits.")
+            customers = Customer.objects.all()
+            return render(
+                request,
+                "customermanager/customers.html",
+                {"customers": customers, "create_mode": True},
+            )
+
+        # ✅ Speichern in DB
+        Customer.objects.create(
+            salutation=salutation,
+            name=name,
+            email=email,
+            phone=phone,
+            street=street,
+            house_number=house_number,
+            zip_code=zip_code,
+            city=city,
+        )
+
+        messages.success(request, "Customer created successfully.")
+        return redirect("customers_page")
+
+    # GET = Create-Form anzeigen (create_mode)
     customers = Customer.objects.all()
     return render(
         request,
         "customermanager/customers.html",
-        {"customers": customers, "create_mode": True}
+        {"customers": customers, "create_mode": True},
     )
 
 
