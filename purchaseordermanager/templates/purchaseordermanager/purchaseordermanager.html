@@ -361,6 +361,8 @@
                 <input id="quantityInput" type="number" min="1" value="1" disabled
                     style="width:100%; padding:10px; border:1px solid #dfe6e9; border-radius:6px; font-size:0.95rem;" />
 
+                <div id="minQtyHint" style="margin-top:6px; font-size:0.85rem; color:#7f8c8d; display:none;"></div>
+
 
                 <label for="supplierSelect">3. Welcher Lieferant?</label>
                 <select id="supplierSelect" disabled>
@@ -421,6 +423,7 @@
 
     const productSelect = document.getElementById("productSelect");
     const quantityInput = document.getElementById("quantityInput");
+    const minQtyHint = document.getElementById("minQtyHint");
     const supplierSelect = document.getElementById("supplierSelect");
     const statusSelect = document.getElementById("statusSelect");
     const msgBox = document.getElementById("createMsg");
@@ -487,6 +490,48 @@
             setMsg("Fehler beim Laden der Produkte.", "error");
         }
     }
+
+    async function updateMinQtyHint(prodId) {
+
+        minQtyHint.style.display = "none";
+        minQtyHint.textContent = "";
+        quantityInput.min = "1";
+
+        if (!prodId) return;
+
+        try {
+            const res = await fetch(`${PS_BY_PRODUCT_API}${prodId}`);
+            if (!res.ok) throw new Error("API Fehler");
+            const all = await res.json();
+
+            const mins = (all || [])
+                .map(x => parseInt(x.min_order_quantity, 10))
+                .filter(v => Number.isInteger(v) && v > 0);
+
+            if (!mins.length) {
+                minQtyHint.style.display = "block";
+                minQtyHint.textContent = "Keine Mindestbestellmenge gepflegt (je Lieferant).";
+                quantityInput.min = "1";
+                return;
+            }
+
+            const minNeeded = Math.min(...mins);
+
+
+            quantityInput.min = String(minNeeded);
+            if (parseInt(quantityInput.value || "0", 10) < minNeeded) {
+                quantityInput.value = String(minNeeded);
+            }
+
+            minQtyHint.style.display = "block";
+            minQtyHint.textContent = `Kleinste Mindestbestellmenge für dieses Produkt: ${minNeeded}`;
+          } catch (e) {
+
+            minQtyHint.style.display = "block";
+            minQtyHint.textContent = "Hinweis zur Mindestbestellmenge konnte nicht geladen werden.";
+            quantityInput.min = "1";
+          }
+        }
 
     async function loadSuppliers(prodId, qty) {
         supplierSelect.innerHTML = '<option value="">Lade Lieferanten...</option>';
@@ -627,7 +672,7 @@
         if(e.target === backdrop) closeModal();
     };
 
-    productSelect.onchange = () => {
+    productSelect.onchange = async () => {
         const prodId = productSelect.value;
 
         supplierSelect.innerHTML = '<option value="">Bitte Menge eingeben...</option>';
@@ -635,16 +680,20 @@
         setMsg("");
 
         quantityInput.disabled = !prodId;
+
         if (!prodId) {
             quantityInput.value = "1";
+            quantityInput.min = "1";
             quantityInput.disabled = true;
+            minQtyHint.style.display = "none";
+            minQtyHint.textContent = "";
             return;
         }
-        loadSuppliers(prodId, quantityInput.value);
-    };
-    quantityInput.oninput = () => {
-        const prodId = productSelect.value;
-        if (!prodId) return;
+
+
+        await updateMinQtyHint(prodId);
+
+
         loadSuppliers(prodId, quantityInput.value);
     };
 
