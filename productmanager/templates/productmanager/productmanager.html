@@ -4,7 +4,6 @@
 
 {% block extra_css %}
 <style>
-    /* Lokale Variablen für die Produkt-Seite */
     :root {
         --prod-bg-main: #ebedef;
         --prod-card-bg: #ffffff;
@@ -13,7 +12,6 @@
         --prod-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
-    /* Container: Umbenannt, damit er nicht mit Bootstrap kollidiert */
     .products-container {
         max-width: 1200px;
         margin: 40px auto;
@@ -59,7 +57,6 @@
         border: 1px solid #e6e6e6;
     }
 
-    /* Tabelle */
     .custom-table { width: 100%; border-collapse: collapse; }
     .custom-table th {
         background: #f8f9fa;
@@ -79,7 +76,6 @@
 
     .text-muted { color: #7f8c8d; font-size: 0.85rem; }
 
-    /* Actions */
     .actions button {
         margin-right: 10px;
         border: none;
@@ -93,11 +89,9 @@
     .actions button:hover { text-decoration: underline; }
     .actions button.danger { color: #e74c3c; }
 
-    /* Empty State */
     .empty-state { text-align: center; padding: 50px; color: #bdc3c7; }
     .empty-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
 
-    /* Modals */
     .modal-backdrop {
         position: fixed; inset: 0;
         background: rgba(0,0,0,0.5);
@@ -147,13 +141,11 @@
         padding: 16px 20px; border-top: 1px solid #eee; background: #fcfcfc;
     }
 
-    /* Buttons Modal */
     .btn-modal { border: none; border-radius: 6px; padding: 10px 16px; cursor: pointer; font-weight: 600; }
     .btn-primary-modal { background: var(--prod-accent-color); color: white; }
     .btn-secondary-modal { background: #e0e0e0; color: #2f3640; }
     .btn-danger-modal { background: #e74c3c; color: white; }
 
-    /* Toast */
     .toast-msg {
         position: fixed; bottom: 20px; right: 20px;
         padding: 15px 20px; border-radius: 8px; background: #ffffff;
@@ -209,7 +201,7 @@
                             '{{ product.category_id }}'
                         )"><i class="bi bi-pencil"></i> Bearbeiten</button>
 
-                        <button class="danger" onclick="openDelete('{{ product.id }}', '{{ product.name|escapejs }}')">
+                        <button class="danger" onclick="confirmDelete('{{ product.id }}', '{{ product.name|escapejs }}')">
                             <i class="bi bi-trash"></i> Löschen
                         </button>
                     </td>
@@ -273,12 +265,9 @@
 
 {% block extra_js %}
 <script>
-    // --- API URLs ---
-    // Da wir auf der Seite /products/ sind, ist api/ relativ dazu (also /products/api/)
     const API_LIST = "api/";
     const API_DETAIL = (id) => `api/${id}/`;
 
-    // --- DOM Elements ---
     const backdrop = document.getElementById("modalBackdrop");
     const modalTitle = document.getElementById("modalTitle");
     const modalActions = document.getElementById("modalActions");
@@ -290,7 +279,6 @@
 
     const toast = document.getElementById("toast");
 
-    // --- UI Helpers ---
     function showToast(msg, isError=false) {
         toast.style.display = "block";
         toast.textContent = msg;
@@ -298,7 +286,6 @@
         setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
-    // --- CSRF + Fetch Wrapper ---
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -346,7 +333,6 @@
         return parts.join(" | ");
     }
 
-    // --- Modal Logic ---
     function openModal() { backdrop.style.display = "flex"; }
 
     function closeModal() {
@@ -381,20 +367,6 @@
         openModal();
     }
 
-    function openDelete(id, name) {
-        modalTitle.textContent = "Produkt löschen";
-        pName.value = name || "";
-        pSku.value = "";
-        pDesc.value = "";
-        pCategoryId.value = ""; // Löschen braucht keine Daten
-
-        modalActions.innerHTML = `
-            <button class="btn-modal btn-secondary-modal" onclick="closeModal()">Abbrechen</button>
-            <button class="btn-modal btn-danger-modal" onclick="deleteProduct('${id}')">Löschen</button>
-        `;
-        openModal();
-    }
-
     function buildPayload() {
         const categoryVal = String(pCategoryId.value || "").trim();
         return {
@@ -405,12 +377,10 @@
         };
     }
 
-    // --- CRUD Operations ---
     async function createProduct() {
         const payload = buildPayload();
         if (!payload.name) return showToast("Bitte einen Namen eingeben.", true);
         if (!payload.sku) return showToast("Bitte eine SKU eingeben.", true);
-        // if (!payload.description) return showToast("Bitte eine Beschreibung eingeben.", true);
         if (!payload.category) return showToast("Bitte eine Kategorie auswählen.", true);
 
         const { res, data } = await apiFetch(API_LIST, {
@@ -445,10 +415,17 @@
         }
     }
 
+    function confirmDelete(id, name) {
+        const ok = confirm(`Produkt "${name}" wirklich löschen?`);
+        if (!ok) return;
+        deleteProduct(id);
+    }
+
     async function deleteProduct(id) {
         const { res, data } = await apiFetch(API_DETAIL(id), { method: "DELETE" });
 
-        if (res.ok) {
+
+        if (res.ok || res.status === 204) {
             showToast("Produkt gelöscht.");
             location.reload();
         } else {
