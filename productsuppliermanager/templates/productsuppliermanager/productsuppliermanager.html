@@ -14,9 +14,11 @@
       align-items: center;
     }
     .cell-product{
-      display: flex;
       flex-direction: column;
       gap: 6px;
+    }
+    .cell-product .product-name{
+        margin-bottom: 6px;
     }
 
     .product-name{
@@ -264,7 +266,8 @@
 
           <td>{{ link.min_order_quantity|default:"—" }}</td>
 
-          <td class="actions">
+          <td>
+            <div class="actions">
             <button class="icon-btn icon-btn-edit"
                     title="Bearbeiten"
                     onclick="openEdit(
@@ -283,6 +286,7 @@
                     onclick="openDelete('{{ link.id }}')">
               🗑
             </button>
+            </div>
           </td>
         </tr>
       {% empty %}
