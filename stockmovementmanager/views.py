@@ -11,7 +11,6 @@ from stockmanager.services import process_outgoing_goods, process_stock_transfer
 
 @api_view(["GET", "POST"])
 def stock_movement_list(request):
-
     if request.method == "GET":
         product_id = request.query_params.get("product_id")
         movement_type = request.query_params.get("movement_type")
@@ -55,7 +54,7 @@ def stock_movement_list(request):
                     source_stock_id=data.get('source_stock_id'),
                     target_location_id=data.get('target_location_id'),
                     quantity=int(data.get('quantity')),
-                    note = data.get('note')
+                    note=data.get('note')
                 )
                 return Response({"msg": "Umlagerung erfolgreich"}, status=status.HTTP_201_CREATED)
 
@@ -96,24 +95,7 @@ def stock_movement_detail(request, id):
 
 
 def stock_movement_ui(request):
-    # 1. Alle Bewegungen holen (Neueste zuerst)
     movements = StockMovement.objects.all().order_by('-timestamp')
-
-    # 2. Filter auslesen
-    q = request.GET.get('q')
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-    move_type = request.GET.get('type')
-
-    # 3. Filter anwenden
-    if q:
-        movements = movements.filter(product__name__icontains=q)
-    if date_from:
-        movements = movements.filter(timestamp__date__gte=date_from)
-    if date_to:
-        movements = movements.filter(timestamp__date__lte=date_to)
-    if move_type:
-        movements = movements.filter(movement_type=move_type)
 
     context = {
         'movements': movements

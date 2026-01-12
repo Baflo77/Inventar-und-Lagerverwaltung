@@ -1,3 +1,9 @@
 from django.contrib import admin
+from stockmanager.models import Stock
 
-# Register your models here.
+
+class AdminStock(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(Stock, AdminStock)
