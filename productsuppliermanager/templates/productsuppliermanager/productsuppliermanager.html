@@ -146,8 +146,6 @@
     .empty-state { text-align: center; padding: 50px; color: #bdc3c7; }
     .empty-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
 
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; padding: 20px; }
-    .modal { background: white; width: 100%; max-width: 720px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
     .modal-header { padding: 16px 18px; background: #f8f9fa; border-bottom: 1px solid var(--bg-main); display: flex; justify-content: space-between; align-items: center; }
     .modal-title { margin: 0; font-size: 1rem; color: var(--header-bg); }
     .modal-body { padding: 18px; display: grid; gap: 12px; }
@@ -257,7 +255,7 @@
           <td class="text-muted">{{ link.supplier.name }}</td>
 
           <td class="cell-price" data-price="{{ link.purchase_price|default_if_none:'' }}">
-            {{ link.purchase_price|default:"—" }}€
+            {% if link.purchase_price %}{{ link.purchase_price }}€{% else %}—{% endif %}
           </td>
 
           <td class="cell-days" data-days="{{ link.delivery_time_days|default_if_none:'' }}">
@@ -438,14 +436,14 @@
     return {
       product: pId.value ? Number(pId.value) : null,
       supplier: sId.value ? Number(sId.value) : null,
-      purchase_price: price.value ? String(price.value) : null,
+      purchase_price: price.value ? price.value.replace(",", ".") : null,
       delivery_time_days: days.value ? Number(days.value) : null,
       min_order_quantity: moq.value ? Number(moq.value) : null,
     };
   }
 
   function validate(payload) {
-    if (!payload.product) return "Bitte Product ID eingeben.";
+    if (!payload.product) return "Bitte Produkt auswählen";
     if (!payload.supplier) return "Bitte Supplier ID eingeben.";
     return null;
   }
