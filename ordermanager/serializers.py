@@ -30,7 +30,6 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def get_customername(self, obj):
         customer = obj.customer
-        # Sucht nach firstname/lastname oder first_name/last_name
         first = getattr(customer, 'firstname', getattr(customer, 'first_name', ''))
         last = getattr(customer, 'lastname', getattr(customer, 'last_name', ''))
 
@@ -50,7 +49,6 @@ class OrderSerializer(serializers.ModelSerializer):
                 'id': item.id,
                 'productname': item.product.name,
                 'quantity': item.quantity,
-                # FIX: Hier holen wir auch 'unitprice' (ohne Unterstrich) oder 'price'
                 'price': float(getattr(item.product, 'unitprice', getattr(item.product, 'price', 0)))
             }
             for item in items
