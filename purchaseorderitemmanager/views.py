@@ -14,7 +14,6 @@ from django.db import transaction
 def purchaseorderitem_list(request):
     if request.method == "GET":
         po_id = request.query_params.get("purchase_order_id")
-
         items = PurchaseOrderItem.objects.select_related(
             "purchase_order",
             "product_supplier",
@@ -23,12 +22,19 @@ def purchaseorderitem_list(request):
         )
         if po_id:
             items = items.filter(purchase_order_id=po_id)
-
         return Response(PurchaseOrderItemSerializer(items, many=True).data)
 
-    is_bulk = isinstance(request.data, list)
-    serializer = PurchaseOrderItemSerializer(data=request.data, many=is_bulk)
+    payload = request.data
+    is_bulk = isinstance(payload, list)
 
+
+    if is_bulk:
+        for idx, row in enumerate(payload, start=1):
+            row.setdefault("line_no", idx)
+    else:
+        payload.setdefault("line_no", 1)
+
+    serializer = PurchaseOrderItemSerializer(data=payload, many=is_bulk)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
