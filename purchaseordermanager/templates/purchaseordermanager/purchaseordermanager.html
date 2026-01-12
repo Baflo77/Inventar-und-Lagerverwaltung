@@ -1451,6 +1451,9 @@ window.removeCartItem = function (idx) {
         });
     }
 
+    statusFilter.addEventListener("change", applyStatusFilter);
+    document.addEventListener("DOMContentLoaded", applyStatusFilter);
+
    async function deletePurchaseOrderItem(itemId, orderId) {
         if (!confirm("Position wirklich löschen?")) return;
 
