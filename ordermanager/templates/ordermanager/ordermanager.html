@@ -276,7 +276,10 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label for="oCustomerId">Kunden-ID</label>
-                    <input id="oCustomerId" type="number" min="1" placeholder="z.B. 101">
+                    <select id="oCustomerId" required>
+                        <option value="">-- Kunde wählen --</option>
+
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="oStatus">Status</label>
@@ -326,16 +329,13 @@
 
 {% block extra_js %}
 <script>
-    // --- KONFIGURATION & URLs ---
-    // Hier relative URLs. Wenn du in urls.py Namen vergeben hast, 
-    // könntest du auch "{% url 'api-orders-list' %}" nutzen.
+
     const API_ORDERS = "orders/"; 
     const API_ITEMS = "orders/items/";
     const API_ORDER_DETAIL = (id) => `orders/${id}/`;
     const API_ITEM_DETAIL = (id) => `orders/items/${id}/`;
 
-    // --- CSRF HELPER FÜR DJANGO ---
-    // Das ist wichtig, damit POST/PUT/DELETE funktionieren!
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -352,7 +352,27 @@
     }
     const csrftoken = getCookie('csrftoken');
 
-    // --- TAB FUNKTION ---
+    async function loadCustomers() {
+        try {
+            const res = await fetch('/api/customers/');
+            if (!res.ok) throw new Error('Fehler beim Laden');
+            const customers = await res.json();
+
+            const select = document.getElementById('oCustomerId');
+            select.innerHTML = '<option value="">-- Kunde wählen --</option>';
+
+            customers.forEach(customer => {
+                const option = document.createElement('option');
+                option.value = customer.id;
+                option.textContent = `${customer.firstname} ${customer.lastname}`;
+                select.appendChild(option);
+            });
+        } catch (e) {
+            console.error('Kunden konnten nicht geladen werden', e);
+            showToast('Fehler: Kunden nicht geladen', true);
+        }
+    }
+
     function switchTab(tab, event) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -364,7 +384,6 @@
         if (tab === 'items') loadItems();
     }
 
-    // --- UI HELPERS ---
     function showToast(msg, isError=false) {
         const toast = document.getElementById("toast");
         toast.style.display = "block";
@@ -373,10 +392,9 @@
         setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
-    // --- ORDERS LOGIC ---
     async function loadOrders() {
         try {
-            const res = await fetch(API_ORDERS);
+            const res = await fetch('/api/customers/');
             if(!res.ok) throw new Error("Fehler beim Laden");
             const orders = await res.json();
             
@@ -393,7 +411,7 @@
                 const row = `
                     <tr>
                         <td><strong>#${order.id}</strong></td>
-                        <td>${order.customer}</td>
+                        <td>${order.customername}</td>
                         <td class="text-muted">${new Date(order.date).toLocaleDateString('de-DE')}</td>
                         <td><span class="status-badge ${statusClass}">${order.status}</span></td>
                         <td class="actions">
@@ -411,6 +429,7 @@
         document.getElementById("modalTitleOrder").textContent = "Neue Order anlegen";
         document.getElementById("oCustomerId").value = "";
         document.getElementById("oStatus").value = "PENDING";
+        loadCustomers();
         document.getElementById("modalActionsOrder").innerHTML = `
             <button class="btn-modal btn-secondary-modal" onclick="closeModalOrder()">Abbrechen</button>
             <button class="btn-modal btn-primary-modal" onclick="createOrder()">Anlegen</button>
@@ -435,14 +454,13 @@
 
     function closeModalOrder() { document.getElementById("modalBackdropOrder").style.display = "none"; }
 
-    // --- CRUD ORDER ---
     async function createOrder() {
-        const customerId = document.getElementById("oCustomerId").value.trim();
+        const customerId = document.getElementById("oCustomerId").value;
         const status = document.getElementById("oStatus").value;
 
         if (!customerId) return showToast("Bitte eine gültige Kunden-ID eingeben.", true);
 
-        const res = await fetch(API_ORDERS, {
+        const res = await fetch('/api/orders/', {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
@@ -491,7 +509,6 @@
         else { showToast("Fehler beim Löschen.", true); }
     }
 
-    // --- ITEMS LOGIC ---
     async function loadItems() {
         try {
             const res = await fetch(API_ITEMS);
@@ -509,14 +526,17 @@
                 const row = `
                     <tr>
                         <td><strong>#${item.id}</strong></td>
-                        <td>Order #${item.order}</td>
+                        <td><strong>#${item.order}</strong> ${item.ordernumber}</td>
                         <td>Produkt #${item.product}</td>
                         <td>${item.quantity} Stk.</td>
+                        <td>€${item.subtotal.toFixed(2)}</td>
                         <td class="actions">
-                            <button onclick="openEditItem('${item.id}', '${item.order}', '${item.product}', '${item.quantity}')"><i class="bi bi-pencil"></i> Bearbeiten</button>
+                            <button onclick="openEditItem('${item.id}', '${item.order}', '${item.product}', '${item.quantity}')">
+                            <i class="bi bi-pencil"></i> Bearbeiten</button>
                             <button class="danger" onclick="openDeleteItem('${item.id}')"><i class="bi bi-trash"></i> Löschen</button>
                         </td>
                     </tr>
+
                 `;
                 tbody.innerHTML += row;
             });
@@ -589,7 +609,8 @@
         else { showToast("Fehler beim Löschen.", true); }
     }
 
-    // Initial load
+    loadCustomers();
     loadOrders();
+    loadItems();
 </script>
 {% endblock %}

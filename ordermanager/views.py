@@ -13,7 +13,7 @@ from rest_framework.exceptions import PermissionDenied
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
-def showallorders(request):
+def show_all_orders(request):
     if request.method == 'GET':
         orders = Order.objects.all()
         serializedorders = OrderSerializer(orders, many=True)
@@ -47,7 +47,7 @@ def show_order_details(request, id):
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
-def showallorderitems(request):
+def show_all_order_items(request):
     if request.method == 'GET':
         orderitems = OrderItem.objects.all()
         serializeditems = OrderItemSerializer(orderitems, many=True)
