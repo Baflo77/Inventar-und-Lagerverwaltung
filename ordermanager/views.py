@@ -11,21 +11,19 @@ from rest_framework.exceptions import PermissionDenied
 
 # Create your views here.
 
-@api_view(["GET", "POST"])
+@api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
-def show_all_orders(request):
-    if request.method == "GET":
-        orders = get_list_or_404(Order)
-        serialized_orders = OrderSerializer(orders, many=True)
-        return Response(serialized_orders.data)
-
-    elif request.method == "POST":
-        order_serializer = OrderSerializer(data=request.data)
-        if order_serializer.is_valid():
-            order_serializer.save()
-            return Response(order_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(order_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    return None
+def showallorders(request):
+    if request.method == 'GET':
+        orders = Order.objects.all()
+        serializedorders = OrderSerializer(orders, many=True)
+        return Response(serializedorders.data)
+    elif request.method == 'POST':
+        orderserializer = OrderSerializer(data=request.data)
+        if orderserializer.is_valid():
+            orderserializer.save()
+            return Response(orderserializer.data, status=status.HTTP_201_CREATED)
+        return Response(orderserializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET", "PUT", "DELETE"])
@@ -47,21 +45,19 @@ def show_order_details(request, id):
     return None
 
 
-@api_view(["GET", "POST"])
+@api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
-def show_all_order_items(request):
-    if request.method == "GET":
-        order_items = get_list_or_404(OrderItem)
-        serialized_items = OrderItemSerializer(order_items, many=True)
-        return Response(serialized_items.data)
-
-    elif request.method == "POST":
-        item_serializer = OrderItemSerializer(data=request.data)
-        if item_serializer.is_valid():
-            item_serializer.save()
-            return Response(item_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    return None
+def showallorderitems(request):
+    if request.method == 'GET':
+        orderitems = OrderItem.objects.all()
+        serializeditems = OrderItemSerializer(orderitems, many=True)
+        return Response(serializeditems.data)
+    elif request.method == 'POST':
+        itemserializer = OrderItemSerializer(data=request.data)
+        if itemserializer.is_valid():
+            itemserializer.save()
+            return Response(itemserializer.data, status=status.HTTP_201_CREATED)
+        return Response(itemserializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET", "PUT", "DELETE"])
