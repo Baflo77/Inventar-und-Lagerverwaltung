@@ -9,13 +9,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'order', 'ordernumber', 'product', 'productname', 'quantity', 'subtotal']
+        fields = ['id', 'order', 'product', 'productname', 'quantity', 'ordernumber', 'subtotal']
 
     def get_ordernumber(self, obj):
         return f"Order #{obj.order.id}"
 
     def get_subtotal(self, obj):
-        # FIX: Wir nutzen die Methode aus dem Model, damit die Logik nur an einem Ort ist
         return obj.get_subtotal()
 
 
