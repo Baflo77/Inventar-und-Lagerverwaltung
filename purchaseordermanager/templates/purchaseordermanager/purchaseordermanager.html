@@ -5,15 +5,29 @@
 {% block content %}
 <style>
 
-    .actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 16px;
-  white-space: nowrap;
+.page-title-left{
+    display:flex;
+    align-items:flex-end;
+    gap:18px;
+    flex-wrap:wrap;
+}
+.page-title-actions{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:12px;
 }
 
-/* Link-Action (Bearbeiten/Löschen/Eingang) */
+
+.actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 16px;
+        white-space: nowrap;
+        }
+
+
 .action-link {
   background: transparent;
   border: none;
@@ -492,16 +506,40 @@
     <div class="content-container">
 
         <div class="page-title-section">
+
+
+        <div class="page-title-left">
             <div>
-                <h2 class="page-title">PurchaseOrders</h2>
-                <p class="subtitle">Verwaltung deiner Lieferantenbestellungen</p>
+            <h2 class="page-title">PurchaseOrders</h2>
+            <p class="subtitle">Verwaltung deiner Lieferantenbestellungen</p>
             </div>
 
-            <button class="btn-add" id="openCreateModalBtn" type="button">
-                <span>➕</span> Neue Bestellung
-            </button>
+            <div style="display:flex; align-items:center; gap:10px;">
+            <label for="statusFilter"
+                    style="font-size:0.9rem; color:#7f8c8d; font-weight:700;">
+                Status
+            </label>
+
+            <select id="statusFilter"
+                    style="padding:10px 12px;
+                            border:1px solid #dfe6e9;
+                            border-radius:10px;
+                            background:#fff;
+                            font-weight:600;">
+                <option value="all">Alle</option>
+                <option value="open">Open</option>
+                <option value="delivered">Delivered</option>
+                <option value="canceled">Canceled</option>
+            </select>
+            </div>
         </div>
 
+        <div class="page-title-actions">
+            <button class="btn-add" id="openCreateModalBtn" type="button">
+            <span>➕</span> Neue Bestellung
+            </button>
+        </div>
+       </div>
         <div class="data-card">
             <table>
                 <thead>
@@ -516,7 +554,7 @@
                 <tbody>
 
                 {% for order in orders %}
-                    <tr>
+                    <tr class="po-row" data-status="{{ order.status|lower }}">
                         <td><strong>#{{ order.id }}</strong></td>
                         <td>
                             <strong>{{ order.supplier.name }}</strong><br>
@@ -1355,6 +1393,30 @@ window.removeCartItem = function (idx) {
     </div>
   `;
 }
+    const statusFilter = document.getElementById("statusFilter");
+
+    function applyStatusFilter() {
+        const val = statusFilter.value;
+        const rows = document.querySelectorAll("tr.po-row");
+
+        rows.forEach(r => {
+            const st = (r.dataset.status || "").toLowerCase();
+            const show = (val === "all") || (st === val);
+
+            r.style.display = show ? "" : "none";
+
+            const orderIdCell = r.querySelector("td strong");
+            const orderId = r.querySelector("td strong")?.textContent?.replace("#","")?.trim();
+            if (orderId) {
+                    const detailsRow = document.getElementById(`details-row-${orderId}`);
+                    if (detailsRow) {
+                        if (!show) detailsRow.style.display = "none";
+                    }
+            }
+        });
+    }
+
+    statusFilter.addEventListener("change", applyStatusFilter);
 
 </script>
 {% endblock %}
