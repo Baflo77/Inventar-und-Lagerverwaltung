@@ -592,7 +592,6 @@
                         <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
                        <td class="actions" style="text-align: right;">
                          <button type="button"
-                                 id="details-btn-{{ order.id }}"
                                  class="action-link action-primary action-entry"
                                  onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'"
                                  title="Ware empfangen">
@@ -618,11 +617,12 @@
 
 
                          <button type="button"
-                            class="details-pill"
-                            onclick="toggleDetails({{ order.id }}, this)"
-                            title="Details anzeigen">
-                            <span class="chev">▾</span>
-                            Details
+                                 id="details-btn-{{ order.id }}"
+                                 class="details-pill"
+                                 onclick="toggleDetails({{ order.id }}, this)"
+                                 title="Details anzeigen">
+                                <span class="chev">▾</span>
+                                Details
                          </button>
 
                        </td>
@@ -1332,13 +1332,13 @@ window.removeCartItem = function (idx) {
 
     if (isOpen) {
         row.style.display = "none";
-        if (btnEl) btnEl.textContent = "▾ Details";
+        if (btnEl) btnEl.innerHTML = `<span class="chev">▾</span> Details`;
         return;
     }
 
 
     row.style.display = "";
-    if (btnEl) btnEl.textContent = "▴ Details";
+    if (btnEl) btnEl.innerHTML = `<span class="chev">▴</span> Details`;
 
 
     if (detailsCache.has(orderId)) {
