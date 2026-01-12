@@ -96,7 +96,8 @@ class OrderItem(models.Model):
         super().save(*args, **kwargs)
 
     def get_subtotal(self):
-        return self.quantity * self.product.unit_price
+        price = getattr(self.product, 'unitprice', getattr(self.product, 'price', 0))
+        return self.quantity * price
 
     def __str__(self):
         return f"{self.quantity}x {self.product.name} (Order #{self.order_id})"
