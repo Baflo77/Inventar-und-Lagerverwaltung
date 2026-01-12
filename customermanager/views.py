@@ -11,53 +11,23 @@ from .serializers import CustomerSerializer
 
 
 # =========================
-# API (Swagger / REST)
+# API (Swagger / REST)  ✅ wie bei deliveries
 # =========================
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 @permission_classes([AllowAny])
-def show_customer(request):
-    customers = Customer.objects.all()
-    serializer = CustomerSerializer(customers, many=True)
-    return Response(serializer.data)
-
-
-@api_view(["GET", "PUT", "DELETE"])
-@permission_classes([AllowAny])
-def show_customer_details(request, id):
-    customer = get_object_or_404(Customer, pk=id)
-
+def customers_api(request):
+    """
+    /customers/api/
+    - GET  -> Liste
+    - POST -> Create
+    """
     if request.method == "GET":
-        serializer = CustomerSerializer(customer)
+        customers = Customer.objects.all()
+        serializer = CustomerSerializer(customers, many=True)
         return Response(serializer.data)
 
-    if request.method == "PUT":
-        serializer = CustomerSerializer(instance=customer, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    customer.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def show_first_customer(request):
-    customer = Customer.objects.first()
-    if not customer:
-        return Response(
-            {"detail": "No customers found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    serializer = CustomerSerializer(customer)
-    return Response(serializer.data)
-
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def write_customer(request):
+    # POST
     serializer = CustomerSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
@@ -65,7 +35,50 @@ def write_customer(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(["GET", "PUT", "DELETE"])
+@permission_classes([AllowAny])
+def customer_api_detail(request, id):
+    """
+    /customers/api/<id>/
+    - GET    -> Detail
+    - PUT    -> Update
+    - DELETE -> Delete
+    """
+    customer = get_object_or_404(Customer, pk=id)
+
+    if request.method == "GET":
+        serializer = CustomerSerializer(customer)
+        return Response(serializer.data)
+
+    if request.method == "PUT":
+        # partial=True ist stabiler (wie bei deliveries)
+        serializer = CustomerSerializer(instance=customer, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # DELETE
+    customer.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# =========================
+# OPTIONAL: extra Endpoint (wenn du ihn behalten willst)
+# =========================
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def show_first_customer(request):
+    customer = Customer.objects.first()
+    if not customer:
+        return Response({"detail": "No customers found"}, status=status.HTTP_404_NOT_FOUND)
+    serializer = CustomerSerializer(customer)
+    return Response(serializer.data)
+
+
+# =========================
 # HTML (Browser View)
+# =========================
 
 def customers_page(request):
     customers = Customer.objects.all()
@@ -73,9 +86,9 @@ def customers_page(request):
     create_mode = request.GET.get("create") == "1"
     edit_id = request.GET.get("edit")
 
-    edit_customer = None
+    edit_customer_obj = None
     if edit_id:
-        edit_customer = get_object_or_404(Customer, pk=edit_id)
+        edit_customer_obj = get_object_or_404(Customer, pk=edit_id)
 
     return render(
         request,
@@ -83,7 +96,7 @@ def customers_page(request):
         {
             "customers": customers,
             "create_mode": create_mode,
-            "edit_customer": edit_customer,
+            "edit_customer": edit_customer_obj,
         }
     )
 
@@ -149,7 +162,7 @@ def edit_customer(request, id):
     customer = get_object_or_404(Customer, pk=id)
 
     if request.method == "POST":
-        serializer = CustomerSerializer(instance=customer, data=request.POST)
+        serializer = CustomerSerializer(instance=customer, data=request.POST, partial=True)
         if serializer.is_valid():
             serializer.save()
             messages.success(request, "Customer updated successfully.")
@@ -162,7 +175,7 @@ def edit_customer(request, id):
         "customermanager/customers.html",
         {
             "customers": customers,
-            "edit_customer": customer,  # WICHTIG: Name wie im Template
+            "edit_customer": customer,
         }
     )
 
