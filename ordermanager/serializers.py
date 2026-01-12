@@ -16,6 +16,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
         return f"Order #{obj.order.id}"
 
     def get_subtotal(self, obj):
+        unit_price = getattr(obj.product, 'unit_price', 0)
         return round(obj.quantity * obj.product.unitprice, 2)
 
 
@@ -30,7 +31,10 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'customer', 'customername', 'date', 'status', 'itemscount', 'totalprice', 'items']
 
     def get_customername(self, obj):
-        return f"{obj.customer.firstname} {obj.customer.lastname}"
+        customer = obj.customer
+        first = getattr(customer, 'first_name', '')
+        last = getattr(customer, 'last_name', '')
+        return f"{first} {last}".strip() or f"Customer #{customer.id}"
 
     def get_itemscount(self, obj):
         return obj.items.count()
@@ -49,3 +53,5 @@ class OrderSerializer(serializers.ModelSerializer):
             }
             for item in items
         ]
+
+
