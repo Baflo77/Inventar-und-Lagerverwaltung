@@ -29,7 +29,6 @@
         padding: 0 20px;
     }
 
-    /* Header */
     .page-header{
         margin-bottom: 2rem;
         border-bottom: 1px solid #dee2e6;
@@ -68,7 +67,6 @@
     }
     .btn-create:hover{ background-color:#1a252f; }
 
-    /* Card */
     .data-card{
         background: #fff;
         border-radius: 6px;
@@ -95,7 +93,6 @@
         color: var(--dm-dark);
     }
 
-    /* Buttons */
     .btn-secondary{
         padding: 10px 14px;
         border-radius: 6px;
@@ -128,7 +125,6 @@
     }
     .btn-primary:hover{ background:#1a252f; }
 
-    /* Table */
     .table-modern{
         width:100%;
         border-collapse: collapse;
@@ -146,7 +142,6 @@
         letter-spacing: .5px;
         user-select: none;
 
-        /* Sort UI */
         cursor: pointer;
     }
     .table-modern thead th:hover{
@@ -170,7 +165,6 @@
         font-size: 0.95rem;
     }
 
-    /* Actions */
     .btn-action{
         border: none;
         background: none;
@@ -193,9 +187,6 @@
     .btn-delete{ color: var(--dm-danger); }
     .btn-delete:hover{ background:#ffebeb; }
 
-    /* =========================
-       STATUS DROPDOWN (CLEAN + FARBE)
-       ========================= */
     .status-select{
         appearance: none;
         -webkit-appearance: none;
@@ -227,7 +218,6 @@
         box-shadow: 0 0 0 4px rgba(52,152,219,0.12), 0 10px 18px rgba(0,0,0,0.08);
     }
 
-    /* Status Farben: Offen=Rot, Versendet=Orange, Zugestellt=Grün */
     .status-open{
         background-color: #f8d7da;
         color: #721c24;
@@ -253,7 +243,6 @@
     }
     .status-hint.show{ display:inline-block; }
 
-    /* Details */
     .details-row{ display:none; background:#fbfbfc; }
     .details-box{
         padding: 14px;
@@ -275,9 +264,6 @@
         .status-select{ min-width: 100%; }
     }
 
-    /* =========================
-       FORM LOOK wie Customer "Anlegen"
-       ========================= */
     .dm-form-wrap{
       padding: 1.25rem;
     }
@@ -617,6 +603,77 @@
       setTimeout(() => hint.classList.remove("show"), 1200);
     }
     selectEl.form.submit();
+  }
+
+  function toggleDetails(id){
+    const row = document.getElementById(`details-${id}`);
+    const icon = document.getElementById(`icon-${id}`);
+
+    if(!row) return;
+
+    const isOpen = row.style.display === "table-row";
+    row.style.display = isOpen ? "none" : "table-row";
+
+    if(icon){
+      icon.classList.remove("bi-chevron-down", "bi-chevron-up");
+      icon.classList.add(isOpen ? "bi-chevron-down" : "bi-chevron-up");
+    }
+  }
+
+  let deliveriesSortState = { col: -1, dir: "asc" };
+
+  function sortDeliveriesTable(colIndex){
+    const table = document.getElementById("deliveriesTable");
+    if(!table) return;
+
+    const tbody = table.querySelector("tbody");
+    if(!tbody) return;
+
+    if(deliveriesSortState.col === colIndex){
+      deliveriesSortState.dir = deliveriesSortState.dir === "asc" ? "desc" : "asc";
+    } else {
+      deliveriesSortState.col = colIndex;
+      deliveriesSortState.dir = "asc";
+    }
+
+    const ths = table.querySelectorAll("thead th");
+    ths.forEach((th, i) => {
+      th.classList.remove("sort-asc", "sort-desc", "active-sort");
+      if(i === colIndex){
+        th.classList.add("active-sort");
+        th.classList.add(deliveriesSortState.dir === "asc" ? "sort-asc" : "sort-desc");
+      }
+    });
+
+    const rows = Array.from(tbody.querySelectorAll("tr.delivery-row"));
+    const pairs = rows.map(r => {
+      const id = r.getAttribute("data-id");
+      const details = document.getElementById(`details-${id}`);
+      const cell = r.children[colIndex];
+      const sortVal = cell ? (cell.getAttribute("data-sort") ?? cell.textContent.trim()) : "";
+      return { deliveryRow: r, detailsRow: details, sortVal };
+    });
+
+    const dirMul = deliveriesSortState.dir === "asc" ? 1 : -1;
+
+    pairs.sort((a, b) => {
+      const av = (a.sortVal ?? "").toString().trim();
+      const bv = (b.sortVal ?? "").toString().trim();
+
+      const an = Number(av);
+      const bn = Number(bv);
+      const bothNumeric = !isNaN(an) && !isNaN(bn) && av !== "" && bv !== "";
+
+      if(bothNumeric){
+        return (an - bn) * dirMul;
+      }
+      return av.localeCompare(bv, "de", { numeric: true, sensitivity: "base" }) * dirMul;
+    });
+
+    pairs.forEach(p => {
+      tbody.appendChild(p.deliveryRow);
+      if(p.detailsRow) tbody.appendChild(p.detailsRow);
+    });
   }
 </script>
 {% endblock %}
