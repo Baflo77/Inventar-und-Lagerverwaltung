@@ -1,4 +1,3 @@
-
 from rest_framework import serializers
 from .models import Order, OrderItem
 
@@ -16,8 +15,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
         return f"Order #{obj.order.id}"
 
     def get_subtotal(self, obj):
-        unit_price = getattr(obj.product, 'unit_price', 0)
-        return round(obj.quantity * obj.product.unitprice, 2)
+        # FIX: Wir nutzen die Methode aus dem Model, damit die Logik nur an einem Ort ist
+        return obj.get_subtotal()
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -32,26 +31,28 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def get_customername(self, obj):
         customer = obj.customer
-        first = getattr(customer, 'first_name', '')
-        last = getattr(customer, 'last_name', '')
-        return f"{first} {last}".strip() or f"Customer #{customer.id}"
+        # Sucht nach firstname/lastname oder first_name/last_name
+        first = getattr(customer, 'firstname', getattr(customer, 'first_name', ''))
+        last = getattr(customer, 'lastname', getattr(customer, 'last_name', ''))
+
+        full_name = f"{first} {last}".strip()
+        return full_name if full_name else f"Customer #{customer.id}"
 
     def get_itemscount(self, obj):
         return obj.items.count()
 
     def get_totalprice(self, obj):
-        return round(sum(item.get_subtotal() for item in obj.items.all()), 2)
+        return round(obj.get_total_price(), 2)
 
     def get_items(self, obj):
-        items = obj.items.all()
+        items = obj.items.select_related('product').all()
         return [
             {
                 'id': item.id,
                 'productname': item.product.name,
                 'quantity': item.quantity,
-                'price': float(item.product.unitprice)
+                # FIX: Hier holen wir auch 'unitprice' (ohne Unterstrich) oder 'price'
+                'price': float(getattr(item.product, 'unitprice', getattr(item.product, 'price', 0)))
             }
             for item in items
         ]
-
-
