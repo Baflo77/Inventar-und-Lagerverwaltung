@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status as drf_status
 
@@ -15,12 +15,10 @@ from .serializers import DeliverySerializer
 from django.db import transaction
 
 
-# =========================
-# API (JSON) - Swagger
-# =========================
+# API  - Swagger
 
 @api_view(["GET", "POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def show_deliveries(request):
     if request.method == "GET":
         deliveries = Delivery.objects.all()
@@ -35,7 +33,7 @@ def show_deliveries(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def show_delivery_details(request, pk):
     delivery = get_object_or_404(Delivery, pk=pk)
 
@@ -54,12 +52,9 @@ def show_delivery_details(request, pk):
     return Response(status=drf_status.HTTP_204_NO_CONTENT)
 
 
-# =========================
-# HTML (Frontend) - DB CRUD
-# =========================
+# HTML (Frontend)
 
 def _normalize_delivery_status(raw: str) -> str:
-    """Validiert + normalisiert Status-Wert."""
     value = (raw or Delivery.STATUS_OPEN).strip().lower()
     allowed = {Delivery.STATUS_OPEN, Delivery.STATUS_SHIPPED, Delivery.STATUS_DELIVERED}
     return value if value in allowed else Delivery.STATUS_OPEN
@@ -67,11 +62,7 @@ def _normalize_delivery_status(raw: str) -> str:
 
 @login_required
 def deliveries_page(request):
-    """
-    LIST + optional Create/Edit Mode (ähnlich wie customers_page):
-    - /deliveries/?create=1  -> Formular anzeigen
-    - /deliveries/?edit=ID   -> Edit-Formular anzeigen
-    """
+
     create_mode = request.GET.get("create") == "1"
     edit_id = request.GET.get("edit")
     edit_delivery = None
@@ -101,7 +92,6 @@ def deliveries_page(request):
 
 @login_required
 def delivery_create(request):
-    """Create läuft sauber in DB + optional Items (max 3) ODER OrderItems kopieren."""
     if request.method != "POST":
         return redirect("deliveries_page")
 
@@ -113,7 +103,6 @@ def delivery_create(request):
         messages.error(request, "Bitte Order und Lieferdatum ausfüllen.", extra_tags="deliveries")
         return redirect("deliveries_page")
 
-    # ✅ NEU: Schalter aus dem Formular (Checkbox)
     from_orderitems = request.POST.get("from_orderitems") == "1"
 
     try:
@@ -124,13 +113,11 @@ def delivery_create(request):
 
     with transaction.atomic():
         if from_orderitems:
-            # ✅ BEST: nutzt deine Methode im Order-Model (kopiert OrderItems -> DeliveryItems)
             delivery = order_obj.create_delivery_from_orderitems(
                 delivery_date=delivery_date,
                 status=status_value,
             )
         else:
-            # ✅ wie bisher: manuelle Items (max 3)
             delivery = Delivery.objects.create(
                 order_id=order_id,
                 delivery_date=delivery_date,
@@ -163,7 +150,6 @@ def delivery_create(request):
 
 @login_required
 def delivery_edit(request, id):
-    """Edit läuft sauber in DB (hier nur Delivery-Felder)."""
     delivery = get_object_or_404(Delivery, pk=id)
 
     if request.method != "POST":
@@ -182,16 +168,12 @@ def delivery_edit(request, id):
     delivery.status = status_value
     delivery.save()
 
-    # Items-Edit lassen wir bewusst stabil/simple weg (sonst wird’s komplexer).
-    # Wenn du willst, bauen wir danach Items bearbeiten/löschen sauber dazu.
-
     messages.success(request, "Änderungen gespeichert.", extra_tags="deliveries")
     return redirect("deliveries_page")
 
 
 @login_required
 def delivery_status(request, id):
-    """Status-Dropdown Update (POST) -> DB Update."""
     delivery = get_object_or_404(Delivery, pk=id)
 
     if request.method != "POST":
@@ -200,13 +182,11 @@ def delivery_status(request, id):
     delivery.status = _normalize_delivery_status(request.POST.get("status"))
     delivery.save()
 
-    # kein extra message-spam bei jedem Dropdown-Klick
     return redirect("deliveries_page")
 
 
 @login_required
 def delivery_delete(request, id):
-    """Delete nur Admin/Staff (serverseitig!)."""
     if not request.user.is_staff:
         return HttpResponseForbidden("Nur Administratoren dürfen Lieferungen löschen.")
 

@@ -20,7 +20,6 @@ class Delivery(models.Model):
 
     delivery_date = models.DateField()
 
-    # ✅ vorher: BooleanField -> jetzt: 3-stufiger Status
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

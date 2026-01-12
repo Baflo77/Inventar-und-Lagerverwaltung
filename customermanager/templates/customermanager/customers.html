@@ -27,7 +27,6 @@
         padding: 0 20px;
     }
 
-    /* Header */
     .page-header{
         margin-bottom: 2rem;
         border-bottom: 1px solid #dee2e6;
@@ -68,7 +67,6 @@
     }
     .btn-create:hover{ background-color:#1a252f; }
 
-    /* Card */
     .data-card{
         background: #fff;
         border-radius: 6px;
@@ -97,7 +95,6 @@
         color: var(--cm-dark);
     }
 
-    /* Filter Bar */
     .filter-group{
         display:flex;
         gap: 10px;
@@ -138,7 +135,6 @@
         background: #f8f9fa;
     }
 
-    /* Table */
     .table-modern{
         width:100%;
         border-collapse: collapse;
@@ -178,7 +174,6 @@
     .sort-asc .sort-icon::after { content: "▲"; }
     .sort-desc .sort-icon::after { content: "▼"; }
 
-    /* Actions */
     .btn-action{
         border: none;
         background: none;
@@ -203,7 +198,6 @@
     .btn-delete{ color: #e74c3c; }
     .btn-delete:hover{ background:#ffebeb; }
 
-    /* Create/Edit Form */
     .form-grid{
         display:grid;
         grid-template-columns: 1fr 1fr;
@@ -476,7 +470,6 @@ function fillSelect(id, values){
     const sel = document.getElementById(id);
     if(!sel) return;
 
-    // nicht doppelt befüllen
     if(sel.options.length > 1) return;
 
     values.forEach(v => sel.add(new Option(v, v)));
@@ -507,19 +500,17 @@ function resetCustomerFilters(){
     filterCustomers();
 }
 
-let customerSortState = {}; // pro Spalte merken
+let customerSortState = {};
 
 function sortCustomers(colIndex){
     const table = document.getElementById("customersTable");
     const tbody = table.querySelector("tbody");
     const rows = Array.from(tbody.querySelectorAll("tr.customer-row"));
 
-    // Richtung togglen
     const current = customerSortState[colIndex] || "asc";
     const dir = (current === "asc") ? "desc" : "asc";
     customerSortState[colIndex] = dir;
 
-    // header classes updaten (Pfeile)
     const ths = table.querySelectorAll("thead th");
     ths.forEach(th => th.classList.remove("active-sort", "sort-asc", "sort-desc"));
     if(ths[colIndex]) ths[colIndex].classList.add("active-sort", dir === "asc" ? "sort-asc" : "sort-desc");
