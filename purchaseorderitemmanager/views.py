@@ -10,7 +10,7 @@ from django.db import transaction
 
 
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def purchaseorderitem_list(request):
     if request.method == "GET":
         po_id = request.query_params.get("purchase_order_id")
@@ -45,7 +45,7 @@ def purchaseorderitem_list(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def purchaseorderitem_detail(request, id):
     item = get_object_or_404(PurchaseOrderItem, id=id)
 

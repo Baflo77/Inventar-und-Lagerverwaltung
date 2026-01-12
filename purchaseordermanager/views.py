@@ -16,7 +16,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def purchaseorder_list(request):
     if request.method == "GET":
         orders = PurchaseOrder.objects.all().order_by("-created_at")
@@ -30,7 +30,7 @@ def purchaseorder_list(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def purchaseorder_detail(request, id):
     order = get_object_or_404(PurchaseOrder, id=id)
 
@@ -85,7 +85,7 @@ def purchaseorder_receive_ui(request, id):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def purchaseorder_receive_api(request, id):
     destination_location_id = request.data.get("destination_location_id")
     items = request.data.get("items", [])
@@ -210,7 +210,7 @@ def purchaseorder_receive_api(request, id):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def purchaseorder_cancel_api(request, id):
     order = get_object_or_404(PurchaseOrder, id=id)
 

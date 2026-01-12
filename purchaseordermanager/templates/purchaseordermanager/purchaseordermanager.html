@@ -544,7 +544,7 @@
                             background:#fff;
                             font-weight:600;">
                 <option value="all">Alle</option>
-                <option value="open">Open</option>
+                <option value="ordered">Ordered</option>
                 <option value="delivered">Delivered</option>
                 <option value="canceled">Canceled</option>
             </select>
@@ -706,13 +706,10 @@
                     </table>
                 </div>
 
-                <div id="supplierDetails" style="margin-top:8px; font-size:0.9rem; color:#34495e; display:none;">
-                </div>
 
                 <label for="statusSelect">4. Status</label>
                 <select id="statusSelect">
                     <option value="ordered" selected>Bestellt</option>
-                    <option value="open">Offen </option>
                 </select>
 
                 <div id="createMsg" class="modal-msg"></div>
@@ -1127,7 +1124,6 @@
 
     createBtn.onclick = submitOrder;
 
-    const supplierDetails = document.getElementById("supplierDetails");
 
     addItemBtn.onclick = () => {
         setMsg("");
@@ -1178,28 +1174,6 @@
         renderCart();
         setMsg("Position hinzugefügt.", "success");
         };
-
-    supplierSelect.onchange = () => {
-        const opt = supplierSelect.options[supplierSelect.selectedIndex];
-        if (!opt || !opt.value) {
-            supplierDetails.style.display = "none";
-            supplierDetails.textContent = "";
-            return;
-        }
-
-        const name = opt.dataset.supplierName || opt.textContent;
-        const price = opt.dataset.price;
-        const lt = opt.dataset.lt;
-        const min = opt.dataset.min;
-
-        const parts = [];
-        if (price) parts.push(`Preis: ${price} €`);
-        if (lt) parts.push(`Lieferzeit: ${lt} Tage`);
-        if (min) parts.push(`Mindestmenge: ${min}`);
-
-        supplierDetails.style.display = "block";
-        supplierDetails.innerHTML = `<strong>${name}</strong><br>${parts.join(" · ")}`;
-    };
 
     const EDIT_API_BASE = "/purchaseorders/api/";
     const editBackdrop = document.getElementById("editModalBackdrop");
