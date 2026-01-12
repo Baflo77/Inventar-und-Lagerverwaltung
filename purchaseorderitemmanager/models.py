@@ -10,7 +10,7 @@ from django.db import transaction
 class PurchaseOrderItem(models.Model):
     purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name='items')
     product_supplier = models.ForeignKey(ProductSupplier, on_delete=models.PROTECT, related_name="purchase_order_items",)
-    line_no = models.PositiveIntegerField(editable=False, null=True, blank=True) #null true, weil alte Daten keine line_no haben
+    line_no = models.PositiveIntegerField() #null true, weil alte Daten keine line_no haben
     quantity = models.PositiveIntegerField()
     received_quantity = models.PositiveIntegerField(default=0)
 
@@ -23,7 +23,6 @@ class PurchaseOrderItem(models.Model):
                 )
 
     def save(self, *args, **kwargs):
-        self.full_clean()
         if not self.line_no:
             with transaction.atomic():
                 max_no = (
@@ -34,8 +33,8 @@ class PurchaseOrderItem(models.Model):
                     ["m"]
                 ) or 0
                 self.line_no = max_no + 1
-                return super().save(*args, **kwargs)
 
+        self.full_clean()
         return super().save(*args, **kwargs)
 
     @property

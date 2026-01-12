@@ -5,6 +5,23 @@
 {% block content %}
 <style>
 
+.po-id-link{
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.po-id-link strong{
+  color: #1e88e5;
+}
+
+.po-id-link:hover strong{
+  text-decoration: underline;
+}
+
 .page-title-left{
     display:flex;
     align-items:flex-end;
@@ -555,7 +572,14 @@
 
                 {% for order in orders %}
                     <tr class="po-row" data-status="{{ order.status|lower }}">
-                        <td><strong>#{{ order.id }}</strong></td>
+                        <td>
+                            <button type="button"
+                                    class="po-id-link"
+                                    onclick="toggleDetails({{ order.id }}, document.getElementById('details-btn-{{ order.id }}'))"
+                                    title="Details anzeigen">
+                            <strong>#{{ order.id }}</strong>
+                            </button>
+                        </td>
                         <td>
                             <strong>{{ order.supplier.name }}</strong><br>
                             <small style="color:#7f8c8d;">
@@ -568,9 +592,9 @@
                         <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
                        <td class="actions" style="text-align: right;">
                          <button type="button"
-                            class="action-link action-primary action-entry"
-                            onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'"
-                            title="Ware empfangen">
+                                 class="action-link action-primary action-entry"
+                                 onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'"
+                                 title="Ware empfangen">
                              <span class="ico">📥</span>
                             Eingang
                          </button>
@@ -593,11 +617,12 @@
 
 
                          <button type="button"
-                            class="details-pill"
-                            onclick="toggleDetails({{ order.id }}, this)"
-                            title="Details anzeigen">
-                            <span class="chev">▾</span>
-                            Details
+                                 id="details-btn-{{ order.id }}"
+                                 class="details-pill"
+                                 onclick="toggleDetails({{ order.id }}, this)"
+                                 title="Details anzeigen">
+                                <span class="chev">▾</span>
+                                Details
                          </button>
 
                        </td>
@@ -729,7 +754,6 @@
 </div>
 
 <script>
-    // --- CSRF Helper ---
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -753,7 +777,7 @@
     const PURCHASEORDERITEMS_API = "/purchaseorderitems/api/";
 
 
-    // Elements
+
     const backdrop = document.getElementById("createModalBackdrop");
     const openBtn = document.getElementById("openCreateModalBtn");
     const closeBtn = document.getElementById("closeCreateModalBtn");
@@ -819,7 +843,6 @@ window.removeCartItem = function (idx) {
 
     function openModal() {
         backdrop.style.display = "flex";
-        // Kleiner Timeout für CSS Transition
         setTimeout(() => backdrop.classList.add("show"), 10);
         setMsg("");
     }
@@ -828,11 +851,11 @@ window.removeCartItem = function (idx) {
         backdrop.classList.remove("show");
         setTimeout(() => {
             backdrop.style.display = "none";
-        }, 200); // Wartet auf CSS Transition
+        }, 200);
         setMsg("");
     }
 
-    // --- LOGIC ---
+
     async function loadProducts() {
         productSelect.innerHTML = '<option value="">Lade...</option>';
         setMsg("");
@@ -1056,7 +1079,6 @@ window.removeCartItem = function (idx) {
         }
     }
 
-    // Events
     openBtn.onclick = () => {
         openModal();
         loadProducts();
@@ -1184,7 +1206,7 @@ window.removeCartItem = function (idx) {
         supplierDetails.innerHTML = `<strong>${name}</strong><br>${parts.join(" · ")}`;
     };
 
-    const EDIT_API_BASE = "/purchaseorders/api/"; // nutzt dein purchaseorder_detail: /api/<id>/
+    const EDIT_API_BASE = "/purchaseorders/api/";
     const editBackdrop = document.getElementById("editModalBackdrop");
     const closeEditBtn = document.getElementById("closeEditModalBtn");
     const cancelEditBtn = document.getElementById("cancelEditBtn");
@@ -1307,18 +1329,18 @@ window.removeCartItem = function (idx) {
 
     if (isOpen) {
         row.style.display = "none";
-        if (btnEl) btnEl.textContent = "▾ Details";
+        if (btnEl) btnEl.innerHTML = `<span class="chev">▾</span> Details`;
         return;
     }
 
 
     row.style.display = "";
-    if (btnEl) btnEl.textContent = "▴ Details";
+    if (btnEl) btnEl.innerHTML = `<span class="chev">▴</span> Details`;
 
 
     if (detailsCache.has(orderId)) {
         sub.textContent = "geladen";
-        renderDetailsTable(content, detailsCache.get(orderId));
+        renderDetailsTable(content, detailsCache.get(orderId), orderId);
         return;
     }
 
@@ -1336,7 +1358,7 @@ window.removeCartItem = function (idx) {
         detailsCache.set(orderId, items);
 
         sub.textContent = items.length ? `${items.length} Position(en)` : "keine Positionen";
-        renderDetailsTable(content, items);
+        renderDetailsTable(content, items, orderId);
 
     } catch (e) {
        sub.textContent = "Fehler";
@@ -1348,7 +1370,7 @@ window.removeCartItem = function (idx) {
     }
 }
 
-    function renderDetailsTable(container, items) {
+    function renderDetailsTable(container, items, orderId) {
         if (!items || items.length === 0) {
             container.innerHTML = `
         <div style="padding:10px 0; color:#7f8c8d;">
@@ -1363,28 +1385,41 @@ window.removeCartItem = function (idx) {
         <table class="details-items-table">
             <thead>
             <tr>
-             <th>ID</th>
+                <th style="width:80px;">Aktion</th>
+                <th>ID</th>
                 <th>Produkt</th>
                 <th>Lieferant</th>
                 <th>Menge</th>
                 <th>Erhalten</th>
                 <th>Offen</th>
+                <th>Storniert</th>
             </tr>
             </thead>
             <tbody>
                 ${items.map(i => {
                     const qty = Number(i.quantity ?? 0);
                     const rec = Number(i.received_quantity ?? 0);
-                    const open = Math.max(0, qty - rec);
+                    const poStatus = String(i.purchase_order_status ?? "").toLowerCase();
+                    const open = (poStatus === "canceled") ? 0 : Math.max(0, qty - rec);
+                    const canceledQty = (poStatus === "canceled") ? Math.max(0, qty - rec) : 0;
 
                     return `
                      <tr>
-                        <td><strong>#${escapeHtml(i.id)}</strong></td>
+                        <td style="text-align:left;">
+                        <button type="button"
+                                class="icon-btn icon-btn-delete"
+                                title="Position löschen"
+                                onclick="deletePurchaseOrderItem(${i.id}, ${orderId})">🗑</button>
+                        </td>
+
+                        <td><strong>#${escapeHtml(i.line_no)}</strong></td>
                         <td>${escapeHtml(i.product_name)}</td>
                         <td>${escapeHtml(i.supplier_name)}</td>
+
                         <td style="text-align:right;"><strong>${escapeHtml(qty)}</strong></td>
                         <td style="text-align:right;">${escapeHtml(rec)}</td>
                         <td style="text-align:right;">${escapeHtml(open)}</td>
+                        <td style="text-align:right;">${escapeHtml(canceledQty)}</td>
                     </tr>
                     `;
                 }).join("")}
@@ -1416,7 +1451,39 @@ window.removeCartItem = function (idx) {
         });
     }
 
-    statusFilter.addEventListener("change", applyStatusFilter);
+   async function deletePurchaseOrderItem(itemId, orderId) {
+        if (!confirm("Position wirklich löschen?")) return;
+
+        try {
+            const res = await fetch(`/purchaseorderitems/api/${itemId}/`, {
+            method: "DELETE",
+            headers: { "X-CSRFToken": csrftoken },
+            credentials: "same-origin",
+            });
+
+            if (!res.ok) {
+            alert("Löschen fehlgeschlagen (HTTP " + res.status + ")");
+            return;
+            }
+
+
+            if (detailsCache.has(orderId)) {
+            const updated = detailsCache.get(orderId).filter(x => x.id !== itemId);
+            detailsCache.set(orderId, updated);
+
+            const content = document.getElementById(`details-content-${orderId}`);
+            const row = document.getElementById(`details-row-${orderId}`);
+            const sub = row.querySelector(".details-sub");
+            sub.textContent = updated.length ? `${updated.length} Position(en)` : "keine Positionen";
+
+            renderDetailsTable(content, updated, orderId);
+            }
+        } catch (e) {
+            alert("Verbindungsfehler beim Löschen.");
+        }
+   }
+
+
 
 </script>
 {% endblock %}
