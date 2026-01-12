@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models.functions import Coalesce
@@ -12,15 +12,49 @@ from stockmanager.models import Stock
 from .models import Warehouse
 from .serializers import WarehouseSerializer
 
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def warehouse_list_ui(request):
-    # location_count kommt aus Location.related_name="locations"
-    warehouses = Warehouse.objects.annotate(location_count=Count("locations", distinct=True),total_stock_quantity=Coalesce(Sum("locations__stocks__quantity"), 0),total_capacity=Coalesce(Sum("locations__capacity"), 0),)
-    return render(request, "warehousemanager/warehousemanager.html", {"warehouses": warehouses})
+    min_locations = request.GET.get("min_locations")
+    min_capacity = request.GET.get("min_capacity")
+    max_capacity = request.GET.get("max_capacity")
+    sort = request.GET.get("sort")
+    direction = request.GET.get("dir")
+
+    warehouses = Warehouse.objects.annotate(
+        location_count=Count("locations", distinct=True),
+        total_stock_quantity=Coalesce(Sum("locations__stocks__quantity"), 0),
+        total_capacity=Coalesce(Sum("locations__capacity"), 0),
+    )
+
+    try:
+        if min_locations not in (None, ""):
+            warehouses = warehouses.filter(location_count__gte=int(min_locations))
+        if min_capacity not in (None, ""):
+            warehouses = warehouses.filter(total_capacity__gte=int(min_capacity))
+        if max_capacity not in (None, ""):
+            warehouses = warehouses.filter(total_capacity__lte=int(max_capacity))
+    except ValueError:
+        pass
+
+    if sort == "capacity":
+        order = "total_capacity" if direction == "asc" else "-total_capacity"
+        warehouses = warehouses.order_by(order)
+    else:
+        warehouses = warehouses.order_by("name")
+
+    return render(request, "warehousemanager/warehousemanager.html", {
+        "warehouses": warehouses,
+        "min_locations": min_locations or "",
+        "min_capacity": min_capacity or "",
+        "max_capacity": max_capacity or "",
+        "sort": sort or "",
+        "dir": direction or "",
+    })
+
 
 
 @api_view(["GET", "POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def show_all_warehouses(request):
     if request.method == "GET":
         warehouses = Warehouse.objects.all()
@@ -34,7 +68,7 @@ def show_all_warehouses(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def show_warehouse_detail(request, id):
     warehouse = get_object_or_404(Warehouse, pk=id)
 
@@ -73,7 +107,6 @@ def warehouse_delete_ui(request, pk):
         )
         return redirect("warehouse_list_ui")
 
-    # Optional: auch blocken, wenn noch Locations existieren
     if warehouse.locations.exists():
         messages.warning(
             request,

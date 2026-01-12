@@ -24,6 +24,5 @@ urlpatterns = [
     path("", views.location_list_ui, name="location_list_ui"),
     path("api/", views.show_all_locations, name="location_api_list_create"),
     path("api/<int:id>/", views.location_detail, name="location_api_detail"),
-    #path("<int:pk>/edit/", views.location_edit_ui, name="location_edit_ui"),
     path("<int:pk>/delete/", views.location_delete_ui, name="location_delete_ui"),
 ]

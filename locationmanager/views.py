@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view
 from .models import Location
 from rest_framework.response import Response
 from .serializers import LocationSerializer
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
@@ -20,20 +20,55 @@ from stockmanager.models import Stock
 
 # Create your views here.
 def location_list_ui(request):
-    locations = (Location.objects.select_related('warehouse').annotate(item_count=Count('stocks'),total_quantity=Coalesce(Sum('stocks__quantity'), 0)).all()
+    min_cap = request.GET.get("min_cap")
+    max_cap = request.GET.get("max_cap")
+    warehouse_id = request.GET.get("warehouse")
+    sort = request.GET.get("sort")
+    direction = request.GET.get("dir")
+
+    locations = (
+        Location.objects
+        .select_related("warehouse")
+        .annotate(
+            item_count=Count("stocks"),
+            total_quantity=Coalesce(Sum("stocks__quantity"), 0),
+        )
     )
+
+    try:
+        if min_cap not in (None, ""):
+            locations = locations.filter(capacity__gte=int(min_cap))
+        if max_cap not in (None, ""):
+            locations = locations.filter(capacity__lte=int(max_cap))
+    except ValueError:
+        pass
+
+    if warehouse_id not in (None, "", "all"):
+        locations = locations.filter(warehouse_id=int(warehouse_id))
+
+    if sort == "capacity":
+        order = "capacity" if direction == "asc" else "-capacity"
+        locations = locations.order_by(order)
+    else:
+        locations = locations.order_by("name")
 
     warehouses = Warehouse.objects.all().order_by("name")
 
-    context = {
-        'locations': locations,
-        'warehouses': warehouses,
-    }
-    return render(request, "locationmanager/locationmanager.html", context)
+    return render(request, "locationmanager/locationmanager.html", {
+        "locations": locations,
+        "warehouses": warehouses,
+        "min_cap": min_cap or "",
+        "max_cap": max_cap or "",
+        "warehouse_filter": warehouse_id or "all",
+        "sort": sort or "",
+        "dir": direction or "",
+    })
+
+
 
 
 @api_view(["GET", "POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def show_all_locations(request):
     if request.method == "GET":
         searchterm = request.query_params.get("searchterm")
@@ -53,7 +88,7 @@ def show_all_locations(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def location_detail(request, id):
     location = get_object_or_404(Location, pk=id)
 
