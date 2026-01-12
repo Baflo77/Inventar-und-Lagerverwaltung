@@ -5,6 +5,23 @@
 {% block content %}
 <style>
 
+.po-id-link{
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.po-id-link strong{
+  color: #1e88e5;
+}
+
+.po-id-link:hover strong{
+  text-decoration: underline;
+}
+
 .page-title-left{
     display:flex;
     align-items:flex-end;
@@ -555,7 +572,14 @@
 
                 {% for order in orders %}
                     <tr class="po-row" data-status="{{ order.status|lower }}">
-                        <td><strong>#{{ order.id }}</strong></td>
+                        <td>
+                            <button type="button"
+                                    class="po-id-link"
+                                    onclick="toggleDetails({{ order.id }}, document.getElementById('details-btn-{{ order.id }}'))"
+                                    title="Details anzeigen">
+                            <strong>#{{ order.id }}</strong>
+                            </button>
+                        </td>
                         <td>
                             <strong>{{ order.supplier.name }}</strong><br>
                             <small style="color:#7f8c8d;">
@@ -568,9 +592,10 @@
                         <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
                        <td class="actions" style="text-align: right;">
                          <button type="button"
-                            class="action-link action-primary action-entry"
-                            onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'"
-                            title="Ware empfangen">
+                                 id="details-btn-{{ order.id }}"
+                                 class="action-link action-primary action-entry"
+                                 onclick="window.location.href='/purchaseorders/{{ order.id }}/receive/'"
+                                 title="Ware empfangen">
                              <span class="ico">📥</span>
                             Eingang
                          </button>
