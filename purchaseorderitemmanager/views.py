@@ -28,11 +28,6 @@ def purchaseorderitem_list(request):
     is_bulk = isinstance(payload, list)
 
 
-    if is_bulk:
-        for idx, row in enumerate(payload, start=1):
-            row.setdefault("line_no", idx)
-    else:
-        payload.setdefault("line_no", 1)
 
     serializer = PurchaseOrderItemSerializer(data=payload, many=is_bulk)
     if not serializer.is_valid():

@@ -371,9 +371,6 @@
 </div>
 
 <script>
-  // -----------------------------
-  // CSRF helper (wie Stockmanager)
-  // -----------------------------
   function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -397,7 +394,6 @@
 
   let csrftoken = getCookie('csrftoken');
 
-  // UI wird unter /purchaseorderitems/ aufgerufen
   const ITEMS_API = "/purchaseorderitems/api/";
   const ORDERS_API = "/purchaseorders/api/";
 
@@ -642,7 +638,6 @@
         throw new Error(`HTTP ${res.status}: ${detail}`);
       }
 
-      // optional: Inputs resetten
       bulkRows.innerHTML = "";
       addBulkRow();
       setMsg(`✅ ${payload.length} Items wurden erstellt.`, "success");

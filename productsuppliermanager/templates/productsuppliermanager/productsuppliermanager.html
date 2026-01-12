@@ -517,17 +517,16 @@
       showToast("Fehler beim Löschen.", true);
     }
   }
-  //Bester Lieferant Badge
+
     (function addDecisionBadges() {
     const tbody = document.querySelector("table tbody");
     if (!tbody) return;
 
     const rows = Array.from(tbody.querySelectorAll("tr"))
-      .filter(tr => tr.querySelector(".cell-product")); // ignoriert Empty-State
+      .filter(tr => tr.querySelector(".cell-product"));
 
     const byProduct = new Map();
 
-    // Sammeln: pro Produkt alle Supplier-Zeilen
     for (const tr of rows) {
       const productCell = tr.querySelector(".cell-product");
       const priceCell = tr.querySelector(".cell-price");
@@ -547,7 +546,7 @@
     }
 
     function addBadge(productCell, text, className) {
-      // doppelte Badges vermeiden (falls Reload via HTMX etc.)
+
       const existing = Array.from(productCell.querySelectorAll(".badge"))
         .some(b => b.textContent.trim() === text.trim());
       if (existing) return;
@@ -561,26 +560,25 @@
       }
     }
 
-    // Pro Produkt Gewinner ermitteln
+
     for (const [productId, items] of byProduct.entries()) {
       if (!items.length) continue;
 
-      // günstigster Preis
+
       const withPrice = items.filter(x => Number.isFinite(x.price));
       let cheapest = null;
       if (withPrice.length) {
         cheapest = withPrice.reduce((best, cur) => (cur.price < best.price ? cur : best));
       }
 
-      // schnellste Lieferzeit
+
       const withDays = items.filter(x => Number.isFinite(x.days));
       let fastest = null;
       if (withDays.length) {
         fastest = withDays.reduce((best, cur) => (cur.days < best.days ? cur : best));
       }
 
-      // Beste Wahl (Score: Preis + Lieferzeit)
-      // Gewichtung: Preis stärker, Lieferzeit etwas schwächer
+
 
       const scored = items.map(x => {
         const p = Number.isFinite(x.price) ? x.price : 999999;
@@ -590,7 +588,7 @@
 
       const bestChoice = scored.reduce((best, cur) => (cur.score < best.score ? cur : best));
 
-      // Badges setzen
+
       if (cheapest) {
         const cell = cheapest.tr.querySelector(".cell-product");
         if (cell) addBadge(cell, "🏆 Günstigster", "badge-cheap");
@@ -614,11 +612,11 @@
       if (!productFilter || !supplierFilter) return;
 
       const rows = Array.from(document.querySelectorAll("tbody tr"))
-        .filter(tr => tr.dataset.product && tr.dataset.supplier); // nur echte Datenzeilen
+        .filter(tr => tr.dataset.product && tr.dataset.supplier);
 
       function applyFilters() {
-        const selectedProduct = productFilter.value;   // "" = alle
-        const selectedSupplier = supplierFilter.value; // "" = alle
+        const selectedProduct = productFilter.value;
+        const selectedSupplier = supplierFilter.value;
 
         rows.forEach(tr => {
           const pid = tr.dataset.product;
@@ -634,7 +632,7 @@
       productFilter.addEventListener("change", applyFilters);
       supplierFilter.addEventListener("change", applyFilters);
 
-      applyFilters(); // initial anwenden
+      applyFilters();
  });
 
 </script>

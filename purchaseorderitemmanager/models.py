@@ -10,7 +10,7 @@ from django.db import transaction
 class PurchaseOrderItem(models.Model):
     purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name='items')
     product_supplier = models.ForeignKey(ProductSupplier, on_delete=models.PROTECT, related_name="purchase_order_items",)
-    line_no = models.PositiveIntegerField() #null true, weil alte Daten keine line_no haben
+    line_no = models.PositiveIntegerField(null=True, blank=True) #null true, weil alte Daten keine line_no haben
     quantity = models.PositiveIntegerField()
     received_quantity = models.PositiveIntegerField(default=0)
 
