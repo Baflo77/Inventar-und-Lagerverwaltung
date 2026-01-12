@@ -164,6 +164,54 @@
             </button>
         </div>
 
+        <form method="get" class="data-card" style="padding: 14px 20px; margin-bottom: 16px;">
+            <input type="hidden" name="sort" value="{{ sort }}">
+            <input type="hidden" name="dir" value="{{ dir }}">
+
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+            <div style="font-weight:700; color: var(--primary-dark);">
+              Filter & Suche
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+              <input
+                type="number"
+                name="min_cap"
+                value="{{ min_cap }}"
+                class="form-control"
+                style="width:160px;"
+                placeholder="Min Kapazität"
+              />
+
+              <input
+                type="number"
+                name="max_cap"
+                value="{{ max_cap }}"
+                class="form-control"
+                style="width:160px;"
+                placeholder="Max Kapazität"
+              />
+
+                <select name="warehouse" class="form-control" style="width:220px;">
+                  <option value="all">Alle Warehouses</option>
+                  {% for wh in warehouses %}
+                    <option value="{{ wh.id }}" {% if warehouse_filter == wh.id|stringformat:"s" %}selected{% endif %}>
+                      {{ wh.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+
+              <button type="submit" class="btn btn-sm btn-outline-primary">
+                Anwenden
+              </button>
+
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'location_list_ui' %}">
+                Reset
+              </a>
+            </div>
+          </div>
+        </form>
+
         <div class="data-card">
             <div class="table-responsive">
                 <table class="table-modern">
@@ -171,7 +219,20 @@
                         <tr>
                             <th style="width: 30%;">Name / Beschreibung</th>
                             <th style="width: 20%;">Zugehörigkeit</th>
-                            <th style="width: 15%;">Auslastung</th>
+                            <th style="width: 15%;">
+                            {% if sort == "capacity" and dir == "asc" %}
+                              <a href="?sort=capacity&dir=desc&min_cap={{ min_cap }}&max_cap={{ max_cap }}&warehouse={{ warehouse_filter }}"
+                                 style="text-decoration:none; color:inherit;">
+                                Auslastung ▲
+                              </a>
+                            {% else %}
+                              <a href="?sort=capacity&dir=asc&min_cap={{ min_cap }}&max_cap={{ max_cap }}&warehouse={{ warehouse_filter }}"
+                                 style="text-decoration:none; color:inherit;">
+                                Auslastung ▼
+                              </a>
+                            {% endif %}
+                            </th>
+
                             <th style="width: 35%;">Adresse</th>
                             <th style="width: 15%; text-align: right;">Aktionen</th>
                         </tr>

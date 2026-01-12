@@ -170,6 +170,51 @@
                 <i class="bi bi-plus-lg"></i> Neues Lager anlegen
             </button>
         </div>
+        <form method="get" class="data-card" style="padding: 14px 20px; margin-bottom: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+            <div style="font-weight:700; color: var(--primary-dark);">
+              Filter & Suche
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+              <input
+                type="number"
+                name="min_locations"
+                value="{{ min_locations }}"
+                class="form-control"
+                style="width:170px;"
+                placeholder="Min. Lagerplätze"
+              />
+
+              <input
+                type="number"
+                name="min_capacity"
+                value="{{ min_capacity }}"
+                class="form-control"
+                style="width:170px;"
+                placeholder="Min. Kapazität"
+              />
+
+              <input
+                type="number"
+                name="max_capacity"
+                value="{{ max_capacity }}"
+                class="form-control"
+                style="width:170px;"
+                placeholder="Max. Kapazität"
+              />
+
+              <button type="submit" class="btn btn-sm btn-outline-primary">
+                Anwenden
+              </button>
+
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'warehouse_list_ui' %}">
+                Reset
+              </a>
+            </div>
+          </div>
+        </form>
+
 
         <div class="data-card">
             <div class="table-responsive">
@@ -179,7 +224,18 @@
                             <th>Name / Ort</th>
                             <th style="text-align: center;">Lagerplätze</th>
                             <th>Gesamtbestand</th>
-                            <th>Kapazität</th>
+                            <th>
+                              {% if sort == "capacity" and dir == "asc" %}
+                                <a href="?sort=capacity&dir=desc&min_locations={{ min_locations }}&min_capacity={{ min_capacity }}&max_capacity={{ max_capacity }}" style="text-decoration:none; color:inherit;">
+                                  Kapazität ▲
+                                </a>
+                              {% else %}
+                                <a href="?sort=capacity&dir=asc&min_locations={{ min_locations }}&min_capacity={{ min_capacity }}&max_capacity={{ max_capacity }}" style="text-decoration:none; color:inherit;">
+                                  Kapazität ▼
+                                </a>
+                              {% endif %}
+                            </th>
+
                             <th style="text-align: right;">Aktionen</th>
                         </tr>
                     </thead>

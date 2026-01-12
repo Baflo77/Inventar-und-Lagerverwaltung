@@ -31,7 +31,7 @@ class WarehouseSerializer(serializers.Serializer):
             instance.short_code = validated_data["short_code"]
 
         elif "location" in validated_data:
-            loc = validated_data["location"]  # Location-Objekt oder None
+            loc = validated_data["location"]
             instance.location_id = loc.pk if loc is not None else None
 
         instance.save()
