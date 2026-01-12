@@ -3,25 +3,19 @@ from django.contrib import messages
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Customer
 from .serializers import CustomerSerializer
 
 
-# =========================
-# API (Swagger / REST)  ✅ wie bei deliveries
-# =========================
+# API (Swagger)
 
 @api_view(["GET", "POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def customers_api(request):
-    """
-    /customers/api/
-    - GET  -> Liste
-    - POST -> Create
-    """
+
     if request.method == "GET":
         customers = Customer.objects.all()
         serializer = CustomerSerializer(customers, many=True)
@@ -36,14 +30,9 @@ def customers_api(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def customer_api_detail(request, id):
-    """
-    /customers/api/<id>/
-    - GET    -> Detail
-    - PUT    -> Update
-    - DELETE -> Delete
-    """
+
     customer = get_object_or_404(Customer, pk=id)
 
     if request.method == "GET":
@@ -51,7 +40,6 @@ def customer_api_detail(request, id):
         return Response(serializer.data)
 
     if request.method == "PUT":
-        # partial=True ist stabiler (wie bei deliveries)
         serializer = CustomerSerializer(instance=customer, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -63,11 +51,8 @@ def customer_api_detail(request, id):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# =========================
-# OPTIONAL: extra Endpoint (wenn du ihn behalten willst)
-# =========================
 @api_view(["GET"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def show_first_customer(request):
     customer = Customer.objects.first()
     if not customer:
@@ -76,9 +61,7 @@ def show_first_customer(request):
     return Response(serializer.data)
 
 
-# =========================
 # HTML (Browser View)
-# =========================
 
 def customers_page(request):
     customers = Customer.objects.all()
@@ -104,7 +87,7 @@ def customers_page(request):
 def create_customer(request):
     # POST = wirklich anlegen
     if request.method == "POST":
-        # Feldnamen müssen zu deinem customers.html passen
+
         salutation = request.POST.get("salutation", "").strip()
         name = request.POST.get("name", "").strip()
         email = request.POST.get("email", "").strip()
@@ -114,7 +97,7 @@ def create_customer(request):
         zip_code = request.POST.get("zip_code", "").strip()
         city = request.POST.get("city", "").strip()
 
-        # Pflichtfelder (wie im HTML "required")
+        # Pflichtfelder
         if not (salutation and name and email and phone):
             messages.error(request, "Bitte Pflichtfelder ausfüllen (Anrede, Name, E-Mail, Telefon).")
             customers = Customer.objects.all()
@@ -124,7 +107,6 @@ def create_customer(request):
                 {"customers": customers, "create_mode": True},
             )
 
-        # Optional: doppelte Email verhindern
         if Customer.objects.filter(email=email).exists():
             messages.error(request, "Diese E-Mail existiert bereits.")
             customers = Customer.objects.all()
@@ -134,7 +116,6 @@ def create_customer(request):
                 {"customers": customers, "create_mode": True},
             )
 
-        # ✅ Speichern in DB
         Customer.objects.create(
             salutation=salutation,
             name=name,
@@ -149,7 +130,7 @@ def create_customer(request):
         messages.success(request, "Customer created successfully.")
         return redirect("customers_page")
 
-    # GET = Create-Form anzeigen (create_mode)
+    # GET = Create-Form anzeigen
     customers = Customer.objects.all()
     return render(
         request,

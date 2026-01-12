@@ -3,7 +3,6 @@ from .models import Customer
 
 
 class CustomerSerializer(serializers.ModelSerializer):
-    # Frontend/API sendet nur "name"
     name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     # Output für Swagger/Frontend
     full_name = serializers.SerializerMethodField(read_only=True)
