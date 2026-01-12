@@ -20,6 +20,7 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
         fields = "__all__"
         extra_kwargs = {
             "received_quantity": {"required": False},
+            "line_no": {"required": False},
         }
 
     def validate(self, data):

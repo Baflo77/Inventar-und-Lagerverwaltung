@@ -712,7 +712,7 @@
                 <label for="statusSelect">4. Status</label>
                 <select id="statusSelect">
                     <option value="ordered" selected>Bestellt</option>
-                    <option value="open" selected>Offen </option>
+                    <option value="open">Offen </option>
                 </select>
 
                 <div id="createMsg" class="modal-msg"></div>
@@ -835,11 +835,6 @@
         cart.splice(idx, 1);
         renderCart();
     };
-
-window.removeCartItem = function (idx) {
-  cart.splice(idx, 1);
-  renderCart();
-};
 
     function openModal() {
         backdrop.style.display = "flex";
@@ -1450,6 +1445,9 @@ window.removeCartItem = function (idx) {
             }
         });
     }
+
+    statusFilter.addEventListener("change", applyStatusFilter);
+    document.addEventListener("DOMContentLoaded", applyStatusFilter);
 
    async function deletePurchaseOrderItem(itemId, orderId) {
         if (!confirm("Position wirklich löschen?")) return;
