@@ -12,6 +12,9 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     purchase_order_status = serializers.CharField(source="purchase_order.status", read_only=True)
     purchase_order_supplier_name = serializers.CharField(source="purchase_order.supplier.name", read_only=True)
 
+    open_quantity = serializers.SerializerMethodField()
+    canceled_quantity = serializers.SerializerMethodField()
+
     class Meta:
         model = PurchaseOrderItem
         fields = "__all__"
@@ -30,3 +33,22 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
                 )
 
         return data
+
+    def get_open_quantity(self, obj):
+        qty = obj.quantity or 0
+        rec = obj.received_quantity or 0
+        status = (obj.purchase_order.status or "").lower()
+
+        if status == "canceled":
+            return 0
+        return max(0, qty - rec)
+
+    def get_canceled_quantity(self, obj):
+        qty = obj.quantity or 0
+        rec = obj.received_quantity or 0
+        status = (obj.purchase_order.status or "").lower()
+
+        if status == "canceled":
+            return max(0, qty - rec)
+        return 0
+
