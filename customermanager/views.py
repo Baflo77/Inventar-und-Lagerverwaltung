@@ -3,28 +3,36 @@ from django.contrib import messages
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Customer
 from .serializers import CustomerSerializer
 
 
-# =========================
-# API (Swagger / REST)
-# =========================
+# API (Swagger)
 
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def show_customer(request):
-    customers = Customer.objects.all()
-    serializer = CustomerSerializer(customers, many=True)
-    return Response(serializer.data)
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def customers_api(request):
+
+    if request.method == "GET":
+        customers = Customer.objects.all()
+        serializer = CustomerSerializer(customers, many=True)
+        return Response(serializer.data)
+
+    # POST
+    serializer = CustomerSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([AllowAny])
-def show_customer_details(request, id):
+@permission_classes([IsAuthenticated])
+def customer_api_detail(request, id):
+
     customer = get_object_or_404(Customer, pk=id)
 
     if request.method == "GET":
@@ -32,37 +40,25 @@ def show_customer_details(request, id):
         return Response(serializer.data)
 
     if request.method == "PUT":
-        serializer = CustomerSerializer(instance=customer, data=request.data)
+        serializer = CustomerSerializer(instance=customer, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    # DELETE
     customer.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def show_first_customer(request):
     customer = Customer.objects.first()
     if not customer:
-        return Response(
-            {"detail": "No customers found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({"detail": "No customers found"}, status=status.HTTP_404_NOT_FOUND)
     serializer = CustomerSerializer(customer)
     return Response(serializer.data)
-
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def write_customer(request):
-    serializer = CustomerSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # HTML (Browser View)
@@ -73,9 +69,9 @@ def customers_page(request):
     create_mode = request.GET.get("create") == "1"
     edit_id = request.GET.get("edit")
 
-    edit_customer = None
+    edit_customer_obj = None
     if edit_id:
-        edit_customer = get_object_or_404(Customer, pk=edit_id)
+        edit_customer_obj = get_object_or_404(Customer, pk=edit_id)
 
     return render(
         request,
@@ -83,7 +79,7 @@ def customers_page(request):
         {
             "customers": customers,
             "create_mode": create_mode,
-            "edit_customer": edit_customer,
+            "edit_customer": edit_customer_obj,
         }
     )
 
@@ -91,7 +87,7 @@ def customers_page(request):
 def create_customer(request):
     # POST = wirklich anlegen
     if request.method == "POST":
-        # Feldnamen müssen zu deinem customers.html passen
+
         salutation = request.POST.get("salutation", "").strip()
         name = request.POST.get("name", "").strip()
         email = request.POST.get("email", "").strip()
@@ -101,7 +97,7 @@ def create_customer(request):
         zip_code = request.POST.get("zip_code", "").strip()
         city = request.POST.get("city", "").strip()
 
-        # Pflichtfelder (wie im HTML "required")
+        # Pflichtfelder
         if not (salutation and name and email and phone):
             messages.error(request, "Bitte Pflichtfelder ausfüllen (Anrede, Name, E-Mail, Telefon).")
             customers = Customer.objects.all()
@@ -111,7 +107,6 @@ def create_customer(request):
                 {"customers": customers, "create_mode": True},
             )
 
-        # Optional: doppelte Email verhindern
         if Customer.objects.filter(email=email).exists():
             messages.error(request, "Diese E-Mail existiert bereits.")
             customers = Customer.objects.all()
@@ -121,7 +116,6 @@ def create_customer(request):
                 {"customers": customers, "create_mode": True},
             )
 
-        # ✅ Speichern in DB
         Customer.objects.create(
             salutation=salutation,
             name=name,
@@ -136,7 +130,7 @@ def create_customer(request):
         messages.success(request, "Customer created successfully.")
         return redirect("customers_page")
 
-    # GET = Create-Form anzeigen (create_mode)
+    # GET = Create-Form anzeigen
     customers = Customer.objects.all()
     return render(
         request,
@@ -149,7 +143,7 @@ def edit_customer(request, id):
     customer = get_object_or_404(Customer, pk=id)
 
     if request.method == "POST":
-        serializer = CustomerSerializer(instance=customer, data=request.POST)
+        serializer = CustomerSerializer(instance=customer, data=request.POST, partial=True)
         if serializer.is_valid():
             serializer.save()
             messages.success(request, "Customer updated successfully.")
@@ -162,7 +156,7 @@ def edit_customer(request, id):
         "customermanager/customers.html",
         {
             "customers": customers,
-            "edit_customer": customer,  # WICHTIG: Name wie im Template
+            "edit_customer": customer,
         }
     )
 

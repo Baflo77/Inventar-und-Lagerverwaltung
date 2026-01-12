@@ -42,10 +42,8 @@ def stock_manager_view(request):
             messages.error(request, f"Fehler beim Anlegen: {str(e)}")
         return redirect('stock_manager')
 
-
     stocks = Stock.objects.select_related('product', 'location__warehouse').all()
     all_locations = Location.objects.select_related('warehouse').all()
-
 
     all_products = Product.objects.all().order_by('name')
 
@@ -57,14 +55,11 @@ def stock_manager_view(request):
     return render(request, 'stockmanager/stockmanager.html', context)
 
 
-
-
 @require_POST
 def book_out_api(request, stock_id):
     try:
         data = json.loads(request.body)
         amount = int(data.get('amount', 0))
-        # Hier holen wir die Notiz aus dem JSON, die wir im Frontend senden
         notes = data.get('notes', '')
 
         stock = get_object_or_404(Stock, id=stock_id)
@@ -75,7 +70,6 @@ def book_out_api(request, stock_id):
             return JsonResponse({'error': 'Nicht genügend Bestand verfügbar.'}, status=400)
 
         with transaction.atomic():
-            # Bestand reduzieren
             stock.quantity -= amount
             stock.save()
 
@@ -125,7 +119,7 @@ def transfer_stock_api(request, stock_id):
                 product=source_stock.product,
                 location=target_location,
                 defaults={'quantity': 0, 'threshold': source_stock.threshold},
-                note = data.get('note')
+                note=data.get('note')
             )
             dest_stock.quantity += amount
             dest_stock.save()
@@ -148,23 +142,17 @@ def transfer_stock_api(request, stock_id):
 
 @require_POST
 def delete_stock_api(request, stock_id):
-    # 1. Sicherheitscheck: Ist der User ein Admin?
     if not request.user.is_superuser:
         return JsonResponse({'error': 'Keine Berechtigung. Nur Administratoren dürfen löschen.'}, status=403)
 
     try:
         stock = get_object_or_404(Stock, id=stock_id)
 
-        # 2. Logikcheck: Darf nur gelöscht werden, wenn leer?
         if stock.quantity > 0:
             return JsonResponse({'error': 'Position kann nicht gelöscht werden, da noch Bestand vorhanden ist.'},
                                 status=400)
-
-        # 3. Löschen
         stock.delete()
-
         return JsonResponse({'success': True})
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-

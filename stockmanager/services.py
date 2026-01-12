@@ -6,9 +6,6 @@ from stockmovementmanager.models import StockMovement
 from locationmanager.models import Location
 
 
-# ==========================
-# WARENAUSGANG (BOOK OUT)
-# ==========================
 def process_outgoing_goods(stock_id, quantity, user=None, notes=None):
     if quantity <= 0:
         raise ValidationError("Die Menge muss größer als 0 sein.")
@@ -20,26 +17,21 @@ def process_outgoing_goods(stock_id, quantity, user=None, notes=None):
         if stock.quantity < quantity:
             raise ValidationError(f"Nicht genug Bestand! Verfügbar: {stock.quantity}")
 
-        # Menge abziehen
         stock.quantity -= quantity
         stock.save()
 
-        # Bewegung protokollieren
         StockMovement.objects.create(
             product=stock.product,
             quantity=quantity,
             movement_type='OUT',
             source_location=stock.location,
-            destination_location=None,  # Ziel unbekannt/extern
-            note=notes  # Speichert die Bemerkung
+            destination_location=None,
+            note=notes
         )
 
         return stock
 
 
-# ==========================
-# UMLAGERUNG (TRANSFER)
-# ==========================
 def process_stock_transfer(source_stock_id, target_location_id, quantity, note=None):
     if quantity <= 0:
         raise ValidationError("Menge muss positiv sein.")
@@ -73,7 +65,7 @@ def process_stock_transfer(source_stock_id, target_location_id, quantity, note=N
             movement_type='MOVE',
             source_location=source_stock.location,
             destination_location=target_location,
-            note=note  # Speichert die Bemerkung
+            note=note
         )
 
         return source_stock, target_stock

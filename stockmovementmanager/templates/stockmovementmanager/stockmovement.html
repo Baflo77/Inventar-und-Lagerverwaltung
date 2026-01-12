@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <style>
+    /* --- DEIN BESTEHENDES DESIGN --- */
     :root {
         --primary-dark: #2c3e50;
         --accent-blue: #3498db;
@@ -22,7 +23,7 @@
         min-height: 100vh;
     }
 
-    .lm-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .lm-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
 
     .page-header {
         margin-bottom: 2rem;
@@ -39,18 +40,40 @@
         background: white;
         border-radius: 8px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-
     }
 
+    /* --- ANGEPASSTER CARD HEADER MIT FILTERN --- */
     .card-header {
         padding: 1.25rem;
         border-bottom: 1px solid #edf2f7;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
     }
 
+    .filter-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .filter-select {
+        padding: 6px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        background-color: #fff;
+        color: var(--text-dark);
+        outline: none;
+        cursor: pointer;
+    }
+    .filter-select:focus { border-color: var(--accent-blue); }
+
+    /* --- TABELLE --- */
     .table-modern { width: 100%; border-collapse: collapse; }
+
     .table-modern thead th {
         background-color: #f8fafc;
         color: var(--text-dark);
@@ -60,17 +83,30 @@
         padding: 15px;
         text-align: left;
         border-bottom: 2px solid #edf2f7;
+        cursor: pointer; /* Zeigt an, dass man klicken kann */
+        user-select: none;
     }
+
+    .table-modern thead th:hover { background-color: #edf2f7; }
 
     .table-modern td { padding: 15px; vertical-align: middle; border-bottom: 1px solid #edf2f7; font-size: 0.95rem; }
 
-    /* Badges für die Typen */
+    /* Sortier Icons */
+    .sort-icon { margin-left: 5px; opacity: 0.3; font-size: 0.8em; }
+    .active-sort .sort-icon { opacity: 1; color: var(--accent-blue); }
+    .sort-asc .sort-icon::after { content: "▲"; }
+    .sort-desc .sort-icon::after { content: "▼"; }
+
+    /* Badges */
     .badge {
         font-size: 0.75rem;
         font-weight: 700;
         padding: 5px 10px;
         border-radius: 20px;
         text-transform: uppercase;
+        display: inline-block;
+        text-align: center;
+        min-width: 80px;
     }
     .badge-in { background-color: #def7ec; color: #03543f; }
     .badge-out { background-color: #fde8e8; color: #9b1c1c; }
@@ -83,7 +119,6 @@
         color: var(--text-muted);
         font-size: 0.85rem;
     }
-
     .arrow { color: var(--accent-blue); font-weight: bold; }
 </style>
 {% endblock %}
@@ -95,58 +130,83 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title">Warenbewegungen</h1>
-                <p style="color: var(--text-muted); margin: 5px 0 0 0;">Vollständiges Logbuch aller Lageraktivitäten.</p>
+                <p style="color: var(--text-muted); margin: 5px 0 0 0;">Vollständiges Logbuch aller
+                    Lageraktivitäten.</p>
             </div>
-
         </div>
 
         <div class="data-card">
             <div class="card-header">
-                <h3 style="margin:0; font-size: 1.1rem;">Buchungshistorie</h3>
+                <h3 style="margin:0; font-size: 1.1rem; min-width: 150px;">Buchungshistorie</h3>
+
+                <div class="filter-group">
+                    <input type="date" id="filterDate" onchange="filterTable()" class="filter-select"
+                           title="Nach Datum filtern">
+
+                    <select id="filterProduct" onchange="filterTable()" class="filter-select">
+                        <option value="">Alle Produkte</option>
+                    </select>
+
+                    <select id="filterType" onchange="filterTable()" class="filter-select">
+                        <option value="">Alle Typen</option>
+                        <option value="IN">Wareneingang</option>
+                        <option value="OUT">Warenausgang</option>
+                        <option value="MOVE">Umlagerung</option>
+                    </select>
                 </div>
+            </div>
 
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table-modern">
+                    <table class="table-modern" id="movementTable">
                         <thead>
-                            <tr>
-                                <th>Zeitstempel</th>
-                                <th>Produkt</th>
-                                <th>Bewegungstyp</th>
-                                <th>Menge</th>
-                                <th>Route (Von → Nach)</th>
-                                <th>Bemerkung</th>
-                            </tr>
+                        <tr>
+                            <th onclick="sortTable(0)">Zeitstempel <span class="sort-icon"></span></th>
+                            <th onclick="sortTable(1)">Produkt <span class="sort-icon"></span></th>
+                            <th onclick="sortTable(2)">Bewegungstyp <span class="sort-icon"></span></th>
+                            <th onclick="sortTable(3)">Menge <span class="sort-icon"></span></th>
+                            <th>Route (Von → Nach)</th>
+                            <th>Bemerkung</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {% for move in movements %}
-                            <tr>
-                                <td>
-                                    <div style="font-weight: 600;">{{ move.timestamp|date:"d.m.Y" }}</div>
-                                    <div style="font-size: 0.8rem; color: #94a3b8;">{{ move.timestamp|date:"H:i" }} Uhr</div>
-                                </td>
-                                <td>
-                                    <div style="font-weight: 700; color: var(--primary-dark);">{{ move.product.name }}</div>
-                                    <div style="font-size: 0.75rem; color: #94a3b8;">SKU: {{ move.product.sku|default:"-" }}</div>
-                                </td>
-                                <td>
-                                    {% if move.movement_type == 'IN' %}
-                                        <span class="badge badge-in">Wareneingang</span>
-                                    {% elif move.movement_type == 'OUT' %}
-                                        <span class="badge badge-out">Warenausgang</span>
-                                    {% else %}
-                                        <span class="badge badge-move">Umlagerung</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span style="font-weight: 800; font-size: 1.1rem;">{{ move.quantity }}</span>
-                                    <span style="font-size: 0.8rem; color: #64748b;">Stk.</span>
-                                </td>
-                                <td>
-                                    <div class="location-flow">
-                                        <span>{% if move.source_location %}{{ move.source_location.name }}{% else %}Extern{% endif %}</span>
-                                        <span class="arrow">→</span>
-                                        <span>
+                        {% for move in movements %}
+                        <tr class="movement-row"
+                            data-product="{{ move.product.name }}"
+                            data-type="{{ move.movement_type }}"
+                            data-date="{{ move.timestamp|date:'Y-m-d' }}">
+                            <td data-sort="{{ move.timestamp|date:'YmdHi' }}">
+                                <div style="font-weight: 600;">{{ move.timestamp|date:"d.m.Y" }}</div>
+                                <div style="font-size: 0.8rem; color: #94a3b8;">{{ move.timestamp|date:"H:i" }} Uhr
+                                </div>
+                            </td>
+
+                            <td data-sort="{{ move.product.name|lower }}">
+                                <div style="font-weight: 700; color: var(--primary-dark);">{{ move.product.name }}</div>
+                                <div style="font-size: 0.75rem; color: #94a3b8;">SKU: {{ move.product.sku|default:"-" }}
+                                </div>
+                            </td>
+
+                            <td data-sort="{{ move.movement_type }}">
+                                {% if move.movement_type == 'IN' %}
+                                <span class="badge badge-in">Wareneingang</span>
+                                {% elif move.movement_type == 'OUT' %}
+                                <span class="badge badge-out">Warenausgang</span>
+                                {% else %}
+                                <span class="badge badge-move">Umlagerung</span>
+                                {% endif %}
+                            </td>
+
+                            <td data-sort="{{ move.quantity }}">
+                                <span style="font-weight: 800; font-size: 1.1rem;">{{ move.quantity }}</span>
+                                <span style="font-size: 0.8rem; color: #64748b;">Stk.</span>
+                            </td>
+
+                            <td>
+                                <div class="location-flow">
+                                    <span>{% if move.source_location %}{{ move.source_location.name }}{% else %}Extern{% endif %}</span>
+                                    <span class="arrow">→</span>
+                                    <span>
                                             {% if move.destination_location %}
                                                 {{ move.destination_location.name }}
                                             {% elif move.target_location %}
@@ -155,20 +215,22 @@
                                                 Extern
                                             {% endif %}
                                         </span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <small style="color: #64748b;">{{ move.note|default:"-" }}</small>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="6" style="text-align: center; padding: 4rem; color: #94a3b8;">
-                                    <i class="bi bi-journal-x" style="font-size: 2.5rem; display: block; margin-bottom: 1rem;"></i>
-                                    Keine Warenbewegungen in der Datenbank gefunden.
-                                </td>
-                            </tr>
-                            {% endfor %}
+                                </div>
+                            </td>
+
+                            <td>
+                                <small style="color: #64748b;">{{ move.note|default:"-" }}</small>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 4rem; color: #94a3b8;">
+                                <i class="bi bi-journal-x"
+                                   style="font-size: 2.5rem; display: block; margin-bottom: 1rem;"></i>
+                                Keine Warenbewegungen in der Datenbank gefunden.
+                            </td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -176,4 +238,103 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        populateFilters();
+    });
+
+    // 1. FILTER OPTIONEN BEFÜLLEN (Produkte dynamisch laden)
+    function populateFilters() {
+        const rows = document.querySelectorAll('.movement-row');
+        if (rows.length === 0) return;
+
+        const products = new Set();
+
+        rows.forEach(row => {
+            const pName = row.getAttribute('data-product');
+            if(pName) products.add(pName);
+        });
+
+        const prodSelect = document.getElementById('filterProduct');
+        if(prodSelect && prodSelect.options.length === 1) {
+             Array.from(products).sort().forEach(prod => {
+                 prodSelect.add(new Option(prod, prod));
+             });
+        }
+    }
+
+    // 2. FILTER FUNKTION
+    window.filterTable = function() {
+        const selProduct = document.getElementById("filterProduct").value;
+        const selType = document.getElementById("filterType").value;
+        const selDate = document.getElementById("filterDate").value; // Liefert YYYY-MM-DD
+
+        const rows = document.querySelectorAll('.movement-row');
+
+        rows.forEach(row => {
+            const rowProd = row.getAttribute('data-product');
+            const rowType = row.getAttribute('data-type');
+            const rowDate = row.getAttribute('data-date'); // Wir haben das im HTML vorbereitet
+
+            // Prüfen (leere Filter ignorieren)
+            const matchProd = selProduct === "" || rowProd === selProduct;
+            const matchType = selType === "" || rowType === selType;
+            const matchDate = selDate === "" || rowDate === selDate;
+
+            row.style.display = (matchProd && matchType && matchDate) ? "" : "none";
+        });
+    }
+
+    // 3. SORTIER FUNKTION
+    window.sortTable = function(n) {
+        const table = document.getElementById("movementTable");
+        let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        switching = true;
+        dir = "asc";
+
+        // Icons zurücksetzen
+        const headers = table.getElementsByTagName("th");
+        for(let h of headers) h.classList.remove('active-sort', 'sort-asc', 'sort-desc');
+
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            // Loop durch alle Zeilen (außer Header)
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+
+                // Wir nutzen data-sort, falls vorhanden (für Datum/Zahlen), sonst Text
+                const xElem = rows[i].getElementsByTagName("td")[n];
+                const yElem = rows[i + 1].getElementsByTagName("td")[n];
+
+                let xVal = xElem.getAttribute('data-sort') || xElem.innerText.toLowerCase();
+                let yVal = yElem.getAttribute('data-sort') || yElem.innerText.toLowerCase();
+
+                // Zahlen-Check
+                if(!isNaN(xVal) && !isNaN(yVal)) {
+                    xVal = parseFloat(xVal);
+                    yVal = parseFloat(yVal);
+                }
+
+                if (dir == "asc") {
+                    if (xVal > yVal) { shouldSwitch = true; break; }
+                } else if (dir == "desc") {
+                    if (xVal < yVal) { shouldSwitch = true; break; }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount ++;
+            } else {
+                if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; }
+            }
+        }
+        // Icon für geklickte Spalte setzen
+        if (headers[n]) headers[n].classList.add('active-sort', dir === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+</script>
 {% endblock %}

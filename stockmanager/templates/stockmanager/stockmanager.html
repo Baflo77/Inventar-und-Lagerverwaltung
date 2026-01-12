@@ -215,14 +215,14 @@
     <div class="lm-container">
 
         {% if messages %}
-            {% for message in messages %}
-                <div style="padding: 12px 20px; margin-bottom: 20px; border-radius: 6px;
+        {% for message in messages %}
+        <div style="padding: 12px 20px; margin-bottom: 20px; border-radius: 6px;
                      background: {% if message.tags == 'error' %}#f8d7da{% else %}#d4edda{% endif %};
                      color: {% if message.tags == 'error' %}#721c24{% else %}#155724{% endif %};
                      border: 1px solid {% if message.tags == 'error' %}#f5c6cb{% else %}#c3e6cb{% endif %};">
-                    {{ message }}
-                </div>
-            {% endfor %}
+            {{ message }}
+        </div>
+        {% endfor %}
         {% endif %}
 
         <div class="page-header">
@@ -260,79 +260,83 @@
                 <div class="table-responsive">
                     <table class="table-modern" id="stockTable">
                         <thead>
-                            <tr>
-                                <th onclick="sortTable(0)">Produkt <span class="sort-icon"></span></th>
-                                <th onclick="sortTable(1)">Lagerort <span class="sort-icon"></span></th>
-                                <th onclick="sortTable(2)">Menge <span class="sort-icon"></span></th>
-                                <th onclick="sortTable(3)">Status <span class="sort-icon"></span></th>
-                                <th>Min.</th>
-                                <th style="text-align: right;">Aktionen</th>
-                            </tr>
+                        <tr>
+                            <th onclick="sortTable(0)">Produkt <span class="sort-icon"></span></th>
+                            <th onclick="sortTable(1)">Lagerort <span class="sort-icon"></span></th>
+                            <th onclick="sortTable(2)">Menge <span class="sort-icon"></span></th>
+                            <th onclick="sortTable(3)">Status <span class="sort-icon"></span></th>
+                            <th>Min.</th>
+                            <th style="text-align: right;">Aktionen</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {% for stock in stocks %}
-                            <tr class="stock-row"
-                                data-product="{{ stock.product.name }}"
-                                data-location="{{ stock.location.name }}"
-                                data-status="{% if stock.quantity == 0 %}LEER{% elif stock.quantity <= stock.threshold %}KRITISCH{% else %}OK{% endif %}">
+                        {% for stock in stocks %}
+                        <tr class="stock-row"
+                            data-product="{{ stock.product.name }}"
+                            data-location="{{ stock.location.name }}"
+                            data-status="{% if stock.quantity == 0 %}LEER{% elif stock.quantity <= stock.threshold %}KRITISCH{% else %}OK{% endif %}">
 
-                                <td data-sort="{{ stock.product.name|lower }}">
-                                    <strong style="color: var(--primary-dark); display: block;">{{ stock.product.name }}</strong>
-                                    <small style="color: #999;">SKU: {{ stock.product.sku|default:"-" }}</small>
-                                </td>
+                            <td data-sort="{{ stock.product.name|lower }}">
+                                <strong style="color: var(--primary-dark); display: block;">{{ stock.product.name }}</strong>
+                                <small style="color: #999;">SKU: {{ stock.product.sku|default:"-" }}</small>
+                            </td>
 
-                                <td data-sort="{{ stock.location.name|lower }}">
-                                    <div style="font-weight: 500;">{{ stock.location.name }}</div>
-                                    <small style="color: #6c757d;">{{ stock.location.warehouse.name|default:"-" }}</small>
-                                </td>
+                            <td data-sort="{{ stock.location.name|lower }}">
+                                <div style="font-weight: 500;">{{ stock.location.name }}</div>
+                                <small style="color: #6c757d;">{{ stock.location.warehouse.name|default:"-" }}</small>
+                            </td>
 
-                                <td data-sort="{{ stock.quantity }}">
-                                    <span style="font-size: 1.1em; font-weight: 700;">{{ stock.quantity }}</span>
-                                </td>
+                            <td data-sort="{{ stock.quantity }}">
+                                <span style="font-size: 1.1em; font-weight: 700;">{{ stock.quantity }}</span>
+                            </td>
 
-                                <td data-sort="{% if stock.quantity == 0 %}1{% elif stock.quantity <= stock.threshold %}2{% else %}3{% endif %}">
-                                    {% if stock.quantity == 0 %}
-                                        <span class="status-badge status-empty">LEER</span>
-                                    {% elif stock.quantity <= stock.threshold %}
-                                        <span class="status-badge status-crit">KRITISCH</span>
-                                    {% else %}
-                                        <span class="status-badge status-ok">OK</span>
-                                    {% endif %}
-                                </td>
+                            <td data-sort="{% if stock.quantity == 0 %}1{% elif stock.quantity <= stock.threshold %}2{% else %}3{% endif %}">
+                                {% if stock.quantity == 0 %}
+                                <span class="status-badge status-empty">LEER</span>
+                                {% elif stock.quantity <= stock.threshold %}
+                                <span class="status-badge status-crit">KRITISCH</span>
+                                {% else %}
+                                <span class="status-badge status-ok">OK</span>
+                                {% endif %}
+                            </td>
 
-                                <td><span style="color: #999;">{{ stock.threshold }}</span></td>
+                            <td><span style="color: #999;">{{ stock.threshold }}</span></td>
 
-                                <td style="text-align: right;">
-    {% if stock.quantity == 0 %}
-        {# WENN LEER: #}
-        {% if request.user.is_superuser %}
-            {# Admin sieht Löschen-Button #}
-            <button class="btn-action action-delete" onclick="deleteStock('{{ stock.id }}', '{{ stock.product.name|escapejs }}')">
-                <i class="bi bi-trash"></i> Löschen
-            </button>
-        {% else %}
-            {# Mitarbeiter sieht NICHTS (leere Zelle) #}
-            &nbsp;
-        {% endif %}
-    {% else %}
-        {# WENN NICHT LEER: Zeige normale Aktionen (Umlagern / Ausbuchen) #}
-        <button class="btn-action action-move" onclick="openTransferModal('{{ stock.id }}', '{{ stock.product.name|escapejs }}', {{ stock.quantity }})">
-            <i class="bi bi-arrow-left-right"></i> Umlagern
-        </button>
-        <button class="btn-action action-out" onclick="openBookOutModal('{{ stock.id }}', '{{ stock.product.name|escapejs }}', {{ stock.quantity }})">
-            <i class="bi bi-box-arrow-right"></i> Ausbuchen
-        </button>
-    {% endif %}
-</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="6" style="text-align: center; padding: 4rem; color: #adb5bd;">
-                                    <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                                    Keine Bestände gefunden.
-                                </td>
-                            </tr>
-                            {% endfor %}
+                            <td style="text-align: right;">
+                                {% if stock.quantity == 0 %}
+                                {# WENN LEER: #}
+                                {% if request.user.is_superuser %}
+                                {# Admin sieht Löschen-Button #}
+                                <button class="btn-action action-delete"
+                                        onclick="deleteStock('{{ stock.id }}', '{{ stock.product.name|escapejs }}')">
+                                    <i class="bi bi-trash"></i> Löschen
+                                </button>
+                                {% else %}
+                                {# Mitarbeiter sieht NICHTS (leere Zelle) #}
+                                &nbsp;
+                                {% endif %}
+                                {% else %}
+                                {# WENN NICHT LEER: Zeige normale Aktionen (Umlagern / Ausbuchen) #}
+                                <button class="btn-action action-move"
+                                        onclick="openTransferModal('{{ stock.id }}', '{{ stock.product.name|escapejs }}', {{ stock.quantity }})">
+                                    <i class="bi bi-arrow-left-right"></i> Umlagern
+                                </button>
+                                <button class="btn-action action-out"
+                                        onclick="openBookOutModal('{{ stock.id }}', '{{ stock.product.name|escapejs }}', {{ stock.quantity }})">
+                                    <i class="bi bi-box-arrow-right"></i> Ausbuchen
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 4rem; color: #adb5bd;">
+                                <i class="bi bi-inbox"
+                                   style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                                Keine Bestände gefunden.
+                            </td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -349,21 +353,21 @@
             {% csrf_token %}
             <input type="hidden" name="action" value="initialize">
             <div class="form-group">
-    <label class="form-label">Produkt wählen</label>
-    <select name="product_id" class="form-select" required>
-        <option value="" selected disabled>Bitte Produkt auswählen...</option>
-        {% for p in products %}
-            <option value="{{ p.id }}">
-                {{ p.name }} {% if p.sku %}(SKU: {{ p.sku }}){% endif %}
-            </option>
-        {% endfor %}
-    </select>
-</div>
+                <label class="form-label">Produkt wählen</label>
+                <select name="product_id" class="form-select" required>
+                    <option value="" selected disabled>Bitte Produkt auswählen...</option>
+                    {% for p in products %}
+                    <option value="{{ p.id }}">
+                        {{ p.name }} {% if p.sku %}(SKU: {{ p.sku }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
             <div class="form-group">
                 <label class="form-label">Lagerort</label>
                 <select name="location_id" class="form-select" required>
                     {% for loc in locations %}
-                        <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
+                    <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.warehouse.name }})</option>
                     {% endfor %}
                 </select>
             </div>
@@ -398,13 +402,14 @@
                 <select id="targetLocationId" class="form-select" required>
                     <option value="" selected disabled>Wählen...</option>
                     {% for loc in locations %}
-                        <option value="{{ loc.id }}">{{ loc.name }}</option>
+                    <option value="{{ loc.id }}">{{ loc.name }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Bemerkung (Optional)</label>
-                <textarea id="transferNote" class="form-control" rows="2" placeholder="Grund für die Umlagerung..."></textarea>
+                <textarea id="transferNote" class="form-control" rows="2"
+                          placeholder="Grund für die Umlagerung..."></textarea>
             </div>
             <button type="submit" class="btn-submit">Umlagern</button>
         </form>
