@@ -3,12 +3,14 @@ from productmanager.models import Product
 from purchaseordermanager.models import PurchaseOrder
 from productsuppliermanager.models import ProductSupplier
 from django.core.exceptions import ValidationError
+from django.db.models import Max
+from django.db import transaction
 
 
 class PurchaseOrderItem(models.Model):
     purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name='items')
     product_supplier = models.ForeignKey(ProductSupplier, on_delete=models.PROTECT, related_name="purchase_order_items",)
-    #nachher entfernen!!!
+    line_no = models.PositiveIntegerField(editable=False, null=True, blank=True) #null true, weil alte Daten keine line_no haben
     quantity = models.PositiveIntegerField()
     received_quantity = models.PositiveIntegerField(default=0)
 
@@ -22,6 +24,18 @@ class PurchaseOrderItem(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean()
+        if not self.line_no:
+            with transaction.atomic():
+                max_no = (
+                    PurchaseOrderItem.objects
+                    .select_for_update()
+                    .filter(purchase_order=self.purchase_order)
+                    .aggregate(m=Max("line_no"))
+                    ["m"]
+                ) or 0
+                self.line_no = max_no + 1
+                return super().save(*args, **kwargs)
+
         return super().save(*args, **kwargs)
 
     @property
@@ -30,3 +44,11 @@ class PurchaseOrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product_supplier.product.name} x{self.quantity}"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["purchase_order", "line_no"],
+                name="uniq_po_line_no"
+            )
+        ]

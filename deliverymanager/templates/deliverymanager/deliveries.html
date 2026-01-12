@@ -95,6 +95,7 @@
         color: var(--dm-dark);
     }
 
+    /* Buttons */
     .btn-secondary{
         padding: 10px 14px;
         border-radius: 6px;
@@ -127,47 +128,7 @@
     }
     .btn-primary:hover{ background:#1a252f; }
 
-    .form-grid{
-        display:grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 12px;
-    }
-    .form-grid input, .form-grid select{
-        width: 100%;
-        padding: 0.65rem;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        font-size: 1rem;
-        background: #fff;
-        box-sizing: border-box;
-    }
-    .form-grid input:focus, .form-grid select:focus{
-        border-color: var(--dm-accent);
-        outline:none;
-        box-shadow: 0 0 0 3px rgba(52,152,219,0.12);
-    }
-    .form-actions{
-        display:flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 14px;
-        flex-wrap: wrap;
-    }
-
-    .meta{
-        color:#6c757d;
-        font-size: 0.9rem;
-        margin: 14px 0 10px;
-        font-weight: 700;
-    }
-
-    .items-grid{
-        display:grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 10px;
-        align-items: end;
-    }
-
+    /* Table */
     .table-modern{
         width:100%;
         border-collapse: collapse;
@@ -185,6 +146,7 @@
         letter-spacing: .5px;
         user-select: none;
 
+        /* Sort UI */
         cursor: pointer;
     }
     .table-modern thead th:hover{
@@ -208,6 +170,7 @@
         font-size: 0.95rem;
     }
 
+    /* Actions */
     .btn-action{
         border: none;
         background: none;
@@ -230,6 +193,9 @@
     .btn-delete{ color: var(--dm-danger); }
     .btn-delete:hover{ background:#ffebeb; }
 
+    /* =========================
+       STATUS DROPDOWN (CLEAN + FARBE)
+       ========================= */
     .status-select{
         appearance: none;
         -webkit-appearance: none;
@@ -258,9 +224,10 @@
     }
     .status-select:focus{
         border-color: rgba(52,152,219,0.55);
-        box-shadow: 0 0 0 4px rgba(52,152,219,0.12), 0 10px 18px rgba(0,0,0strrah0,0,0.08);
+        box-shadow: 0 0 0 4px rgba(52,152,219,0.12), 0 10px 18px rgba(0,0,0,0.08);
     }
 
+    /* Status Farben: Offen=Rot, Versendet=Orange, Zugestellt=Grün */
     .status-open{
         background-color: #f8d7da;
         color: #721c24;
@@ -286,6 +253,7 @@
     }
     .status-hint.show{ display:inline-block; }
 
+    /* Details */
     .details-row{ display:none; background:#fbfbfc; }
     .details-box{
         padding: 14px;
@@ -304,9 +272,97 @@
     .empty-state{ text-align:center; padding: 60px; color:#bdc3c7; }
 
     @media(max-width: 900px){
-        .form-grid{ grid-template-columns: 1fr; }
-        .items-grid{ grid-template-columns: 1fr; }
         .status-select{ min-width: 100%; }
+    }
+
+    /* =========================
+       FORM LOOK wie Customer "Anlegen"
+       ========================= */
+    .dm-form-wrap{
+      padding: 1.25rem;
+    }
+
+    .dm-form-row{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .dm-form-row input,
+    .dm-form-row select{
+      width: 100%;
+      padding: 0.85rem 0.9rem;
+      border: 1px solid #ced4da;
+      border-radius: 10px;
+      font-size: 1rem;
+      background: #fff;
+      box-sizing: border-box;
+    }
+
+    .dm-form-row input:focus,
+    .dm-form-row select:focus{
+      border-color: var(--dm-accent);
+      outline:none;
+      box-shadow: 0 0 0 3px rgba(52,152,219,0.12);
+    }
+
+    .dm-form-section-title{
+      margin-top: 18px;
+      margin-bottom: 10px;
+      font-weight: 900;
+      color: var(--dm-dark);
+    }
+
+    .dm-form-help{
+      margin-top: 6px;
+      color:#6c757d;
+      font-size:0.9rem;
+      font-weight:700;
+    }
+
+    .dm-checkbox-row{
+      margin-top: 14px;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .dm-checkbox-row input[type="checkbox"]{
+      width: 18px;
+      height: 18px;
+      margin: 0;
+    }
+
+    .dm-checkbox-label{
+      margin:0;
+      font-weight:900;
+      color: var(--dm-dark);
+      cursor:pointer;
+    }
+
+    .dm-items-grid{
+      display:grid;
+      grid-template-columns: 1fr 220px;
+      gap: 12px;
+    }
+
+    .dm-items-grid input{
+      padding: 0.85rem 0.9rem;
+      border-radius: 10px;
+    }
+
+    .dm-actions{
+      display:flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    @media(max-width: 900px){
+      .dm-form-row{ grid-template-columns: 1fr; }
+      .dm-items-grid{ grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}
@@ -339,85 +395,80 @@
       </a>
     </div>
 
-    {% if create_mode or edit_delivery %}
-    <div class="data-card">
-      <div class="card-header">
-        <h3 class="card-title">{% if edit_delivery %}Lieferung bearbeiten{% else %}Lieferung anlegen{% endif %}</h3>
-        <a href="{% url 'deliveries_page' %}" class="btn-secondary">
-          <i class="bi bi-x-lg"></i> Abbrechen
-        </a>
-      </div>
-
-      <div style="padding: 1.25rem;">
-        <form method="post"
-              action="{% if edit_delivery %}{% url 'delivery_edit' edit_delivery.id %}{% else %}{% url 'delivery_create' %}{% endif %}">
-          {% csrf_token %}
-
-          <div class="form-grid">
-            <select name="order" required>
-              <option value="" disabled {% if not edit_delivery %}selected{% endif %}>Order auswählen…</option>
-              {% for o in orders %}
-                <option value="{{ o.id }}" {% if edit_delivery and edit_delivery.order_id == o.id %}selected{% endif %}>
-                  Order #{{ o.id }}
-                </option>
-              {% endfor %}
-            </select>
-
-            <input type="date" name="delivery_date" required value="{{ edit_delivery.delivery_date|date:'Y-m-d'|default:'' }}">
-
-            <select name="status" required>
-              <option value="open" {% if not edit_delivery or edit_delivery.status == "open" %}selected{% endif %}>Offen</option>
-              <option value="shipped" {% if edit_delivery and edit_delivery.status == "shipped" %}selected{% endif %}>Versendet</option>
-              <option value="delivered" {% if edit_delivery and edit_delivery.status == "delivered" %}selected{% endif %}>Zugestellt</option>
-            </select>
-          </div>
-
-          {% if not edit_delivery %}
-            <div style="margin-top:12px; display:flex; align-items:center; gap:10px;">
-              <input
-                type="checkbox"
-                id="from_orderitems"
-                style="width:18px; height:18px;"
-                onclick="toggleManualItems(this)"
-              >
-              <label for="from_orderitems" style="margin:0; font-weight:800; color: var(--dm-dark); cursor:pointer;">
-                OrderItems automatisch übernehmen (OrderItems → DeliveryItems)
-              </label>
-
-              <input type="hidden" name="from_orderitems" id="from_orderitems_value" value="0">
-            </div>
-
-            <div style="margin-top:6px; color:#6c757d; font-size:0.9rem; font-weight:700;">
-              Wenn aktiv: deine manuell eingegebenen Positionen werden ignoriert und alle OrderItems werden kopiert.
-            </div>
-          {% endif %}
-
-          <div class="meta">Delivery Items – bis zu 3 Positionen (leere Zeilen werden ignoriert)</div>
-
-          <div class="items-grid">
-            <div><input type="text" name="description_1" placeholder="Beschreibung 1 (z.B. Ware XY)"></div>
-            <div><input type="number" name="quantity_1" min="1" placeholder="Menge 1"></div>
-
-            <div><input type="text" name="description_2" placeholder="Beschreibung 2"></div>
-            <div><input type="number" name="quantity_2" min="1" placeholder="Menge 2"></div>
-
-            <div><input type="text" name="description_3" placeholder="Beschreibung 3"></div>
-            <div><input type="number" name="quantity_3" min="1" placeholder="Menge 3"></div>
-          </div>
-
-          <div class="form-actions">
-            <a href="{% url 'deliveries_page' %}" class="btn-secondary">
-              <i class="bi bi-x-lg"></i> Abbrechen
-            </a>
-            <button type="submit" class="btn-primary">
-              <i class="bi bi-check2"></i>
-              {% if edit_delivery %}Speichern{% else %}Anlegen{% endif %}
-            </button>
-          </div>
-        </form>
-      </div>
+      {% if create_mode or edit_delivery %}
+  <div class="data-card">
+    <div class="card-header">
+      <h3 class="card-title">{% if edit_delivery %}Lieferung bearbeiten{% else %}Lieferung anlegen{% endif %}</h3>
+      <a href="{% url 'deliveries_page' %}" class="btn-secondary">
+        <i class="bi bi-x-lg"></i> Abbrechen
+      </a>
     </div>
-    {% endif %}
+
+    <div class="dm-form-wrap">
+      <form method="post"
+            action="{% if edit_delivery %}{% url 'delivery_edit' edit_delivery.id %}{% else %}{% url 'delivery_create' %}{% endif %}">
+        {% csrf_token %}
+
+        <div class="dm-form-row">
+          <select name="order" required>
+            <option value="" disabled {% if not edit_delivery %}selected{% endif %}>Order auswählen…</option>
+            {% for o in orders %}
+              <option value="{{ o.id }}" {% if edit_delivery and edit_delivery.order_id == o.id %}selected{% endif %}>
+                Order #{{ o.id }}
+              </option>
+            {% endfor %}
+          </select>
+
+          <input type="date" name="delivery_date" required value="{{ edit_delivery.delivery_date|date:'Y-m-d'|default:'' }}">
+
+          <select name="status" required>
+            <option value="open" {% if not edit_delivery or edit_delivery.status == "open" %}selected{% endif %}>Offen</option>
+            <option value="shipped" {% if edit_delivery and edit_delivery.status == "shipped" %}selected{% endif %}>Versendet</option>
+            <option value="delivered" {% if edit_delivery and edit_delivery.status == "delivered" %}selected{% endif %}>Zugestellt</option>
+          </select>
+        </div>
+
+        {% if not edit_delivery %}
+          <div class="dm-checkbox-row">
+            <input type="checkbox" id="from_orderitems" onclick="toggleManualItems(this)">
+            <label for="from_orderitems" class="dm-checkbox-label">
+              OrderItems automatisch übernehmen (OrderItems → DeliveryItems)
+            </label>
+            <input type="hidden" name="from_orderitems" id="from_orderitems_value" value="0">
+          </div>
+
+          <div class="dm-form-help">
+            Wenn aktiv: deine manuell eingegebenen Positionen werden ignoriert und alle OrderItems werden kopiert.
+          </div>
+        {% endif %}
+
+        <div class="dm-form-section-title">Delivery Items</div>
+        <div class="dm-form-help" style="margin-top:-6px;">Bis zu 3 Positionen (leere Zeilen werden ignoriert)</div>
+
+        <div class="dm-items-grid" style="margin-top:12px;">
+          <input type="text" name="description_1" placeholder="Beschreibung 1 (z.B. Ware XY)">
+          <input type="number" name="quantity_1" min="1" placeholder="Menge 1">
+
+          <input type="text" name="description_2" placeholder="Beschreibung 2">
+          <input type="number" name="quantity_2" min="1" placeholder="Menge 2">
+
+          <input type="text" name="description_3" placeholder="Beschreibung 3">
+          <input type="number" name="quantity_3" min="1" placeholder="Menge 3">
+        </div>
+
+        <div class="dm-actions">
+          <a href="{% url 'deliveries_page' %}" class="btn-secondary">
+            <i class="bi bi-x-lg"></i> Abbrechen
+          </a>
+          <button type="submit" class="btn-primary">
+            <i class="bi bi-check2"></i>
+            {% if edit_delivery %}Speichern{% else %}Anlegen{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
 
     <div class="data-card">
       {% if deliveries %}
@@ -534,39 +585,6 @@
 
 {% block extra_js %}
 <script>
-  function toggleDetails(id){
-    const row = document.getElementById("details-" + id);
-    const icon = document.getElementById("icon-" + id);
-
-    if(row && icon){
-      const isOpen = row.style.display === "table-row";
-      row.style.display = isOpen ? "none" : "table-row";
-
-      if(isOpen){
-        icon.classList.remove("bi-chevron-up");
-        icon.classList.add("bi-chevron-down");
-      } else {
-        icon.classList.remove("bi-chevron-down");
-        icon.classList.add("bi-chevron-up");
-      }
-    }
-  }
-
-  function prettyStatusSubmit(selectEl){
-    selectEl.classList.remove("status-open", "status-shipped", "status-delivered");
-    const value = selectEl.value;
-    if(value === "open") selectEl.classList.add("status-open");
-    else if(value === "shipped") selectEl.classList.add("status-shipped");
-    else selectEl.classList.add("status-delivered");
-
-    const hint = selectEl.parentElement.querySelector(".status-hint");
-    if(hint){
-      hint.classList.add("show");
-      setTimeout(() => hint.classList.remove("show"), 1200);
-    }
-    selectEl.form.submit();
-  }
-
   function toggleManualItems(checkbox){
     const hidden = document.getElementById("from_orderitems_value");
     if(hidden) hidden.value = checkbox.checked ? "1" : "0";
@@ -586,61 +604,19 @@
     });
   }
 
-  function sortDeliveriesTable(colIndex){
-    const table = document.getElementById("deliveriesTable");
-    if(!table) return;
+  function prettyStatusSubmit(selectEl){
+    selectEl.classList.remove("status-open", "status-shipped", "status-delivered");
+    const value = selectEl.value;
+    if(value === "open") selectEl.classList.add("status-open");
+    else if(value === "shipped") selectEl.classList.add("status-shipped");
+    else selectEl.classList.add("status-delivered");
 
-    const headers = table.querySelectorAll("thead th");
-    headers.forEach(h => h.classList.remove("active-sort", "sort-asc", "sort-desc"));
-
-    let dir = table.getAttribute("data-sort-dir") || "asc";
-    let lastCol = table.getAttribute("data-sort-col");
-
-    if(lastCol !== null && parseInt(lastCol, 10) === colIndex){
-      dir = (dir === "asc") ? "desc" : "asc";
-    } else {
-      dir = "asc";
+    const hint = selectEl.parentElement.querySelector(".status-hint");
+    if(hint){
+      hint.classList.add("show");
+      setTimeout(() => hint.classList.remove("show"), 1200);
     }
-
-    table.setAttribute("data-sort-dir", dir);
-    table.setAttribute("data-sort-col", String(colIndex));
-
-    const tbody = table.querySelector("tbody");
-    const rows = Array.from(tbody.querySelectorAll("tr")).filter(tr => tr.classList.contains("delivery-row"));
-
-    const pairList = rows.map(r => {
-      const id = r.getAttribute("data-id");
-      const details = document.getElementById("details-" + id);
-      return { main: r, details: details };
-    });
-
-    pairList.sort((a, b) => {
-      const aCell = a.main.children[colIndex];
-      const bCell = b.main.children[colIndex];
-      const aVal = (aCell && aCell.getAttribute("data-sort")) ? aCell.getAttribute("data-sort") : aCell.innerText;
-      const bVal = (bCell && bCell.getAttribute("data-sort")) ? bCell.getAttribute("data-sort") : bCell.innerText;
-
-      const aNum = parseFloat(aVal);
-      const bNum = parseFloat(bVal);
-      const bothNum = !isNaN(aNum) && !isNaN(bNum);
-
-      let cmp;
-      if(bothNum){
-        cmp = aNum - bNum;
-      } else {
-        cmp = String(aVal).localeCompare(String(bVal), "de", { numeric:true, sensitivity:"base" });
-      }
-      return (dir === "asc") ? cmp : -cmp;
-    });
-
-    pairList.forEach(pair => {
-      tbody.appendChild(pair.main);
-      if(pair.details) tbody.appendChild(pair.details);
-    });
-
-    if(headers[colIndex]){
-      headers[colIndex].classList.add("active-sort", dir === "asc" ? "sort-asc" : "sort-desc");
-    }
+    selectEl.form.submit();
   }
 </script>
 {% endblock %}
