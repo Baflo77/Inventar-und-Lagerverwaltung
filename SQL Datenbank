@@ -1,0 +1,316 @@
+-- Erstmal Tabellen leeren (Reihenfolge wegen Foreign Keys wichtig)
+DELETE FROM deliveryitem_deliveryitem;
+DELETE FROM deliverymanager_delivery;
+DELETE FROM purchaseorderitemmanager_purchaseorderitem;
+DELETE FROM purchaseordermanager_purchaseorder;
+DELETE FROM stockmovementmanager_stockmovement;
+DELETE FROM stockmanager_stock;
+DELETE FROM productsuppliermanager_productsupplier;
+DELETE FROM ordermanager_orderitem;
+DELETE FROM ordermanager_order;
+DELETE FROM customermanager_customer;
+DELETE FROM productmanager_product;
+DELETE FROM locationmanager_location;
+DELETE FROM warehousemanager_warehouse;
+DELETE FROM categorymanager_category;
+DELETE FROM suppliermanager_supplier;
+
+-- IDs zurücksetzen
+DELETE FROM sqlite_sequence WHERE name='deliveryitem_deliveryitem';
+DELETE FROM sqlite_sequence WHERE name='deliverymanager_delivery';
+DELETE FROM sqlite_sequence WHERE name='purchaseorderitemmanager_purchaseorderitem';
+DELETE FROM sqlite_sequence WHERE name='purchaseordermanager_purchaseorder';
+DELETE FROM sqlite_sequence WHERE name='stockmovementmanager_stockmovement';
+DELETE FROM sqlite_sequence WHERE name='stockmanager_stock';
+DELETE FROM sqlite_sequence WHERE name='productsuppliermanager_productsupplier';
+DELETE FROM sqlite_sequence WHERE name='ordermanager_orderitem';
+DELETE FROM sqlite_sequence WHERE name='ordermanager_order';
+DELETE FROM sqlite_sequence WHERE name='customermanager_customer';
+DELETE FROM sqlite_sequence WHERE name='productmanager_product';
+DELETE FROM sqlite_sequence WHERE name='locationmanager_location';
+DELETE FROM sqlite_sequence WHERE name='warehousemanager_warehouse';
+DELETE FROM sqlite_sequence WHERE name='categorymanager_category';
+DELETE FROM sqlite_sequence WHERE name='suppliermanager_supplier';
+
+
+-- ==========================================
+-- 2. KATEGORIEN
+-- ==========================================
+INSERT INTO "categorymanager_category" ("id", "name") VALUES
+(1, 'Elektronik & IT'), (2, 'Bürobedarf'), (3, 'Möbel & Einrichtung'),
+(4, 'Werkzeuge'), (5, 'Arbeitsschutz (PSA)'), (6, 'Reinigung & Hygiene'),
+(7, 'Verpackung & Versand'), (8, 'Garten & Außenanlagen'), (9, 'Rohstoffe / Metalle'),
+(10, 'KFZ-Zubehör'), (11, 'Küche & Kantine'), (12, 'Kabel & Adapter'), (13, 'Retouren / Defekt');
+
+-- ==========================================
+-- 3. WARENHÄUSER
+-- ==========================================
+INSERT INTO "warehousemanager_warehouse" ("id", "name", "location_id") VALUES
+(1, 'Zentrallager HAMBURG', NULL),
+(2, 'Verteilzentrum MÜNCHEN', NULL),
+(3, 'Logistikhub DORTMUND', NULL),
+(4, 'Retourencenter LEIPZIG', NULL);
+
+-- ==========================================
+-- 4. LAGERORTE (LOCATIONS)
+-- ==========================================
+INSERT INTO "locationmanager_location" ("id", "warehouse_id", "name", "city", "country", "street", "zip_code", "created_at", "updated_at", "capacity") VALUES
+(1, 1, 'WE - Wareneingang', 'Hamburg', 'DE', 'Hafenstr. 1', '20457', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 1000),
+(2, 1, 'A-01 - Hochregal Elektronik', 'Hamburg', 'DE', 'Hafenstr. 1', '20457', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 1000),
+(3, 1, 'A-02 - Hochregal Großgeräte', 'Hamburg', 'DE', 'Hafenstr. 1', '20457', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 500),
+(4, 1, 'KOM - Kommissionierzone', 'Hamburg', 'DE', 'Hafenstr. 1', '20457', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 100),
+(5, 2, 'B-01 - Kleinteilelager', 'München', 'DE', 'Industriepark 5', '80939', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 5000),
+(6, 2, 'B-02 - Palettenstellplätze', 'München', 'DE', 'Industriepark 5', '80939', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 300),
+(7, 2, 'GEFAHR - Gefahrgutlager', 'München', 'DE', 'Industriepark 5', '80939', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 50),
+(8, 2, 'KÜHL - Kühlraum', 'München', 'DE', 'Industriepark 5', '80939', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 100),
+(9, 3, 'C-01 - Reihe 1-10', 'Dortmund', 'DE', 'Ruhrallee 9', '44139', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 6000),
+(10, 3, 'C-02 - Reihe 11-20', 'Dortmund', 'DE', 'Ruhrallee 9', '44139', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 600),
+(11, 3, 'PACK - Packstation', 'Dortmund', 'DE', 'Ruhrallee 9', '44139', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 20),
+(12, 4, 'RET - Annahme Retouren', 'Leipzig', 'DE', 'Messe-Allee 1', '04356', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 500),
+(13, 4, 'PRÜF - Qualitätsprüfung', 'Leipzig', 'DE', 'Messe-Allee 1', '04356', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 50),
+(14, 4, 'OUT - Container 1', 'Leipzig', 'DE', 'Messe-Allee 1', '04356', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 2000),
+(15, 4, 'OUT - Container 2', 'Leipzig', 'DE', 'Messe-Allee 1', '04356', '2025-01-01 00:00:00', '2025-01-01 00:00:00', 2000);
+
+-- ==========================================
+-- 5. LIEFERANTEN
+-- ==========================================
+INSERT INTO "suppliermanager_supplier" ("id", "name", "contact_person", "email", "phone", "postal_code", "city", "street", "house_number") VALUES
+(1, 'Global Tech Supply', 'John Doe', 'sales@globaltech.com', '040-12345', 20099, 'Hamburg', 'Hafenstr.', 1),
+(2, 'Office Partner GmbH', 'Sarah Schmidt', 'info@officepartner.de', '089-98765', 80331, 'München', 'Büroweg', 10),
+(3, 'CleanCorp AG', 'Mike Sauber', 'order@cleancorp.de', '030-55566', 10115, 'Berlin', 'Sauberstr.', 5),
+(4, 'Möbel Profi', 'Petra Müller', 'b2b@moebelprofi.de', '0221-44332', 50667, 'Köln', 'Holzweg', 9),
+(5, 'ToolMasters Ltd', 'Bob Builder', 'sales@toolmasters.com', '069-11223', 60311, 'Frankfurt', 'Werkzeugstr.', 44),
+(6, 'Safety First PSA', 'Sicherer Sepp', 'protect@safety.de', '0711-99887', 70173, 'Stuttgart', 'Schutzwall', 12),
+(7, 'Pack & Go', 'Lisa Paket', 'info@packngo.de', '0511-33221', 30159, 'Hannover', 'Pappweg', 3),
+(8, 'Green Garden', 'Flora Blatt', 'flora@greengarden.de', '0421-66554', 28195, 'Bremen', 'Wiesenstr.', 7),
+(9, 'Electro World', 'Steve Jobs', 'import@electro.de', '0351-77889', 01067, 'Dresden', 'Chipstr.', 1),
+(10, 'Chemie Union', 'Dr. Bunsen', 'labor@chemie.de', '0201-22334', 45127, 'Essen', 'Chemiepark', 8),
+(11, 'Auto Parts 24', 'Benzin Bruder', 'parts@auto24.de', '0911-55443', 90403, 'Nürnberg', 'Motorstr.', 20),
+(12, 'Gastro King', 'Gordon R.', 'chef@gastroking.de', '0231-88990', 44135, 'Dortmund', 'Kochlöffel', 2);
+
+-- ==========================================
+-- 6. PRODUKTE
+-- ==========================================
+INSERT INTO "productmanager_product" ("id", "name", "sku", "description", "category_id") VALUES
+(1, 'Business Laptop 15"', 'NB-BUS-15', 'i7, 16GB RAM, 512GB SSD', 1),
+(2, 'USB-C Docking Station', 'ACC-DOCK-C', '4K Support, 100W PD', 1),
+(3, 'Wireless Maus', 'ACC-MOUSE-W', 'Ergonomisch, Schwarz', 1),
+(4, 'Kopierpapier A4', 'PAP-A4-80', '80g/m2, Weiß, 500 Blatt', 2),
+(5, 'Aktenvernichter P4', 'OFF-SHRED-P4', 'Partikelschnitt, 10 Blatt', 2),
+(6, 'Schreibtischstuhl', 'FUR-CHAIR-M', 'Mesh-Rücken, verstellbar', 3),
+(7, 'Konferenztisch', 'FUR-CONF-L', 'Eiche Optik, 200x100cm', 3),
+(8, 'Akkuschrauber Set', 'TOOL-DRILL-18', '18V, 2 Akkus, Koffer', 4),
+(9, 'Hammer 500g', 'TOOL-HAM-500', 'Fiberglasstiel', 4),
+(10, 'Warnweste Gelb', 'PSA-VEST-Y', 'EN ISO 20471, XL', 5),
+(11, 'Sicherheitsschuhe S3', 'PSA-SHOE-42', 'Größe 42, Stahlkappe', 5),
+(12, 'Allzweckreiniger', 'CLN-ALL-10', '10 Liter Kanister', 6),
+(13, 'Papierhandtücher', 'CLN-PAP-2', '2-lagig, Z-Falz', 6),
+(14, 'Umzugskarton XL', 'PACK-BOX-XL', '2-wellig, 60kg Traglast', 7),
+(15, 'Klebeband Transparent', 'PACK-TAPE-T', '50mm x 66m, Lautlos', 7),
+(16, 'Rasendünger', 'GARD-FERT-5', '5kg Sack, Langzeit', 8),
+(17, 'HDMI Kabel 3m', 'CAB-HDMI-3', '4K@60Hz, Gold', 12),
+(18, 'Defekter Monitor', 'RET-MON-ERR', 'Displaybruch', 13);
+
+-- ==========================================
+-- 7. PRODUKT-LIEFERANTEN (Preise & Verknüpfung)
+-- ==========================================
+INSERT INTO "productsuppliermanager_productsupplier" ("id", "product_id", "supplier_id", "purchase_price", "delivery_time_days", "min_order_quantity") VALUES
+(1, 1, 1, 850.00, 7, 5), (2, 2, 1, 120.00, 7, 10), (3, 3, 9, 15.50, 5, 20),
+(4, 4, 2, 3.50, 2, 50), (5, 5, 2, 89.90, 3, 1),
+(6, 6, 4, 150.00, 14, 1), (7, 7, 4, 299.00, 14, 1),
+(8, 8, 5, 75.00, 4, 5), (9, 9, 5, 8.50, 2, 10),
+(10, 10, 6, 2.50, 2, 50), (11, 11, 6, 35.00, 3, 5),
+(12, 12, 3, 12.00, 3, 5), (13, 13, 3, 18.00, 3, 10),
+(14, 14, 7, 1.20, 2, 100), (15, 15, 7, 0.80, 2, 36),
+(16, 16, 8, 14.99, 5, 10), (17, 17, 9, 4.20, 5, 20), -- KOMMA STATT SEMIKOLON
+
+-- 1. SZENARIO: PREIS VS. SCHNELLIGKEIT (Produkt: Laptop ID 1)
+-- Bisher: Global Tech (850€, 7 Tage)
+(20, 1, 9, 820.00, 14, 10),   -- Electro World: Günstiger (820€), aber 2 Wochen Wartezeit
+(21, 1, 2, 899.00, 2, 1),     -- Office Partner: Teurer (899€), aber in 2 Tagen da
+
+-- 2. SZENARIO: DER "ALLES-KÖNNER" (Supplier: Global Tech ID 1)
+-- Ermöglicht Sammelbestellungen (Laptops + Maus + Kabel + Papier zusammen bestellen)
+(22, 3, 1, 14.50, 7, 50),     -- Wireless Maus (Massenware)
+(23, 17, 1, 3.80, 7, 100),    -- HDMI Kabel
+(24, 4, 1, 4.20, 7, 200),     -- Kopierpapier
+
+-- 3. SZENARIO: BÜRO-SPEZIALIST (Supplier: Office Partner ID 2)
+-- Hat jetzt Möbel und Verpackung
+(25, 6, 2, 169.00, 3, 1),     -- Schreibtischstuhl (Schnell lieferbar)
+(26, 14, 2, 1.90, 2, 10),     -- Umzugskartons
+
+-- 4. SZENARIO: CHEMIKALIEN / REINIGUNG (Produkt: Reiniger ID 12)
+-- Vergleich: CleanCorp (Standard) vs. Gastro King (Schnell) vs. Chemie Union (Billig/Masse)
+(27, 12, 12, 11.50, 1, 5),    -- Gastro King: Etwas billiger, sehr schnell
+(28, 12, 10, 9.50, 10, 100),  -- Chemie Union: Sehr billig, aber Mindestabnahme 100 Stück!
+
+-- 5. SZENARIO: CROSS-SELLING (Baumarkt verkauft auch Arbeitskleidung)
+(29, 10, 5, 3.99, 4, 5),      -- Warnweste bei ToolMasters
+(30, 9, 11, 12.50, 1, 1);     -- Hammer bei Auto Parts 24 (Teuer, aber Einzelstück möglich)
+
+-- ==========================================
+-- 8. KUNDEN
+-- ==========================================
+INSERT INTO "customermanager_customer" ("id", "salutation", "first_name", "last_name", "email", "phone", "city", "zip_code", "street", "house_number", "user_id") VALUES
+(1, 'Herr', 'Max', 'Mustermann', 'max@muster.de', '0171-11111', 'Berlin', '10115', 'Hauptstr.', '1', NULL),
+(2, 'Frau', 'Sabine', 'Müller', 's.mueller@web.de', '0172-22222', 'München', '80331', 'Seestr.', '5', NULL),
+(3, 'Firma', 'Tech', 'Solutions', 'info@techsol.de', '030-33333', 'Hamburg', '20095', 'Speicherstadt', '10', NULL),
+(4, 'Firma', 'Handwerk', 'Meier', 'buero@meier-bau.de', '040-44444', 'Hamburg', '21107', 'Bauweg', '99', NULL),
+(5, 'Herr', 'Jan', 'Jansen', 'j.jansen@gmx.de', '0221-55555', 'Köln', '50667', 'Rheinufer', '3', NULL),
+(6, 'Frau', 'Lisa', 'Lustig', 'lisa.l@yahoo.com', '069-66666', 'Frankfurt', '60311', 'Zeil', '8', NULL),
+(7, 'Firma', 'StartUp', 'Rocket', 'founders@rocket.io', '030-77777', 'Berlin', '10999', 'Kreuzberg', '44', NULL),
+(8, 'Herr', 'Peter', 'Pan', 'p.pan@neverland.com', '0151-88888', 'Dortmund', '44137', 'Westen', '1', NULL),
+(9, 'Firma', 'Logistik', 'Express', 'dispo@logex.de', '0711-99999', 'Stuttgart', '70173', 'Autoallee', '2', NULL),
+(10, 'Frau', 'Anna', 'Altmann', 'anna.a@t-online.de', '0341-10101', 'Leipzig', '04109', 'Markt', '12', NULL);
+
+-- ==========================================
+-- 9. LAGERBESTAND (STOCK) - BEREINIGT
+-- ==========================================
+INSERT INTO "stockmanager_stock" ("product_id", "location_id", "quantity", "threshold") VALUES
+(1, 2, 50, 10),
+(2, 2, 8, 20),
+(3, 5, 200, 50),
+(4, 9, 5000, 500),
+(5, 9, 12, 5),
+(6, 6, 20, 5),
+(7, 6, 2, 2),
+(8, 5, 30, 10),
+(9, 5, 100, 20),
+(10, 9, 40, 10),
+(11, 9, 25, 15),
+(12, 7, 50, 10),
+(13, 9, 300, 50),
+(14, 1, 500, 100),
+(15, 1, 200, 50),
+(18, 12, 5, 0);
+
+-- ==========================================
+-- 10. BESTELLUNGEN (ORDERS)
+-- ==========================================
+INSERT INTO "ordermanager_order" ("id", "customer_id", "status", "date") VALUES
+(1, 1, 'COMPLETED', '2025-01-01 10:00:00'),
+(2, 2, 'SHIPPED', '2025-01-02 11:30:00'),
+(3, 3, 'PROCESSING', '2025-01-03 09:15:00'),
+(4, 3, 'PENDING', '2025-01-04 08:00:00'),
+(5, 4, 'SHIPPED', '2025-01-05 14:00:00'),
+(6, 5, 'CANCELLED', '2025-01-06 10:00:00'),
+(7, 6, 'COMPLETED', '2025-01-07 16:00:00'),
+(8, 7, 'PROCESSING', '2025-01-08 12:00:00'),
+(9, 8, 'PENDING', '2025-01-09 09:00:00'),
+(10, 9, 'SHIPPED', '2025-01-10 10:30:00'),
+(11, 1, 'PENDING', '2025-01-11 08:00:00'),
+(12, 2, 'PROCESSING', '2025-01-11 09:00:00');
+
+-- ==========================================
+-- 11. BESTELLPOSITIONEN (ITEMS)
+-- ==========================================
+INSERT INTO "ordermanager_orderitem" ("order_id", "product_id", "quantity") VALUES
+(1, 1, 1), (1, 2, 1),
+(2, 15, 5), (2, 14, 10),
+(3, 1, 5),
+(4, 3, 10),
+(5, 8, 4), (5, 9, 10),
+(7, 10, 2),
+(8, 6, 10),
+(9, 11, 2),
+(10, 14, 500), (10, 15, 200);
+
+-- ==========================================
+-- 12. LIEFERUNGEN (DELIVERY)
+-- ==========================================
+INSERT INTO "deliverymanager_delivery" ("order_id", "status", "delivery_date") VALUES
+(1, 'DELIVERED', '2025-01-03'),
+(2, 'SHIPPED', '2025-01-12'),
+(5, 'SHIPPED', '2025-01-12'),
+(7, 'DELIVERED', '2025-01-08'),
+(10, 'SHIPPED', '2025-01-12');
+
+-- ==========================================
+-- 13. EINKAUF: BESTELLUNGEN (PURCHASE ORDERS) - ERWEITERT
+-- ==========================================
+
+INSERT INTO "purchaseordermanager_purchaseorder" ("id", "supplier_id", "status", "created_at") VALUES
+-- Szenario A: Dringende Bestellung bei Office Partner (Supplier 2)
+-- Status: Bereits geliefert (RECEIVED)
+(2, 2, 'RECEIVED', '2025-01-10 09:00:00'),
+
+-- Szenario B: Die "Sparfuchs"-Bestellung bei Electro World (Supplier 9)
+-- Status: Bestellt (ORDERED), dauert lange
+(3, 9, 'ORDERED', '2025-01-12 14:30:00'),
+
+-- Szenario C: Große Sammelbestellung bei Global Tech (Supplier 1)
+-- Status: Bestellt (ORDERED)
+(4, 1, 'ORDERED', '2025-01-12 15:00:00'),
+
+-- Szenario D: Massenbestellung Chemie (Supplier 10)
+-- Status: Bestellt (ORDERED) - Test der Mindestbestellmenge
+(5, 10, 'ORDERED', '2025-01-12 16:00:00'),
+
+-- Szenario E: Kleine Nachbestellung Werkzeug (Supplier 5)
+-- Status: Unterwegs/Teilweise (falls dein System das unterstützt, sonst ORDERED)
+(6, 5, 'ORDERED', '2025-01-13 08:00:00');
+
+
+-- ==========================================
+-- 14. EINKAUF: POSITIONEN (PURCHASE ORDER ITEMS)
+-- ==========================================
+-- HINWEIS: "product_supplier_id" bezieht sich auf die ID aus der Tabelle "productsuppliermanager_productsupplier"
+-- die wir gerade im vorherigen Schritt (1-17 und 20-30) angelegt haben.
+
+INSERT INTO "purchaseorderitemmanager_purchaseorderitem" ("purchase_order_id", "product_supplier_id", "quantity", "received_quantity") VALUES
+
+-- Zu Order 2 (Office Partner - Schnell & Teuer):
+-- 2x Laptop (ID 21: teure Variante), 5x Kartons (ID 26)
+(2, 21, 2, 2),   -- 2 bestellt, 2 erhalten (abgeschlossen)
+(2, 26, 5, 5),   -- 5 bestellt, 5 erhalten
+
+-- Zu Order 3 (Electro World - Langsam & Billig):
+-- 5x Laptop (ID 20: billige Variante), 20x HDMI Kabel (ID 17)
+(3, 20, 5, 0),   -- Noch nichts erhalten
+(3, 17, 20, 0),
+
+-- Zu Order 4 (Global Tech - Sammelbestellung):
+-- Hier nutzen wir die neuen "Allrounder" Einträge
+-- 10x Maus (ID 22), 50x Papier (ID 24), 2x Docking Station (ID 2)
+(4, 22, 10, 0),
+(4, 24, 50, 0),
+(4, 2, 2, 0),
+
+-- Zu Order 5 (Chemie Union - Masse):
+-- 150x Reiniger (ID 28 war Chemie Union? Nein ID 30 war Chemie Union/Billig)
+-- Check: ID 30 ist Reiniger bei Supplier 10 mit Min-Qty 100
+(5, 30, 150, 0), -- 150 Stück (über der Mindestmenge von 100)
+
+-- Zu Order 6 (ToolMasters - Werkzeug):
+-- 2x Warnweste (ID 29), 1x Hammer (ID 9)
+(6, 29, 2, 0),
+(6, 9, 1, 0);
+
+
+-- ==========================================
+-- 15. WARENBEWEGUNGEN (STOCK MOVEMENTS)
+-- ==========================================
+INSERT INTO "stockmovementmanager_stockmovement"
+("product_id", "source_location_id", "destination_location_id", "quantity", "movement_type", "timestamp", "note")
+VALUES
+
+-- 1. INVENTUR-PLUS (Eingang)
+-- Wir haben 2 Mäuse (ID 3) gefunden, die nirgendwo herkammen (NULL) -> gehen ins Lager (ID 5)
+(3, NULL, 5, 2, 'ADJUSTMENT', '2025-01-14 09:00:00', 'Inventurkorrektur: 2 Stück gefunden'),
+
+-- 2. BRUCH/SCHROTT (Ausgang)
+-- Ein Stuhl (ID 6) ist im Lager (ID 6) kaputtgegangen -> geht ins Nichts (NULL)
+(6, 6, NULL, 1, 'SCRAP', '2025-01-14 10:30:00', 'Transportschaden Lagerhalle'),
+
+-- 3. EIGENBEDARF (Ausgang)
+-- Ein HDMI Kabel (ID 17) aus dem Lager (ID 2) entnommen für Eigenbedarf
+(17, 2, NULL, 1, 'INTERNAL', '2025-01-14 11:15:00', 'Entnahme für Meetingraum 2'),
+
+-- 4. RETOURE (Eingang)
+-- Eine Warnweste (ID 10) kommt zurück -> ins Retourenlager (ID 12)
+(10, NULL, 12, 1, 'RETURN', '2025-01-14 13:45:00', 'Kundenretoure Order #123'),
+
+-- 5. UMLAGERUNG (Transfer)
+-- Papier (ID 4) wird vom Lager (ID 9) zur Packstation (ID 11) bewegt
+(4, 9, 11, 50, 'TRANSFER', '2025-01-14 14:50:00', 'Bereitstellung für Großauftrag');
